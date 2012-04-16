@@ -1,0 +1,123 @@
+// This is a generated file. Edits will be lost.
+(function() {
+  var $;
+
+  $ = jQuery;
+
+  $.widget('ui.toggleswitch', {
+    options: {
+      peek: 8,
+      speed: 120,
+      disabled: null,
+      yesno: false,
+      onoff: true
+    },
+    _is_checked: function() {
+      if (this.element.is(':checked')) {
+        return 1;
+      } else {
+        return 0;
+      }
+    },
+    _update: function(speed) {
+      var pos, _ref;
+      if (speed == null) {
+        speed = this.options.speed;
+      }
+      pos = ((_ref = this._shift) != null ? _ref[this._is_checked()] : void 0) || 0;
+      if (speed === 0) {
+        return this._span.stop().css({
+          backgroundPositionX: pos
+        });
+      } else {
+        return this._span.stop().animate({
+          backgroundPositionX: pos
+        }, speed);
+      }
+    },
+    _getOffShift: function($span) {
+      var offShift,
+        _this = this;
+      if ($span == null) {
+        $span = this._span;
+      }
+      offShift = $span.css('backgroundPositionX');
+      if (offShift === '0%') {
+        return $(function() {
+          var $tmp;
+          $tmp = $('<span class="ui-toggleswitch-container">').css({
+            display: 'none'
+          }).appendTo('body');
+          _this._getOffShift($tmp);
+          return $tmp.detach();
+        });
+      } else {
+        this._peek = [parseInt(offShift) + this.options.peek, -this.options.peek];
+        this._shift = [parseInt(offShift), 0];
+        return this._update(0);
+      }
+    },
+    _create: function() {
+      var _base,
+        _this = this;
+      if ((_base = this.options).disabled == null) {
+        _base.disabled = this.element.propAttr('disabled');
+      }
+      if (this.element.is(':disabled')) {
+        this.options.disabled = true;
+      }
+      this._span = this.element.hide().addClass('ui-toggleswitch').change(function() {
+        return _this._update();
+      }).wrap("<span class='ui-toggleswitch-container' tabindex='0'></span>").after('<span></span>').parent().hover(function() {
+        if (!_this.options.disabled) {
+          return _this._span.stop().animate({
+            backgroundPositionX: _this._peek[_this._is_checked()]
+          }, 100);
+        }
+      }, function() {
+        if (!_this.options.disabled) {
+          return _this._span.stop().animate({
+            backgroundPositionX: _this._shift[_this._is_checked()]
+          }, 100);
+        }
+      }).click(function() {
+        if (!_this.options.disabled) {
+          if (_this._is_checked()) {
+            _this.element.removeAttr('checked');
+          } else {
+            _this.element.attr('checked', 'checked');
+          }
+          return _this.element.change();
+        }
+      }).on('selectstart', function() {
+        return false;
+      });
+      if (this.options.yesno) {
+        this._span.addClass('ui-toggleswitch-yesno');
+      }
+      this._getOffShift();
+      return this._setOption('disabled', this.options.disabled);
+    },
+    _setOption: function(key, value) {
+      $.Widget.prototype._setOption.apply(this, arguments);
+      switch (key) {
+        case 'disabled':
+          value = value ? true : false;
+          this.element.propAttr('disabled', value);
+          this._span.stop();
+          if (value) {
+            return this._span.addClass('ui-state-disabled');
+          } else {
+            return this._span.removeClass('ui-state-disabled');
+          }
+      }
+    },
+    _destroy: function() {
+      return $.Widget.prototype.destroy.call(this);
+    },
+    refresh: function() {
+      return this._update(0);
+    }
+  });
+
+}).call(this);

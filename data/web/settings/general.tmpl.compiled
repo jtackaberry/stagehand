@@ -1,0 +1,175 @@
+<form>
+
+<h1>Miscellaneous</h1>
+<div class='section' id='misc-section'>
+    <div>
+        <label>TV Directory:</label>
+        <input type='text' name='misc-tvdir' size='25' value='{{config.misc.tvdir}}' />
+        <div class='help' id='misc-tvdir-help'>{{!desc(config.misc.tvdir)}}</div>
+    </div>
+    <div>
+        <label>Log Directory:</label>
+        <input type='text' name='misc-logdir' size='25' value='{{config.misc.logdir}}' />
+        <div class='help' id='misc-logdir-help'>{{!desc(config.misc.logdir)}}</div>
+    </div>
+    <div>
+        <label>Log Level:</label>
+        <select name='misc-loglevel' id='misc-loglevel' style='width: 10em'>
+            <option>Warn</option>
+            <option>Info</option>
+            <option>Debug</option>
+            <option>Debug2</option>
+        </select>
+        <div class='help' id='misc-loglevel-help'>{{!desc(config.misc.loglevel)}}</div>
+    </div>
+    <div>
+        <label>Bind IP:</label>
+        <input type='text' name='misc-bind_address' size='25' value='{{config.misc.bind_address}}' />
+        <div class='help' id='misc-bind_address-help'>{{!desc(config.misc.bind_address)}}</div>
+    </div>
+    <div>
+        <label>Language:</label>
+        <input type='text' name='misc-language' size='25' value='{{config.misc.language}}' />
+        <div class='help' id='misc-language-help'>{{!desc(config.misc.language)}}</div>
+    </div>
+
+</div>
+
+<h1>Episode Renaming&nbsp;
+    <input type='checkbox' id='naming-rename' name='naming-rename'
+           {{!'checked="checked"' if config.naming.rename else ''}} />
+    <div class='help' id='naming-rename-help'>{{!desc(config.misc.loglevel)}}</div>
+</h1>
+<div class='section' id='naming-section'>
+    <div>
+        <label>Word Separator:</label>
+        <input type='text' name='naming-separator' size='1' value='{{config.naming.separator}}' />
+    </div>
+    <span style='position: absolute; margin-left: 28em' class='warning' id='naming-example'>
+        <b>Example:</b> {{rename_example.get('example', rename_example.get('error'))}}
+    </span>
+    <div>
+        <label>Season Dir Format:</label>
+        <input type='text' name='naming-season_dir_format' size='25' value='{{config.naming.season_dir_format}}' />
+    </div>
+    <div>
+        <label>Code Style:</label>
+        <input type='text' name='naming-code_style' size='25' value='{{config.naming.code_style}}' />
+    </div>
+    <div>
+        <label>Episode Format:</label>
+        <input type='text' name='naming-episode_format' size='25' value='{{config.naming.episode_format}}' />
+    </div>
+</div>
+
+
+<h1>Proxy &nbsp;
+    <input type='checkbox' id='proxy-use' name='proxy-use'
+           {{!'checked="checked"' if config.misc.proxy.use else ''}} />
+</h1>
+<div class='section' id='proxy-section'>
+    <div>
+        <label>Host:</label>
+        <input type='text' name='proxy-host' size='25' value='{{config.misc.proxy.host}}' />
+    </div>
+    <div>
+        <label>Port:</label>
+        <input type='text' name='proxy-port' size='5' value='{{config.misc.proxy.port}}' />
+    </div>
+    <div>
+        <label>Username:</label>
+        <input type='text' name='proxy-user' size='25' value='{{config.misc.proxy.username}}' />
+    </div>
+    <div>
+        <label>Password:</label>
+        <input type='password' name='proxy-password' size='25' value='{{config.misc.proxy.password}}' />
+    </div>
+</div>
+
+<h1>Web Server</h1>
+<div class='section' id='web-section'>
+    <div>
+        <label>Logging:</label>
+        <input type='checkbox' name='web-logging' id='web-logging'
+              {{!'checked="checked"' if config.web.logging else ''}} />
+    </div>
+    <div>
+        <label>Bind Address:</label>
+        <input type='text' name='web-bind_address' size='25' value='{{config.web.bind_address}}' />
+    </div>
+    <div>
+        <label>Port:</label>
+        <input type='text' name='web-port' size='5' value='{{config.web.port}}' />
+    </div>
+    <div>
+        <label>Reverse Proxy Root:</label>
+        <input type='text' name='web-proxied_root' size='25' value='{{config.web.proxied_root}}' />
+    </div>
+    <div>
+        <label>Authenticate:</label>
+        <input type='checkbox' name='web-auth' id='web-auth'
+              {{!'checked="checked"' if config.web.username else ''}} />
+    </div>
+    <div id='web-auth-section'>
+        <div>
+            <label>Username:</label>
+            <input type='text' name='web-username' size='25' value='{{config.web.username}}' />
+        </div>
+        <div>
+            <label>Password:</label>
+            <input type='password' name='web-password' size='25' value='{{config.web.password}}' />
+        </div>
+    </div>
+</div>
+</form>
+
+<script type='text/javascript'>
+(function() {
+
+  section_toggleswitch('naming-section', $('#naming-rename').toggleswitch());
+
+  $('#web-logging').toggleswitch();
+
+  section_toggleswitch('web-auth-section', $('#web-auth').toggleswitch({
+    yesno: true
+  }));
+
+  section_toggleswitch('proxy-section', $('#proxy-use').toggleswitch());
+
+  $('#naming-section input').on('input', function() {
+    var params;
+    params = {};
+    $('#naming-section input').each(function() {
+      return params[this.name.replace('naming-', '')] = this.value;
+    });
+    return $.get('{{root}}/settings/rename_example', params, function(response) {
+      if (response.error) {
+        return $('#naming-example').html("<b>Error:</b> " + response.error);
+      } else {
+        return $('#naming-example').html("<b>Example:</b> " + response.example);
+      }
+    });
+  });
+
+  $('#misc-loglevel :contains({{config.misc.loglevel.title()}})').attr('selected', 'selected');
+
+  $('#misc-loglevel').selectmenu({
+    style: 'popup'
+  });
+
+  $('div.help').prev().poshytip({
+    className: 'tip-darkgray',
+    showOn: 'focus',
+    offsetX: 10,
+    alignX: 'right',
+    alignY: 'center',
+    alignTo: 'target',
+    content: function() {
+      return $("#" + this.name + "-help").html();
+    }
+  });
+
+}).call(this);
+</script>
+
+%rebase layout.tmpl title='General Settings', section="settings", subsection="general"

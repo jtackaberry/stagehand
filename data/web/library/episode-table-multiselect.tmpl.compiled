@@ -1,0 +1,124 @@
+<div id='episode-button-bar' style='position: absolute; margin-top: 80px; border: 1px solid #aaa; background-color: #eee; width: 45px; border-top-left-radius: 10px; border-bottom-left-radius:10px; padding: 15px 9px 15px 9px; -moz-box-shadow: inset 0 0 9px rgba(0, 0, 0, 0.10); -webkit-box-shadow: inset 0 0 14px rgba(0, 0, 0, 0.15); box-shadow: inset 0 0 14px rgba(0, 0, 0, 0.15); text-align: center; z-index: 0'>
+    <div style='padding-bottom: 8px'>
+        <button title='Schedule for download' id='button-episodes-status-need'>
+            <img src='{{root}}/static/img/icon-20-status-need.png' style='width: 16px; padding: 3px 0' />
+        </button>
+    </div>
+    <div style='padding-bottom: 8px'>
+        <button title='Ignore episodes' id='button-episodes-status-ignore'>
+            <img src='{{root}}/static/img/icon-20-status-ignore.png' style='width: 16px; padding: 3px 0' />
+        </button>
+    </div>
+    <div>
+        <button title='Delete downloaded files then ignore' id='button-episodes-status-delete'>
+            <img src='{{root}}/static/img/icon-16-delete.png' style='padding: 3px 0' />
+        </button>
+    </div>
+</div>
+<script type='text/javascript'>
+(function() {
+  var open_button_bar_if_needed;
+
+  open_button_bar_if_needed = function() {
+    if ($('#{{tableid}} input[type=checkbox]:checked').size()) {
+      return $('#episode-button-bar').animate({
+        marginLeft: -64
+      }, 200);
+    } else {
+      $('#episode-button-bar').animate({
+        marginLeft: 0
+      }, 200);
+      return $('#episode-button-bar button').poshytip('hide');
+    }
+  };
+
+  $(function() {
+    $('#{{tableid}} input[type=checkbox]').click(function(event) {
+      event.stopPropagation();
+      return defer(0, open_button_bar_if_needed);
+    });
+    $('#{{tableid}} tr:first input[type=checkbox]').click(function(event) {
+      return $('#{{tableid}} input[type=checkbox]').prop('checked', this.checked);
+    });
+    $('tr.heading input[type=checkbox]').click(function(event) {
+      var group;
+      group = $(this).parents('tr').attr('id');
+      return $("tr." + group + " input[type=checkbox]").prop('checked', this.checked);
+    });
+    return $('#{{tableid}} input[type=checkbox]').prop('checked', false);
+  });
+
+  $(this).bind('load', function() {
+    var bar, bar_top;
+    bar = $('#episode-button-bar');
+    bar_top = bar.offset().top - 40;
+    $(this).unbind('scroll.stagehand');
+    $(this).bind('scroll.stagehand', function() {
+      if ($(this).scrollTop() > bar_top) {
+        return bar.css({
+          position: 'fixed',
+          top: 0,
+          marginTop: '40px'
+        });
+      } else {
+        return bar.css({
+          position: 'absolute',
+          top: 'inherit',
+          marginTop: '80px'
+        });
+      }
+    });
+    return open_button_bar_if_needed();
+  });
+
+  $('#episode-button-bar button').poshytip({
+    alignY: 'center',
+    alignX: 'right',
+    alignTo: 'target',
+    offsetX: 5,
+    showTimeout: 100
+  });
+
+  $('#episode-button-bar button').click(function() {
+    var epcode, eplist, eps_by_show, item, showid, status, _i, _len, _ref, _ref1, _results;
+    eps_by_show = {};
+    status = this.id.replace('button-episodes-status-', '');
+    _ref = $('#{{tableid}} tr.ep input[type=checkbox]:checked').parents('tr');
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      item = _ref[_i];
+      _ref1 = item.id.split('-'), showid = _ref1[0], epcode = _ref1[1];
+      if (!eps_by_show[showid]) {
+        eps_by_show[showid] = [];
+      }
+      eps_by_show[showid].push(epcode);
+    }
+    _results = [];
+    for (showid in eps_by_show) {
+      eplist = eps_by_show[showid];
+      _results.push((function(showid, eplist) {
+        var _this = this;
+        return stagehand.api("/api/shows/" + showid + "/episodes/" + (eplist.join(',')) + "/status?value=" + status, null, 'POST').done(function(_arg) {
+          var code, statuses, title, _ref2;
+          statuses = _arg.statuses;
+          for (code in statuses) {
+            _ref2 = statuses[code], status = _ref2[0], title = _ref2[1];
+            $("[id='" + showid + "-" + code + "'] img").prop('src', "{{root}}/static/img/icon-20-status-" + status + ".png").prop('title', title).prop('alt', title);
+          }
+          $('#{{tableid}} input[type=checkbox]').prop('checked', false);
+          return open_button_bar_if_needed();
+        }).fail(function(_arg) {
+          var message, xhr;
+          message = _arg.message, xhr = _arg.xhr;
+          if (xhr.status === 404) {
+            return alert("Failed: one of the episodes selected doesn't exist or unknown status code");
+          } else {
+            return alert("Failed: " + message);
+          }
+        });
+      })(showid, eplist));
+    }
+    return _results;
+  });
+
+}).call(this);
+</script>
