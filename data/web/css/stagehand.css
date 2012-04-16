@@ -1,0 +1,411 @@
+body {
+    margin: 0;
+}
+
+img {
+    border: 0;
+}
+
+a, a:visited {
+    text-decoration: none;
+    color: #74839a;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+#banner {
+    background-image: url(../img/banner.jpg);
+    background-position: 50% 0px;
+}
+
+#logo {
+    background-image: url(../img/logo.png);
+    width: 303px;
+    height: 120px;
+}
+
+
+
+.menu {
+    color: white;
+    width: 100%;
+    font-family: Tahoma, Sans-Serif;
+    padding: 0px;
+    margin: 0px;
+    float: left;
+    list-style: none;
+}
+
+.menu#main {
+    font-size: 135%;
+    background-color: rgba(0, 0, 0, 0.5);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr=#66000000,endColorstr=#66000000);
+    margin-top: -5px;
+}
+
+.menu.submenu {
+    font-size: 100%;
+    background-color: rgba(93, 94, 128, 0.35);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr=#735d5e80,endColorstr=#735d5e80);
+    display: none;
+}
+
+.menu li {
+    margin: 0;
+    cursor: pointer;
+    float: left;
+}
+
+.menu#main li {
+    border-right: 1px solid rgba(255, 255, 255, 0.3);
+    min-height: 29px;
+}
+
+.menu#main li:first-child {
+    border-left: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+
+.menu#main li.active {
+    background-color: rgba(93, 94, 128, 0.5);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr=#735d5e80,endColorstr=#735d5e80);
+}
+
+.menu li a {
+    display: inline-block;
+    color: white;
+    padding: 5px 1em;
+}
+
+.menu li a img {
+    position: relative;
+    top: 3px;
+}
+
+.menu a:hover {
+    text-decoration: none;
+}
+
+.menu#main li:hover {
+    background-color: rgba(93, 94, 128, 0.5);
+}
+
+/* version */
+.menu#main li:last-child {
+    position: absolute;
+    margin: 0;
+    padding: 1em;
+    right: 1em;
+    font-size: 0.5em;
+    opacity: 0.5;
+    border: 0;
+    cursor: auto;
+}
+
+.menu#main li:last-child:hover {
+    background-color: transparent;
+}
+
+
+.menu.submenu li.active {
+    background-color: rgba(93, 94, 128, 0.8);
+}
+
+.menu.submenu li:hover {
+    background-color: rgba(93, 94, 128, 0.8);
+}
+
+
+h1 {
+    border-top: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+    background-color: #eee;
+    padding: 0.2em 1.0em;
+    font-size: 120%;
+    font-family: Sans-Serif;
+    vertical-align: middle;
+    text-shadow: #aaa 2px 2px 2px;
+}
+
+h1 img {
+    position: relative;
+    top: 2px;
+}
+
+div.section {
+    padding-left: 1em;
+    font-family: Arial, Sans-Serif;
+}
+
+div.section label:first-child {
+    padding: 0.4em 0;
+    width: 10em;
+    display: inline-block;
+    text-align: right;
+}
+
+.warning {
+    border: 1px solid #e0cd64;
+    background-color: #fffac4;
+    padding: 5px 15px 5px 15px;
+    vertical-align: middle;
+    text-align: center;
+    border-radius: 20px;
+}
+
+.schedule {
+    padding: 1em;
+}
+
+.schedule span {
+    color: #aaa;
+}
+
+.schedule .overview {
+    margin-left: 1.5em;
+    margin-top: 1em;
+    padding: 0.5em 2em 0.5em 1em;
+    border-left: 1px solid #ccc;
+    color: #777;
+    font-size: 90%;
+    text-align: justify;
+    background: -moz-linear-gradient(left, #eee, #f5f5f5);
+    background: -webkit-gradient(linear, left top, right top, from(#eee), to(#f5f5f5));
+}
+
+.schedule .icons {
+    float: right;
+    margin-right: -5px;
+    margin-top: -10px;
+}
+
+.schedule .icons a {
+    opacity: 0.4;
+    -moz-opacity: 0.4;
+}
+
+.schedule .icons a:hover {
+    opacity: 1.0;
+    -moz-opacity: 1.0;
+}
+
+.ui-pnotify-history-container {
+    display: none;
+}
+
+
+.ui-widget {
+    font-size: 90% !important;
+}
+
+.ui-pnotify-icon span {
+    margin-top: 2px;
+}
+
+label.ui-button {
+    cursor: pointer;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -o-user-select: none;
+    user-select: none;
+}
+
+.ui-toggleswitch-container {
+    display: inline-block;
+    background-image: url(toggle-switch/switch-onoff.png);
+    background-repeat: no-repeat no-repeat;
+    cursor: pointer;
+    margin-right: 2px;
+    background-position: -37px 50%;
+    vertical-align: middle;
+    width: 63px;
+    height: 18px;
+}
+
+.ui-toggleswitch-container:focus {
+    outline: 0;
+}
+
+.ui-toggleswitch-container.ui-toggleswitch-yesno {
+    background-image: url(toggle-switch/switch-yesno.png);
+}
+
+.ui-toggleswitch-container span {
+    display: inline-block;
+    background-image: url(toggle-switch/switchplate.png);
+    background-repeat: no-repeat;
+    width: 63px;
+    height: 18px;
+    background-position: 0 50%;
+}
+
+.ui-toggleswitch-container.ui-state-disabled {
+    opacity: 0.3;
+    /*
+    background-image: url('toggle-switch/disabled.png');
+    background-position: 0px 0px;
+    */
+}
+
+table.grid {
+    font-family: Sans-Serif;
+    border: 1px solid #222;
+    border-radius: 11px;
+    border-spacing: 0px;
+}
+
+table.grid th {
+    padding: 0.4em 2.0em;
+    background-color: #555;
+    color: white;
+}
+
+/* Top left corner */
+table.grid th:first-child {
+    border-top-left-radius: 10px;
+}
+
+/* Top right corner */
+table.grid th:last-child {
+    border-top-right-radius: 10px;
+}
+
+/* Bottom left corner */
+table.grid tr:last-child td:first-child {
+    border-bottom-left-radius: 10px;
+}
+
+/* Bottom right corner */
+table.grid tr:last-child td:last-child {
+    border-bottom-right-radius: 10px;
+}
+
+table.grid td {
+    padding: 0.3em 2.0em;
+}
+table.grid td a {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+table.grid tr:not(.heading):nth-child(odd) td {
+    background-color: #eee;
+}
+
+table.grid tr:not(.heading):nth-child(even) td {
+    background-color: white;
+}
+
+table.grid th, table.grid td {
+    text-align: left;
+}
+
+table.grid.align-center th, table.grid.align-center td {
+    text-align: center;
+}
+
+table.grid.interactive tr {
+    cursor: pointer;
+}
+
+table.grid.interactive tr:not(.heading):hover td {
+    background-color: #493e57;
+    color: white;
+}
+
+table.grid tr.heading {
+    cursor: auto;
+    background-color: black;
+}
+
+table.grid tr.heading td {
+    font-size: 110%;
+    color: white;
+}
+
+.quality span {
+   font-variant: small-caps;
+   font-size: 80%;
+   color: white;
+   border-radius: 5px;
+   padding: 2px 10px;
+   font-weight: bold;
+   text-shadow: #000 1px 1px 1px;
+   display: inline-block;
+   margin: 0;
+   width: 2em;
+}
+
+.quality span.hd {
+   background-color: #54698e;
+   border: 1px solid #383d46;
+}
+
+.quality span.sd {
+   background-color: #9d4f4f;
+   border: 1px solid #6d3939;
+}
+
+.quality span.any {
+   background-color: #644179;
+   border: 1px solid #412f4b;
+}
+
+.help {
+    display: none;
+}
+
+span.step {
+    display: table;
+    background-color: #ada6d9;
+    border: 1px solid #7971a9;
+    border-radius: 1em;
+    font-size: 140%;
+    font-weight: bold;
+    width: 1.7em;
+    height: 1.7em;
+}
+
+span.step span {
+    display: table-cell;
+    vertical-align: middle;
+    text-align: center;
+}
+
+.ui-buttons-small .ui-button-text {
+    padding: 0.3em 0.7em;
+}
+
+/* It's not entirely clear why, but labels to the left of buttonsets aren't
+ * properly vertically aligned without this (which actually reverts a change
+ * from jquery ui 1.8.16 to 1.8.18, at least for buttons inside buttonsets)
+ */
+.ui-buttonset .ui-button {
+    overflow: visible;
+}
+
+a.ui-selectmenu:hover {
+    text-decoration: none;
+}
+
+
+.ui-icon.ui-icon-ignore, .ui-icon.ui-icon-need {
+    position: relative;
+    display: block;
+    margin: 5px 5px 0 5px;
+    padding: 0;
+}
+
+.ui-icon.ui-icon-ignore {
+    background-image: url(../img/icon-20-status-ignore.png);
+}
+
+.ui-icon.ui-icon-need {
+    background-image: url(../img/icon-20-status-need-forced.png);
+    margin: 5px 5px 0 5px;
+    padding: 5px;
+}

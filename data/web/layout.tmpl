@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{title}} | Stagehand</title>
+    <link rel="shortcut icon" href="{{root}}/static/img/favicon.ico" />
+    <link rel='stylesheet' href='{{root}}/static/css/dark-hive/jquery-ui-1.8.18.custom.css.gz' type='text/css' media='all' />
+    <link rel='stylesheet' href='{{root}}/static/css/jquery.pnotify.default.css.gz' type='text/css' media='all' />
+    <link rel='stylesheet' href='{{root}}/static/css/jquery.ui.selectmenu.css' type='text/css' media='all' />
+    <link rel='stylesheet' href='{{root}}/static/css/tip-twitter/tip-twitter.css' type='text/css' media='all' />
+    <link rel='stylesheet' href='{{root}}/static/css/stagehand.css' type='text/css' media='all' />
+    <script type='text/javascript' src='{{root}}/static/js/jquery-1.7.2.min.js.gz'></script>
+    <script type='text/javascript' src='{{root}}/static/js/jquery-ui-1.8.18.custom.min.js.gz'></script>
+    <script type='text/javascript' src='{{root}}/static/js/jquery.pnotify.min.js.gz'></script>
+    <script type='text/javascript' src='{{root}}/static/js/jquery.ui.selectmenu.min.js.gz'></script>
+    <script type='text/javascript' src='{{root}}/static/js/jquery.bgpos.js.gz'></script>
+    <script type='text/javascript' src='{{root}}/static/js/jquery.tablesorter.min.js.gz'></script>
+    <script type='text/javascript' src='{{root}}/static/js/jquery.poshytip.min.js.gz'></script>
+    <script type='text/coffeescript' src='{{root}}/static/js/jquery.toggleswitch.coffee'></script>
+    <script type='text/coffeescript' src='{{root}}/static/js/utils.coffee'></script>
+</head>
+<body>
+    <script type='text/coffeescript'>
+    @stagehand = new Stagehand('{{root}}')
+    </script>
+
+    <div id='banner'>
+        <img style='position: absolute; left: 272px; top: 10px; opacity: 1.5' src='{{root}}/static/img/masks.png' alt='' />
+        <div id='logo'></div>
+        <div id='menubar'>
+            <ul class='menu' id='main'>
+                <li id='m-home'><a href='{{root}}/'><img src='{{root}}/static/img/home.png' alt='Home' /></a></li>
+                <li id='m-library'><a href='{{root}}/library/'>Library</a></li>
+                <li id='m-schedule'><a href='{{root}}/schedule/'>Schedule</a></li>
+                <li id='m-settings'><a href='{{root}}/settings/'>Settings</a></li>
+                <li id='m-log'><a href='{{root}}/log/'>Log</a></li>
+                <li>
+                    %import stagehand
+                    version {{stagehand.__version__}}
+                </li>
+            </ul>
+            <ul class='menu submenu' id='submenu-home' style='background-color: white; {{!'display:inherit' if section == 'home' else ''}}'>
+                <li style='visibility: hidden'><a href='{{root}}/'>Dummy</a></li>
+            </ul>
+            <ul class='menu submenu' id='submenu-library' {{!'style="display:inherit"' if section == 'library' else ''}}>
+                <li id='m-library-series'><a href='{{root}}/library/'>TV Series</a></li>
+                <li id='m-library-import'><a href='{{root}}/library/import'>Import</a></li>
+            </ul>
+
+            <ul class='menu submenu' id='submenu-schedule' {{!'style="display:inherit"' if section == 'schedule' else ''}}>
+                <li id='m-schedule-upcoming'><a href='{{root}}/schedule/'>Upcoming Episodes</a></li>
+                <li id='m-schedule-aired'><a href='{{root}}/schedule/aired'>Aired Episodes</a></li>
+            </ul>
+
+            <ul class='menu submenu' id='submenu-settings' {{!'style="display:inherit"' if section == 'settings' else ''}}>
+                <li id='m-settings-general'><a href='{{root}}/settings/'>General</a></li>
+                <li id='m-settings-searchers'><a href='{{root}}/settings/searchers'>Searchers</a></li>
+                <li id='m-settings-retrievers'><a href='{{root}}/settings/retrievers'>Retrievers</a></li>
+                <li id='m-settings-notifiers'><a href='{{root}}/settings/notifiers'>Notifiers</a></li>
+            </ul>
+
+            <ul class='menu submenu' id='submenu-log' {{!'style="display:inherit"' if section == 'log' else ''}}>
+                <li id='m-log-application'><a href='{{root}}/log/'>Application</a></li>
+                <li id='m-log-web'><a href='{{root}}/log/web'>Web</a></li>
+            </ul>
+            <div style='clear: both'></div>
+        </div>
+    </div>
+
+<script type='text/coffeescript'>
+    $("#m-{{section}}").addClass('active')
+    $("#m-{{section}}-{{subsection}}").addClass('active')
+    $('#main li').mouseenter ->
+        menu = $("#submenu-#{@id.replace 'm-', ''}")
+        if menu.length
+            $('.submenu').hide()
+            menu.show()
+    $('#menubar').mouseleave ->
+        $('.submenu').hide()
+        $("#submenu-{{section}}").show()
+
+    async = `{{!json(async)}}`
+    stagehand.handle_response async
+</script>
+
+    %include
+
+</body>
+</html>

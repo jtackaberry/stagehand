@@ -1,0 +1,151 @@
+from __future__ import absolute_import
+import os
+import time
+import hashlib
+import functools
+import mimetypes
+import itertools
+import time
+import logging
+
+import kaa, kaa.config
+
+from . import server as web
+from . import api
+from .async import asyncweb, webcoroutine
+from .settings import rename_example
+from .utils import SessionPlugin, shview
+from ..utils import download
+from ..config import config
+
+log = logging.getLogger('stagehand.web.app')
+
+web.install(SessionPlugin())
+
+
+@web.route('/static/:filename#.*#')
+def static(filename):
+    manager = web.request['stagehand.manager']
+    root = os.path.join(manager.datadir, 'web')
+
+    if filename.endswith('.coffee'):
+        # This is CoffeeScript, so we need to return the compiled JavaScript
+        # instead.  Ok, not exactly static, strictly speaking. Close enough.
+        src = os.path.abspath(os.path.join(root, filename))
+        if not src.startswith(root):
+            raise web.HTTPError(403, 'Access denied.')
+        elif not os.path.exists(src):
+            raise web.HTTPError(404, 'File does not exist.')
+        else:
+            cached, data = web.cscompile_with_cache(src, web.request['coffee.cachedir'])
+            web.response.logextra = '(CS %s)' % 'cached' if cached else 'compiled on demand'
+            web.response.content_type = 'application/javascript'
+            web.response['Cache-Control'] = 'max-age=3600'
+            return data
+    else:
+        response = web.static_file(filename, root=root)
+        if filename.endswith('.gz') and not isinstance(response, web.HTTPError):
+            # static_file() does the right thing with respect to Content-Type
+            # and Content-Encoding for gz files.  But if the client doesn't have
+            # gzip in Accept-Encoding, we need to decompress it on the fly.
+            if 'gzip' not in web.request.headers.get('Accept-Encoding', ''):
+                import gzip
+                response.output = gzip.GzipFile(fileobj=response.output)
+
+        #if not isinstance(response, web.HTTPError):
+        return response
+
+
+@web.route('/')
+@shview('home.tmpl')
+def home():
+    return {}
+
+
+
+@web.route('/library/')
+@shview('library/tvseries.tmpl')
+def library_tvseries():
+    return {}
+
+@web.route('/library/<id>', method='GET')
+@shview('library/show.tmpl')
+def library_show(id):
+    series = web.request['stagehand.manager'].tvdb.get_series_by_id(id)
+    if not series:
+        raise web.HTTPError(404, 'Invalid show.')
+    return {
+        'series': series
+    }
+
+
+@web.route('/library/add', method='GET')
+@shview('library/add.tmpl')
+def library_add():
+    return {}
+
+
+@web.route('/library/import')
+@shview('library/import.tmpl')
+def library_import():
+    return {}
+
+
+
+@web.route('/schedule/')
+@shview('schedule/upcoming.tmpl')
+def schedule():
+    return {}
+
+@web.route('/schedule/aired')
+@shview('schedule/aired.tmpl')
+def schedule_aired():
+    return {
+        'weeks': int(web.request.query.weeks) if web.request.query.weeks.isdigit() else 4,
+        'status': web.request.query.status or 'all'
+    }
+
+
+@web.route('/settings/')
+@shview('settings/general.tmpl')
+def settings_general():
+    return {
+        'desc': lambda x: kaa.config.get_description(x).replace('\n\n', '<br/><br/>'),
+        'rename_example':
+            rename_example(config.misc.tvdir, config.naming.separator, config.naming.season_dir_format,
+                           config.naming.code_style, config.naming.episode_format)
+    }
+
+@web.route('/settings/rename_example')
+def settings_rename_example():
+    q = web.request.query
+    return rename_example(config.misc.tvdir, q.separator, q.season_dir_format,
+                          q.code_style, q.episode_format)
+
+
+@web.route('/settings/searchers')
+@shview('settings/searchers.tmpl')
+def settings_searchers():
+    return {}
+
+@web.route('/settings/retrievers')
+@shview('settings/retrievers.tmpl')
+def settings_retrievers():
+    return {}
+
+@web.route('/settings/notifiers')
+@shview('settings/notifiers.tmpl')
+def settings_notifiers():
+    return {}
+
+
+
+@web.route('/log/')
+@shview('log/application.tmpl')
+def log_application():
+    return {}
+
+@web.route('/log/web')
+@shview('log/web.tmpl')
+def log_web():
+    return {}

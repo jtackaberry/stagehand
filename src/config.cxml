@@ -1,0 +1,172 @@
+<?xml version="1.0"?>
+<config>
+    <group name='misc'>
+        <var name='tvdir' type='str' default='~/tv'>
+            <desc>Location of your TV series collection</desc>
+        </var>
+        <var name='language' type='str' default='en'>
+            <desc>
+                Preferred language (two letter ISO code).  When there is no
+                choice (either because Stagehand doesn't support it or because
+                the preferred language isn't found), English will be used.
+
+                Currently the only place this is used is with TheTVDB metadata,
+                but it will be used for other things in the future.
+            </desc>
+        </var>
+        <group name='proxy'>
+            <var name='use' type='bool' default='False' />
+            <var name='host' type='str' />
+            <var name='port' type='str' />
+            <var name='username' type='str' />
+            <var name='password' type='str' />
+        </group>
+        <var name='bind_address' type='str'>
+            <desc>
+                Source address for outbound Internet communication.  Not used if a proxy is enabled.
+            </desc>
+        </var>
+        <var name='logdir' type='str' default='~/.cache/stagehand/logs/'>
+            <desc>Directory for logs; leave empty to disable logging to file</desc>
+        </var>
+        <var name='loglevel' default='info'>
+            <desc>
+                Level of logging detail.
+                
+                Warnings and errors are always logged. Debug is useful to help
+                troubleshoot problems, and debug2 is <i>very</i> verbose.
+            </desc>
+            <enum>
+                <value>warn</value>
+                <value>info</value>
+                <value>debug</value>
+                <value>debug2</value>
+            </enum>
+        </var>
+    </group>
+
+    <group name='web'>
+        <var name='bind_address' type='str' default='' />
+        <var name='port' type='int' default='8088' />
+        <var name='username' type='str' />
+        <var name='password' type='str' />
+        <var name='logging' type='bool' default='False' />
+        <var name='proxied_root' type='str' default=''>
+            <desc>
+                When the web server is in front of a reverse proxy (which is detected by
+                the presence of the X-Forwarded-Host header, this specifies the root path
+                for all URLs.  This allows you to put a reverse proxy in front of
+                Stagehand (like Apache mod_proxy) and anchor it under a different path
+                (e.g. /stagehand) without resorting to HTML rewriting mods.
+            </desc>
+        </var>
+    </group>
+
+    <group name='naming'>
+        <var name='rename' type='bool' default='True' />
+        <var name='separator' type='str' default='_' />
+        <var name='season_dir_format' type='str' default='s{season}' />
+        <var name='code_style' type='str' default='s{season:02}e{episode:02}' />
+        <var name='episode_format' type='str' default='{show}-{code}-{title}' />
+    </group>
+
+    <group name='scoring'>
+        <dict name='modifiers'>
+            <desc>Keywords that modify the search result scoring.</desc>
+            <var type='int'>
+                <desc>Value added to the score if the modifier is found.</desc>
+            </var>
+        </dict>
+    </group>
+
+    <list name='series'>
+        <desc>The current TV series subscriptions.</desc>
+        <var name='id' type='unicode'>
+            <desc>
+                The id for this series, in the form "provider:id".  For example,
+                thetvdb:75897 or tvrage:7926.
+            </desc>
+        </var>
+        <var name='provider' type='str' default='thetvdb'>
+            <desc>
+                The preferred metadata provider for this series.  This provider will
+                be used for episode codes and air dates, and will take precedence
+                for episode summaries.
+
+                Note that this doesn't need to be the same provider as specified
+                in the id field.
+            </desc>
+        </var>
+        <var name='warn_conflicts' default='True'>
+            <desc>
+                Notify when metadata providers disagree about series data.  You
+                can set this to False when you're certain the preferred provider
+                is correct for this series and you're not interested in conflicts.
+            </desc>
+        </var>
+        <var name='path' type='str'>
+            <desc>
+                Name of the directory holding episodes for this series.
+                Non-absolute paths will be relative to the global tv directory.
+
+                If unspecified, will be auto-generated. 
+            </desc>
+        </var>
+        <var name='flat' type='bool' default='False'>
+            <desc>
+                True if all episodes should be stored in the root of the
+                series directory, or False if episods should be stored within
+                separate season subdirectories.
+            </desc>
+        </var>
+        <var name='quality' default='HD'>
+            <enum>
+                <value>HD</value>
+                <value>SD</value>
+                <value>Any</value>
+            </enum>
+        </var>
+        <var name='upgrade' type='bool' default='False'>
+            <desc>
+                If True, periodically monitor existing episodes for better
+                quality versions, and replace poorer quality versions when
+                available.
+            </desc>
+        </var>
+        <var name='paused' type='bool' default='False'>
+            <desc>
+                If True, new episodes will not be searched for or downloaded.
+            </desc>
+        </var>
+    </list>
+              
+    <group name="searchers">
+        <desc>Methods of searching for TV series</desc>
+        <list name='enabled'>
+            <desc>List of enabled searcher plugins and their order of preference.</desc>
+            <var type='str' />
+        </list>
+    </group>
+
+    <group name='retrievers'>
+        <list name='enabled'>
+            <desc>List of enabled retriever plugins and their order of preference.</desc>
+            <var type='str' />
+        </list>
+    </group>
+
+    <group name='notifiers'>
+        <list name='enabled'>
+            <desc>List of enabled notifier plugins and their order of preference.</desc>
+            <var type='str' />
+        </list>
+    </group>
+
+    <code>
+        # Force plugins to load and attach their config objects.
+        from . import searchers
+        from . import retrievers
+        from . import notifiers
+    </code>
+</config>
+

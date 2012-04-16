@@ -1,0 +1,114 @@
+%from datetime import datetime, timedelta
+%from stagehand.utils import episode_status_icon_info
+%episodes = [ep for s in manager.tvdb.series for ep in s.episodes if ep.aired and not ep.is_older_than(weeks*7)]
+%if status == 'need':
+    %episodes = [ep for ep in episodes if ep.ready]
+%elif status == 'have':
+    %episodes = [ep for ep in episodes if ep.status == ep.STATUS_HAVE]
+%end
+
+<div style='padding: 0 1em; display: table; margin: 2em auto'>
+    <div>
+        <div style='float: left; padding-right: 2em'>
+            Show
+            <select id='select-status' style='width: 11em'>
+                <option value='all' class='image-all'>all</option>
+                <option value='have' class='image-have'>downloaded</option>
+                <option value='need' class='image-need'>needed</option>
+            </select>
+            in the
+            <select id='select-weeks' style='width: 12em'>
+                <option value='1'>last week</option>
+                <option value='2'>last 2 weeks</option>
+                <option value='4'>last month</option>
+                <option value='8'>last 2 months</option>
+                <option value='24'>last 6 months</option>
+            </select>
+        </div>
+        <button style='float: right' id='button-search'>
+            Find Needed Episodes Now
+        </button>
+    </div>
+    <div style='clear: both; padding-top: 0.75em'></div>
+    %include library/find-needed-episodes.tmpl root=root, buttonid='button-search', showid=''
+    <script type='text/coffeescript'>
+        $('#select-status :[value={{status}}]').attr 'selected', 'selected'
+        $('#select-weeks :[value={{weeks}}]').attr 'selected', 'selected'
+        $('select').selectmenu
+            icons: [
+                {find: '.image-all', icon: 'ui-icon-radio-on'},
+                {find: '.image-have', icon: 'ui-icon-circle-arrow-s'},
+                {find: '.image-need', icon: 'ui-icon-clock'}
+            ]
+            style: 'popup'
+    </script>
+
+    %if not episodes:
+        <div style='text-align: center; padding: 1em'>
+            <div style='padding: 0.5em 3em; background-color: #fffcd0; border: 1px solid #e5e1a0; 
+                        display: inline-block; border-radius: 10px;'>
+                There are no episodes that match this criteria.
+            </div>
+        </div>
+    %else:
+        %include library/episode-table-multiselect.tmpl tableid='episode-list', root=root
+
+        <table id='episode-list' class='grid align-center interactive' width='100%' style='z-index: 2; position: relative'>
+        <thead id='episode-list-header'>
+        <tr> 
+            <th style='padding: 0 0.7em'><input type='checkbox' /></th>
+            <th style='text-align: left'>Series</th>
+            <th style='padding: 0 0.7em'>#</th>
+            <th style='text-align: left'>Episode Name</th>
+            <th style='text-align: left'>Date</th>
+            <th>Status</th>
+        </tr>
+        </thead>
+        <tbody>
+        %today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        %sunday = today - timedelta(days=5-today.weekday())
+        %last_week = None
+        %for ep in sorted(episodes, key=lambda e: e.airdate, reverse=True):
+            %week = ((sunday - ep.airdate).days + 6) / 7
+            %if last_week != week:
+                %last_week = week 
+                <tr class='heading' id='group-{{week}}'>
+                    <td style='padding: 0'><input type='checkbox' /></td>
+                    <td colspan="5" style='text-align: left; padding-left: 0.5em'>
+                        %if week == 0:
+                            <b>This Week</b>
+                        %elif week == 1:
+                            <b>Last Week</b>
+                        %else:
+                            <b>{{week}} Weeks Ago</b>
+                        %end
+                    </td>
+                </tr>
+            %end
+            <tr id='{{ep.series.id}}-{{ep.code}}' class='group-{{week}} ep' style='position: relative'>
+                <td style='padding: 0'><input type='checkbox' /></td>
+                <td style='text-align: left'>{{ep.series.name}}</td>
+                <td style='padding:0'>{{ep.season.number}}x{{ep.number}}</td>
+                <td style='text-align: left'>{{ep.name}}</td>
+                <td style='text-align: left; white-space: nowrap'>{{ep.airdate.strftime('%Y-%m-%d')}}</td>
+                <td>
+                    %icon, title = episode_status_icon_info(ep)
+                    <img src='{{root}}/static/img/icon-20-status-{{icon}}.png' alt='{{title}}' title='{{title}}' />
+                </td>
+            </tr>
+        %end
+        </tbody>
+        </table>
+    %end
+</div>
+
+<script type='text/coffeescript'>
+    $('table.grid tr.ep td:not(:first-child)').wrapInner('<a />')
+    $('table.grid tr.ep td a').each (i, e) ->
+        e.href = "{{root}}/library/#{e.parentNode.parentNode.id.replace /-.*/, ''}"
+
+    $('select').change ->
+        window.location = "{{root}}/schedule/aired?weeks=#{$('#select-weeks').val()}&status=#{$('#select-status').val()}"
+</script>
+
+%rebase layout.tmpl title='Aired Episodes | Schedule', section="schedule", subsection='aired'
