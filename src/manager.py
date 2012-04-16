@@ -25,7 +25,7 @@ class Manager(object):
         self._retrieve_queue = []
         # The series/episodes the _process_retrieve_queue() is actively
         # processing now. 
-        self._retrieve_queue_current = None
+        self._retrieve_queue_active = None
         self._check_new_timer = kaa.AtTimer(self.check_new_episodes)
 
         if not datadir:
@@ -214,7 +214,7 @@ class Manager(object):
         """
         Is the given episode currently queued for retrieval?
         """
-        if self._retrieve_queue_current and ep in self._retrieve_queue_current[1]:
+        if self._retrieve_queue_active and ep in self._retrieve_queue_active[1]:
             return True
         for series, results in self._retrieve_queue:
             if ep in results:
@@ -267,7 +267,7 @@ class Manager(object):
                     log.debug('need %s %s (%s): %s', series.name, ep.code, ep.airdatetime.strftime('%Y-%m-%d %H:%M'), ep.name)
                     if self._check_episode_queued_for_retrieval(ep):
                         log.debug('episode is already queued for retrieval, skipping')
-                        log.debug('retrieve queue current=%s, others=%s', self._retrieve_queue_current, self._retrieve_queue)
+                        log.debug('retrieve queue current=%s, others=%s', self._retrieve_queue_active, self._retrieve_queue)
                     else:
                         needlist.append(ep)
             if needlist:
@@ -334,7 +334,7 @@ class Manager(object):
         while self._retrieve_queue:
             # Before popping, sort retrieve queue so that result sets with
             # older episodes appear first.
-            series, results = self._retrieve_queue_current = self._retrieve_queue.pop(0)
+            series, results = self._retrieve_queue_active = self._retrieve_queue.pop(0)
             # For the given result set, sort according to older episodes
             for ep, ep_results in sorted(results.items(), key=lambda (ep, _): ep.code):
                 # Sanity check.
@@ -371,7 +371,7 @@ class Manager(object):
                         # Break result list for this episode and move onto next episode.
                         break
 
-        self._retrieve_queue_current = None
+        self._retrieve_queue_active = None
         if retrieved:
             yield notify(retrieved)
 
