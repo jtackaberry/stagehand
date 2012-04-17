@@ -109,9 +109,9 @@ class SearcherBase(object):
         if ascore != bscore:
             return 1 if bscore > ascore else -1
 
-        # Sort by date, preferring the newest.
+        # Sort by date, preferring the newest (or the one which actually has a date)
         if a.date != b.date:
-            return 1 if b.date > a.date else -1
+            return 1 if b.date and not a.date or (b.date and a.date and b.date > a.date) else -1
         return 0
 
 
@@ -224,6 +224,7 @@ class SearchResult(object):
     searcher = None
     filename = None
     subject = None
+    # Size is in bytes
     size = None
     date = None
     newsgroup = None
