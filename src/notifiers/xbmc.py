@@ -150,7 +150,7 @@ class Notifier(NotifierBase):
             elif len(dirs) == 1:
                 # We may not be able to check if XBMC is scanning, but we only have
                 # one directory that's changed, so we can update that.
-                yield self._update_library(dirs[0])
+                yield self._update_library(tuple(dirs)[0])
             else:
                 # individual is True, multiple directories, but no JSON-RPC.  No
                 # choice but to do a full update.
