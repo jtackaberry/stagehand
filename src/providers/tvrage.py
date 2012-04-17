@@ -126,7 +126,8 @@ class Provider(ProviderBase):
             elif tag == 'status':
                 from ..tvdb import Series
                 status = data.lower()
-                if status.startswith('return') or status.startswith('new'):
+                # Returning Series, New Series, Final Season all indicate currently running
+                if status.startswith('return') or status.startswith('new') or status.startswith('final'):
                     series['status'] = Series.STATUS_RUNNING
                 elif 'ended' in status:
                     series['status'] = Series.STATUS_ENDED
