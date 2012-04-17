@@ -177,7 +177,7 @@ class SearcherBase(object):
         to an episode object, and it will be up to the caller (i.e. the main
         search() method) to determine that.
         """
-        raise NotImplementedErrorErrorErrorError
+        raise NotImplementedError
 
 
     @kaa.coroutine()
