@@ -158,6 +158,7 @@ class Episode(object):
             dt = dt.replace(hour=int(hour), minute=int(minute))
         return dt
 
+
     @property
     def status(self):
         """
@@ -259,7 +260,7 @@ class Season(object):
     """
     Represents a season for a specific series.
 
-    This doesn't correspond to any database object, but providers a convenient
+    This doesn't correspond to any database object, but provides a convenient
     interface to select a subset of episodes.
     """
     def __init__(self, db, series, season):
@@ -484,12 +485,14 @@ class Series(object):
     def poster_data(self):
         return self._dbattr('poster_data')
 
+
     @property
     def seasons(self):
         """
         A list of all seasons as Season objects for this series.  The list is
         in order, such that the list index corresponds with the series number,
-        starting at 0 (i.e. seasons[0] is season 1).
+        starting at 0.  Note that some series may have a "season 0" (usually
+        comprised of special episodes) which would be at index 0.
         """
         if self._season_cache_ver == self._db._version:
             return self._season_cache

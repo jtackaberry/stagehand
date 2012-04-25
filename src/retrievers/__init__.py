@@ -19,7 +19,7 @@ def retrieve(progress, result, outfile, episode, skip=[]):
         tried = True
         retriever = plugins[name].Retriever()
         try:
-            yield retriever.retrieve(result, outfile, episode)
+            yield retriever.retrieve(progress, result, outfile, episode)
         except RetrieverError, e:
             log.warning('retriever %s failed to retrieve %s: %s', name, result.filename, e.args[0])
         except Exception:

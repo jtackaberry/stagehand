@@ -61,21 +61,21 @@
     </div>
     <div style='margin-top: 1.5em'>
         <label></label>
-        <button id='button-delete'>Delete Series</button>
         <div id="button-delete-dialog" title="Delete this series?" style='display: none'>
             <span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>
             This series will be permanently deleted from the local database, however no
             video files will be deleted.  Are you sure you want to do this?
         </div>
         <button id='button-refresh'>Refresh Episode Info</button>
+        <button id='button-delete'>Delete Series</button>
         <button id='button-search'>
-            Find Needed Episodes Now
+            Download Needed Episodes Now
         </button>
 
     </div>
 </div>
 
-%include library/find-needed-episodes.tmpl root=root, buttonid='button-search', showid=series.id
+%include library/download-needed-episodes.tmpl root=root, buttonid='button-search', showid=series.id
 
 <script type='text/javascript'>
 (function() {

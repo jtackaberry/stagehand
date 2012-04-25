@@ -97,6 +97,7 @@ def library_import():
 def schedule():
     return {}
 
+
 @web.route('/schedule/aired')
 @shview('schedule/aired.tmpl')
 def schedule_aired():
@@ -104,6 +105,12 @@ def schedule_aired():
         'weeks': int(web.request.query.weeks) if web.request.query.weeks.isdigit() else 4,
         'status': web.request.query.status or 'all'
     }
+
+
+@web.route('/schedule/downloads')
+@shview('schedule/downloads.tmpl')
+def schedule():
+    return {}
 
 
 @web.route('/settings/')

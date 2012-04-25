@@ -22,10 +22,15 @@ log = logging.getLogger('stagehand.manager')
 class Manager(object):
     def __init__(self, cfgdir=None, datadir=None, cachedir=None):
         self.series_by_name = {}
+        # A list of episodes to be retrieved.
+        # [(Episode, [SearchResult, ...]), (Episode, [SearchResult, ...])]
         self._retrieve_queue = []
-        # The series/episodes the _process_retrieve_queue() is actively
-        # processing now. 
+        # The element of the retrieve queue that is actively being processed.
+        # (Episode, [SearchResult, ...]).  The first SearchResult is the one
+        # being retrieved.
         self._retrieve_queue_active = None
+        # Maps Episode objects to InProgress objects for active downloads.
+        self._retrieve_inprogress = {}
         self._check_new_timer = kaa.AtTimer(self.check_new_episodes)
 
         if not datadir:
@@ -78,6 +83,20 @@ class Manager(object):
         import traceback
         traceback.print_stack()
         return self.tvdb.series
+
+    @property
+    def retrieve_queue(self):
+        """
+        The current retrieve queue, in the form:
+        [(Episode, [SearchResult, ...]), (Episode, [SearchResult, ...])]
+
+        The first element of this queue is probably active, but you should
+        call :meth:`get_episode_retrieve_inprogress` to be sure.
+        """
+        if self._retrieve_queue_active:
+            return [self._retrieve_queue_active] + self._retrieve_queue
+        else:
+            return self._retrieve_queue
 
 
     def _config_reloaded(self, changed):
@@ -208,16 +227,20 @@ class Manager(object):
                 self.tvdb.ignore_series_by_id(series.id)
 
 
+    def get_episode_retrieve_inprogress(self, ep):
+        """
+        Returns the InProgress object for the given Episode object if it is
+        currently being retrieved, otherwise returns None.
+        """
+        return self._retrieve_inprogress.get(ep)
 
 
     def _check_episode_queued_for_retrieval(self, ep):
         """
         Is the given episode currently queued for retrieval?
         """
-        if self._retrieve_queue_active and ep in self._retrieve_queue_active[1]:
-            return True
-        for series, results in self._retrieve_queue:
-            if ep in results:
+        for qep, qresults in self.retrieve_queue:
+            if ep == qep:
                 return True
         return False
 
@@ -321,10 +344,10 @@ class Manager(object):
                     for r in ep_results:
                         log.debug2('result %s (%dM)', r.filename, r.size / 1048576.0)
                 episodes_found.extend(results.keys())
-                self._retrieve_queue.append((series, results))
+                self._retrieve_queue.extend(results.items())
                 self._process_retrieve_queue()
 
-        log.debug('new episode check finished, found %d results', len(episodes_found))
+        log.info('new episode check finished, found %d results', len(episodes_found))
         yield episodes_found
 
 
@@ -334,42 +357,42 @@ class Manager(object):
         while self._retrieve_queue:
             # Before popping, sort retrieve queue so that result sets with
             # older episodes appear first.
-            series, results = self._retrieve_queue_active = self._retrieve_queue.pop(0)
-            # For the given result set, sort according to older episodes
-            for ep, ep_results in sorted(results.items(), key=lambda (ep, _): ep.code):
-                # Sanity check.
-                if ep.status == ep.STATUS_HAVE:
-                    log.error('BUG: scheduled to retrieve %s %s but it is already STATUS_HAVE', 
-                              ep.series.name, ep.code)
-                    continue
-                # Check to see if the episode exists locally.
-                elif ep.filename and os.path.exists(os.path.join(ep.season.path, ep.filename)):
-                    # The episode filename exists.  Do we need to resume?
-                    if ep.search_result:
-                        # Yes, there is a search result for this episode, so resume it.
-                        log.info('resuming download from last search result')
-                        success = yield self._get_episode(ep, ep.search_result)
-                        if success:
-                            retrieved.append(ep)
-                            # Move onto the next episode.
-                            continue
-                        else:
-                            log.warning('download failed, trying other search results')
-                            ep.filename = ep_search_result = None
-                    else:
-                        # XXX: should we move it out of the way and try again?
-                        log.error('retriever was scheduled to fetch %s but it already exists; aborting', 
-                                  ep.filename)
-                        continue
-
-                # Find the highest scoring item for this episode and retrieve it.
-                # TODO: also validate series name.
-                for result in ep_results:
-                    success = yield self._get_episode(ep, result)
+            # FIXME: ep.airdate could be None which Python 3 won't like sorting.
+            self._retrieve_queue.sort(key=lambda (ep, _): ep.airdate)
+            ep, ep_results = self._retrieve_queue_active = self._retrieve_queue.pop(0)
+            # Sanity check.
+            if ep.status == ep.STATUS_HAVE:
+                log.error('BUG: scheduled to retrieve %s %s but it is already STATUS_HAVE', 
+                          ep.series.name, ep.code)
+                continue
+            # Check to see if the episode exists locally.
+            elif ep.filename and os.path.exists(os.path.join(ep.season.path, ep.filename)):
+                # The episode filename exists.  Do we need to resume?
+                if ep.search_result:
+                    # Yes, there is a search result for this episode, so resume it.
+                    log.info('resuming download from last search result')
+                    success = yield self._get_episode(ep, ep.search_result)
                     if success:
                         retrieved.append(ep)
-                        # Break result list for this episode and move onto next episode.
-                        break
+                        # Move onto the next episode.
+                        continue
+                    else:
+                        log.warning('download failed, trying other search results')
+                        ep.filename = ep.search_result = None
+                else:
+                    # XXX: should we move it out of the way and try again?
+                    log.error('retriever was scheduled to fetch %s but it already exists; aborting', 
+                              ep.filename)
+                    continue
+
+            # Find the highest scoring item for this episode and retrieve it.
+            # TODO: also validate series name.
+            for result in ep_results:
+                success = yield self._get_episode(ep, result)
+                if success:
+                    retrieved.append(ep)
+                    # Break result list for this episode and move onto next episode.
+                    break
 
         self._retrieve_queue_active = None
         if retrieved:
@@ -378,6 +401,12 @@ class Manager(object):
 
     @kaa.coroutine()
     def _get_episode(self, ep, search_result):
+        """
+        Initiate the retriever plugin for the given search result.
+
+        On failure, False is returned, and it's up to the caller to retry with
+        a different search result.
+        """
         if not os.path.isdir(ep.season.path):
             # TODO: handle failure
             os.makedirs(ep.season.path)
@@ -392,12 +421,18 @@ class Manager(object):
         ep.search_result = search_result
         ep.filename = os.path.basename(target)
 
-        msg = 'starting retrieval of %s %s (%s)' % (ep.series.name, ep.code, search_result.searcher)
+        msg = 'Starting retrieval of %s %s (%s)' % (ep.series.name, ep.code, search_result.searcher)
         log.info(msg)
-        web.notify('Episode Download', msg.capitalize())
+        # FIXME: wrong root.
+        msg += '<br/><br/>Check progress of <a href="/schedule/downloads">active downloads</a>.'
+        web.notify('Episode Download', msg)
 
         try:
-            yield retrieve(search_result, target, ep)
+            #log.debug('not actually retrieving %s %s', ep.series.name, ep.code)
+            ip = retrieve(search_result, target, ep)
+            #ip = fake_download(search_result, target, ep)
+            self._retrieve_inprogress[ep] = ip
+            yield ip
         except RetrieverError, e:
             ep.filename = None
             if os.path.exists(target):
@@ -409,7 +444,16 @@ class Manager(object):
         else:
             # TODO: notify per episode (as well as batches)
             log.info('successfully retrieved %s %s', ep.series.name, ep.code)
+            #log.debug('not really')
             ep.status = ep.STATUS_HAVE
             yield True
+        finally:
+            del self._retrieve_inprogress[ep]
 
 
+@kaa.coroutine(progress=True)
+def fake_download(progress, result, outfile, episode):
+    for i in range(100):
+        progress.set(i*1*1024, 100*1024, 2048)
+        print progress.get_progressbar(), progress.speed
+        yield kaa.delay(1)

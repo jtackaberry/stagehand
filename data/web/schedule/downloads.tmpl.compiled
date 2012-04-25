@@ -1,0 +1,57 @@
+<div style='padding: 0 1em; display: table; margin: 2em auto'>
+    %if not manager.retrieve_queue:
+        <div style='text-align: center; padding: 1em'>
+            <div style='padding: 0.5em 3em; background-color: #fffcd0; border: 1px solid #e5e1a0; 
+                        display: inline-block; border-radius: 10px; font-size: 120%'>
+                There are no active downloads.
+            </div>
+        </div>
+    %else:
+        <table id='episode-list' class='grid align-center interactive' width='100%' style='z-index: 2; position: relative'>
+        <thead id='episode-list-header'>
+        <tr>
+            <th style='padding: 0 0.7em'><input type='checkbox' /></th>
+            <th style='text-align: left'>Series</th>
+            <th style='padding: 0 0.7em'>#</th>
+            <th style='text-align: left'>Episode Name</th>
+            <th>Progress</th>
+            <th>Speed</th>
+        </tr>
+        </thead>
+        <tbody>
+        %for ep, results in manager.retrieve_queue:
+            <tr id='{{ep.series.id}}-{{ep.code}}' class='ep' >
+                <td style='padding: 0'><input type='checkbox' /></td>
+                <td style='text-align: left'>{{ep.series.name}}</td>
+                <td style='padding:0'>{{ep.season.number}}x{{ep.number}}</td>
+                <td style='text-align: left'>{{ep.name}}</td>
+            %ip = manager.get_episode_retrieve_inprogress(ep)
+            %if ip:
+                <td align='valign'>
+                    <div id="progressbar" style='height: 1.5em; width: 150px'>
+                    <div style='position: absolute; width: 150px; text-align: center; color:white; font-size: 11px; padding-top: 3px'>
+                        {{'%.1f' % (ip.progress.pos/1024.0)}} / {{'%.1f' % (ip.progress.max/1024)}} MB
+                    </div>
+                    </div>
+                    <script type='text/javascript'>
+(function() {
+
+  $("#progressbar").progressbar({
+    value: {{ip.progress.percentage}}
+  });
+
+}).call(this);
+</script>
+                </td>
+                <td>{{int(ip.progress.speed)}} KB/s</td>
+            %else:
+                <td>Waiting</td>
+                <td></td>
+            %end
+            </tr>
+        %end
+        </tbody>
+        </table>
+    %end
+</div>   
+%rebase layout.tmpl title='Active Downloads | Schedule', section="schedule", subsection='downloads'

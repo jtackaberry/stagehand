@@ -13,15 +13,16 @@ __all__ = ['Retriever']
 
 log = logging.getLogger('stagehand.retrievers.easynews')
 
-def progress(curl, state, position, total, speed):
+def download_progress_cb(curl, state, position, total, speed, progress):
     log.debug('[%s] %d KB/s, %d KB / %d KB', state, speed/1024, position/1024, total/1024)
+    progress.set(position/1024, total/1024, speed/1024)
 
 
 class Retriever(RetrieverBase):
     SUPPORTED_TYPES = ('easynews',)
 
     @kaa.coroutine()
-    def retrieve(self, result, outfile, episode):
+    def retrieve(self, progress, result, outfile, episode):
         """
         Retrieve the given SearchResult object.
         """
@@ -33,10 +34,12 @@ class Retriever(RetrieverBase):
         if not user or not pwd:
             raise RetrieverError('Searcher configuration lacks username and/or password')
 
+        # Before we start fetching, initialize progress.
+        progress.set(0, result.size / 1024.0, 0)
         c = Curl(userpwd='%s:%s' % (user, pwd))
         # TODO: once we've fetched enough, get metadata and confirm if HD, abort if
         # not and HD only is required for this search result.
-        c.signals['progress'].connect(progress)
+        c.signals['progress'].connect(download_progress_cb, progress)
         c.progress_interval = 5
         log.debug('fetching %s', url)
         for i in range(config.searchers.easynews.retries or 1):

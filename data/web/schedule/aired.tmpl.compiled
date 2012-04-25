@@ -26,11 +26,11 @@
             </select>
         </div>
         <button style='float: right' id='button-search'>
-            Find Needed Episodes Now
+            Download Needed Episodes Now
         </button>
     </div>
     <div style='clear: both; padding-top: 0.75em'></div>
-    %include library/find-needed-episodes.tmpl root=root, buttonid='button-search', showid=''
+    %include library/download-needed-episodes.tmpl root=root, buttonid='button-search', showid=''
     <script type='text/javascript'>
 (function() {
 
@@ -60,7 +60,7 @@
     %if not episodes:
         <div style='text-align: center; padding: 1em'>
             <div style='padding: 0.5em 3em; background-color: #fffcd0; border: 1px solid #e5e1a0; 
-                        display: inline-block; border-radius: 10px;'>
+                        display: inline-block; border-radius: 10px; font-size: 120%'>
                 There are no episodes that match this criteria.
             </div>
         </div>

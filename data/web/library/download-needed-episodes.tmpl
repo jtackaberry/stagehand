@@ -16,9 +16,9 @@
                 need_cells.stop().css backgroundColor: ''
             .done ({need, found}) ->
                 if not need
-                    msg = 'No episodes need downloading.'
+                    msg = "No episodes of #{if '{{showid}}' then 'this' else 'any'} series need downloading."
                 else
-                    msg = "Found #{found} of #{need} episodes."
+                    msg = "Found #{found} of #{need} episodes #{if '{{showid}}' then 'for this' else 'across all'} series."
                 pn.show().pnotify
                     pnotify_text: msg, pnotify_delay: 4000, pnotify_notice_icon: 'picon picon-complete'
             .fail ({message}) ->

@@ -53,6 +53,7 @@
             <ul class='menu submenu' id='submenu-schedule' {{!'style="display:inherit"' if section == 'schedule' else ''}}>
                 <li id='m-schedule-upcoming'><a href='{{root}}/schedule/'>Upcoming Episodes</a></li>
                 <li id='m-schedule-aired'><a href='{{root}}/schedule/aired'>Aired Episodes</a></li>
+                <li id='m-schedule-downloads'><a href='{{root}}/schedule/downloads'>Active Downloads</a></li>
             </ul>
 
             <ul class='menu submenu' id='submenu-settings' {{!'style="display:inherit"' if section == 'settings' else ''}}>

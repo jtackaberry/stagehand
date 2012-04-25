@@ -3,8 +3,8 @@ import os
 import urllib
 import StringIO
 import logging
-import email.utils
 import kaa
+import kaa.dateutils
 from BeautifulSoup import BeautifulStoneSoup
 
 from ..utils import download
@@ -54,6 +54,14 @@ class Searcher(SearcherBase):
         if quality == 'HD':
             query += ' (720p|1080p)'
 
+        """
+        log.debug('generating bogus results')
+        results = []
+        for ep in episodes:
+            results.append(SearchResult(self, filename='Acme.Show.%s.720p.HDTV.X264-DIMENSION.mkv' % ep.code, size=1198*1024*1024, date=kaa.dateutils.from_rfc822('Thu, 12 Apr 2012 17:06:02 -0700'), url='https://boost4-downloads.secure.members.easynews.com/news/8/4/7/847b553db83e1b0ff14796adfa38694d014e73e3c.mkv/Awake.S01E07.720p.HDTV.X264-DIMENSION.mkv'))
+        yield {None: results}
+        """
+        
         log.debug('searching for "%s" with minimum size %s', query, size)
         for i in range(modconfig.retries or 1):
             try:
@@ -71,7 +79,7 @@ class Searcher(SearcherBase):
             result = SearchResult(self)
             result.filename = urllib.unquote(os.path.split(item.enclosure['url'])[-1])
             result.size = self._parse_hsize(item.enclosure['length'])
-            result.date = email.utils.parsedate(item.pubdate.contents[0])
+            result.date = kaa.dateutils.from_rfc822(item.pubdate.contents[0])
             result.subject = ''.join(item.title.contents)
             result.url = item.enclosure['url']
             # TODO: parse out newsgroup
