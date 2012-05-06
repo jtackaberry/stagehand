@@ -235,7 +235,7 @@ class Manager(object):
         return self._retrieve_inprogress.get(ep)
 
 
-    def _check_episode_queued_for_retrieval(self, ep):
+    def is_episode_queued_for_retrieval(self, ep):
         """
         Is the given episode currently queued for retrieval?
         """
@@ -288,7 +288,7 @@ class Manager(object):
                 # to force an update if airdate is not correct on tvdb.)
                 if ep.ready and not ep.series.cfg.paused:
                     log.debug('need %s %s (%s): %s', series.name, ep.code, ep.airdatetime.strftime('%Y-%m-%d %H:%M'), ep.name)
-                    if self._check_episode_queued_for_retrieval(ep):
+                    if self.is_episode_queued_for_retrieval(ep):
                         log.debug('episode is already queued for retrieval, skipping')
                         log.debug('retrieve queue is %s', self.retrieve_queue)
                     else:
@@ -347,7 +347,7 @@ class Manager(object):
                     # for if it was already queued for retrieval.  But I've seen cases
                     # where episodes existed multiple times in the retrieve queue, and it's
                     # not clear how.
-                    if self._check_episode_queued_for_retrieval(ep):
+                    if self.is_episode_queued_for_retrieval(ep):
                         log.error('BUG: searched for episode %s which is already in retrieve queue %s', ep, 
                                    self.retrieve_queue)
                         continue
