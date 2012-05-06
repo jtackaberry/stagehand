@@ -100,6 +100,9 @@ class Curl(kaa.Object):
         # pycurl's progress support which appears to introduce a slew of new
         # problems around trying to stop the process gracefully (e.g. ctrl-c).
         self._progress_check_timer = kaa.WeakTimer(self._progress_check)
+        self._speed_sample_timer = kaa.WeakTimer(self._speed_sample)
+        self._speed_up_samples = []
+        self._speed_down_samples = []
         self.signals['progress'].changed_cb = self._progress_signal_changed
         kaa.signals['shutdown'].connect_weak(self.abort)
 
@@ -126,11 +129,17 @@ class Curl(kaa.Object):
 
     @property
     def position(self):
-        return (self.resume_from or 0) + self.size_download
+        if self.content_length_download == -1:
+            return 0
+        else:
+            return (self.resume_from or 0) + self.size_download
 
     @property
     def content_length_download_total(self):
-        return (self.resume_from or 0) + self.content_length_download
+        if self.content_length_download == -1:
+            return 0
+        else:
+            return (self.resume_from or 0) + self.content_length_download
 
     @property
     def state(self):
@@ -145,8 +154,31 @@ class Curl(kaa.Object):
         self._emit_progress()
 
 
+    def _calculate_speed(self, samples):
+        if self.state != Curl.STATE_ACTIVE or not samples:
+            return 0
+        deltas = [samples[i] - samples[i-1] for i in range(1, len(samples))]
+        return sum(deltas) / len(deltas)
+
+
+    @property
+    def speed_download(self):
+        return self._calculate_speed(self._speed_down_samples)
+
+    @property
+    def speed_upload(self):
+        return self._calculate_speed(self._speed_up_samples)
+
+    def _speed_sample(self):
+        if len(self._speed_down_samples) == 10:
+            self._speed_down_samples.pop(0)
+        if len(self._speed_up_samples) == 10:
+            self._speed_up_samples.pop(0)
+        self._speed_down_samples.append(self.size_download)
+        self._speed_up_samples.append(self.size_upload)
+
+
     def _emit_progress(self):
-        # FIXME: size_download / speed_download are wrong
         self.signals['progress'].emit(self, self._state, self.position, 
                                       self.content_length_download_total, self.speed_download)
 
@@ -156,8 +188,10 @@ class Curl(kaa.Object):
             return
         if action == kaa.Signal.DISCONNECTED and len(signal) == 0:
             self._progress_check_timer.stop()
+            self._speed_sample_timer.stop()
         elif action == kaa.Signal.CONNECTED and len(signal):
             self._progress_check_timer.start(self._progress_interval)
+            self._speed_sample_timer.start(1)
 
 
     def _reinit_curl(self):
@@ -214,6 +248,9 @@ class Curl(kaa.Object):
             self._inprogress = self._make_inprogress()
 
         self._last_progress_check = -1, -1
+        del self._speed_down_samples[:]
+        del self._speed_up_samples[:]
+        self._progress_check_timer.stop()
         self._curl.setopt(pycurl.URL, kaa.py3_b(url))
         self._perform()
         # state may become inactive here indirectly via _perform(), e.g.  if
@@ -222,6 +259,7 @@ class Curl(kaa.Object):
         # progress timer.
         if self._state == Curl.STATE_ACTIVE and len(self.signals['progress']):
             self._progress_check_timer.start(self._progress_interval)
+            self._speed_sample_timer.start(1)
         return self._inprogress
 
 
@@ -242,6 +280,7 @@ class Curl(kaa.Object):
             return
         self._state = Curl.STATE_DONE
         self._progress_check_timer.stop()
+        self._speed_sample_timer.stop()
         with self._lock:
             self._multi.close()
         self._multi = None
@@ -295,6 +334,11 @@ class Curl(kaa.Object):
             if num_q == 0:
                 break
 
+        if self._last_progress_check == (-1, -1):
+            # We haven't done a progress update yet, the download has clearly
+            # just started.  Emit now that we should have something to report.
+            self._progress_check()
+
         # TODO: now that multi:easy is 1:1 this can be made more efficient.
         self._update_all_fds()
         return True
@@ -346,10 +390,6 @@ class Curl(kaa.Object):
     # like position we need a total size
     size_download = curlprop(pycurl.SIZE_DOWNLOAD)
     size_upload = curlprop(pycurl.SIZE_UPLOAD)
-    # FIXME: these speed properties suck for current throughput measurements
-    # because they are averages over the entire download.
-    speed_download = curlprop(pycurl.SPEED_DOWNLOAD)
-    speed_upload = curlprop(pycurl.SPEED_UPLOAD)
     resume_from = curlprop(pycurl.RESUME_FROM, curlprop.WRITEONLY)
     response_code = curlprop(pycurl.RESPONSE_CODE)
     follow_location = curlprop(pycurl.FOLLOWLOCATION, curlprop.WRITEONLY)
