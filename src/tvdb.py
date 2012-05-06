@@ -1199,12 +1199,29 @@ class TVDB(kaa.db.Database):
 
         # XXX: should remove conflicts from non-preferred providers?
         max_season = max(ep['season'] for idmap, ep in episodes)
+        provider_epids = {}  # idattr -> [id, id, ...]
         for idmap, ep in episodes:
+            [provider_epids.setdefault(idattr, []).append(epid) for idattr, epid in idmap.items()]
             self._add_or_update(
                 'episode', idmap, addattrs={'status': Episode.STATUS_NONE}, parent=parent, 
                 name=fixquotes(ep['name']), season=ep['season'], episode=ep['episode'],
                 airdate=ep.get('airdate'), overview=fixquotes(ep.get('overview'))
             )
+
+        # Remove from local database any episodes that were removed from
+        # providers' databases.
+        qattrs = dict((idattr, kaa.db.QExpr('not in', ids)) for idattr, ids in provider_epids.items())
+        obsolete = self.query(type='episode', parent=parent, orattrs=qattrs.keys(), **qattrs)
+        for row in obsolete:
+            self.delete(row)
+            epinfo = '%s s%02de%02d: %s' % (series['name'], row['season'], row['episode'], row['name'])
+            log.debug('removing obsolete episode %s', epinfo)
+            dupes = self.query(type='episode', parent=parent, season=row['season'], episode=row['episode'])
+            if dupes:
+                # FIXME: we might need to reconcile local attributes like status, filename, blacklist,
+                # search_result.  For now, log a warning if status of the obsolete row was changed.
+                if row['status'] != dupes[0]['status']:
+                    log.warning('FIXME: removal of obsolete episode (%s) discards local attributes', epinfo)
         self.purge_caches()
 
 
