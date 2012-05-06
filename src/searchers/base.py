@@ -28,7 +28,7 @@ class SearcherBase(object):
         return int(sz)
 
 
-    def _cmp_result(self, a, b, ideal_size):
+    def _cmp_result(self, a, b, ep, ideal_size):
         # Ugh.  This function is hideous and in serious need of refactoring.
         inf = float('inf')
         exts = {'mkv': 2, 'avi': 1, 'wmv': -inf, 'mpg': -inf, 'ts': -inf}
@@ -46,6 +46,12 @@ class SearcherBase(object):
         bname = b.filename.lower()
         aext = os.path.splitext(aname)[-1].lstrip('.')
         bext = os.path.splitext(bname)[-1].lstrip('.')
+
+        # Prefer results that match filename over subject.
+        ascore = self._is_name_for_episode(a.filename, ep)
+        bscore = self._is_name_for_episode(b.filename, ep)
+        if ascore != bscore:
+            return 1 if bscore else -1
 
         # Sort by extension
         ascore = bscore = 0
@@ -187,16 +193,24 @@ class SearcherBase(object):
         if None in results:
             for result in results[None]:
                 for ep in episodes:
-                    # XXX: if there are no results by filename we could search subject,
-                    # but need to be careful because subject may include other codes
-                    # (e.g. "Some Show s01e01-s01e23" in the case of an archive bundle)
                     if self._is_name_for_episode(result.filename, ep):
                         results.setdefault(ep, []).append(result)
+                        break
+                else:
+                    # We couldn't match the filename for this result against any
+                    # episode.  Try matching against subject.  FIXME: we need to
+                    # be careful because subject may include other codes (e.g.
+                    # "Some Show s01e01-s01e23" in the case of an archive
+                    # bundle)
+                    if result.subject:
+                        for ep in episodes:
+                            if self._is_name_for_episode(result.subject, ep):
+                                results.setdefault(ep, []).append(result)
+                                break
             del results[None]
 
         # Remove disqualified results, set common result attributes, and then sort.
-        cmp = kaa.Callable(self._cmp_result, ideal_size)
-        for l in results.values():
+        for ep, l in results.items():
             for result in l[:]:
                 if result.disqualified or result.size < min_size:
                     l.remove(result)
@@ -205,7 +219,7 @@ class SearcherBase(object):
                     # We str(quality) because it may be a kaa.config Var object which can't
                     # be pickled, and we do need to be able to pickle SearchResult objects.
                     result.quality = str(quality)
-            l.sort(cmp=cmp)
+            l.sort(cmp=kaa.Callable(self._cmp_result, ep, ideal_size))
 
         yield results
 
