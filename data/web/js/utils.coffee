@@ -62,7 +62,12 @@ class @Stagehand
                     @jobs[job.id].resolve job.result
                 delete @jobs[job.id]
         for n in notifications
-            n['pnotify_' + key] = value for key, value of n
+            for key, value of n
+                if typeof value == 'string'
+                    # Replace instances of {{root}} in string-based values with
+                    # root.  Poor-man's template variable for notifications.
+                    value = value.replace(/{{root}}/g, @root)
+                n['pnotify_' + key] = value
             $.pnotify n
 
     poll: (interval=@interval) ->

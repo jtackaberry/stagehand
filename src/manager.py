@@ -425,8 +425,7 @@ class Manager(object):
 
         msg = 'Starting retrieval of %s %s (%s)' % (ep.series.name, ep.code, search_result.searcher)
         log.info(msg)
-        # FIXME: wrong root.
-        msg += '<br/><br/>Check progress of <a href="/schedule/downloads">active downloads</a>.'
+        msg += '<br/><br/>Check progress of <a href="{{root}}/schedule/downloads">active downloads</a>.'
         web.notify('Episode Download', msg)
 
         try:
