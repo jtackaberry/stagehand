@@ -290,7 +290,7 @@ class Manager(object):
                     log.debug('need %s %s (%s): %s', series.name, ep.code, ep.airdatetime.strftime('%Y-%m-%d %H:%M'), ep.name)
                     if self._check_episode_queued_for_retrieval(ep):
                         log.debug('episode is already queued for retrieval, skipping')
-                        log.debug('retrieve queue current=%s, others=%s', self._retrieve_queue_active, self._retrieve_queue)
+                        log.debug('retrieve queue is %s', self.retrieve_queue)
                     else:
                         needlist.append(ep)
             if needlist:
@@ -343,6 +343,14 @@ class Manager(object):
                 # FIXME: need a way to cache results for a given episode, so that if we
                 # restart, we have a way to resume downloads without full searching.
                 for ep, ep_results in results.items():
+                    # XXX: sanity check: the given episode should not have been searched
+                    # for if it was already queued for retrieval.  But I've seen cases
+                    # where episodes existed multiple times in the retrieve queue, and it's
+                    # not clear how.
+                    if self._check_episode_queued_for_retrieval(ep):
+                        log.error('BUG: searched for episode %s which is already in retrieve queue %s', ep, 
+                                   self.retrieve_queue)
+                        continue
                     for r in ep_results:
                         log.debug2('result %s (%dM)', r.filename, r.size / 1048576.0)
                 episodes_found.extend(results.keys())
@@ -383,7 +391,7 @@ class Manager(object):
                         ep.filename = ep.search_result = None
                 else:
                     # XXX: should we move it out of the way and try again?
-                    log.error('retriever was scheduled to fetch %s but it already exists; aborting', 
+                    log.error('retriever was scheduled to fetch %s but it already exists, skipping', 
                               ep.filename)
                     continue
 
