@@ -321,7 +321,9 @@ class Manager(object):
         for series, episodes in need.items():
             earliest = min(ep.airdate for ep in episodes if ep.airdate) or None
             if earliest:
-                earliest = (earliest - timedelta(days=3)).strftime('%Y-%m-%d')
+                # Allow for episodes to be posted 10 days before the supposed
+                # air date.
+                earliest = (earliest - timedelta(days=10)).strftime('%Y-%m-%d')
 
             # XXX: should probably review these wild-ass min size guesses
             mb_per_min = 5.5 if series.cfg.quality == 'HD' else 3
