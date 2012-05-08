@@ -3,7 +3,7 @@ import os
 import logging
 import kaa
 
-from ..utils import Curl
+from ..utils import Curl, download
 from ..curl import CurlError
 from ..config import config
 from .base import RetrieverBase, RetrieverError
@@ -36,23 +36,11 @@ class Retriever(RetrieverBase):
 
         # Before we start fetching, initialize progress.
         progress.set(0, result.size / 1024.0, 0)
-        c = Curl(userpwd='%s:%s' % (user, pwd))
+        log.debug('fetching %s', url)
         # TODO: once we've fetched enough, get metadata and confirm if HD, abort if
         # not and HD only is required for this search result.
-        c.signals['progress'].connect(download_progress_cb, progress)
-        c.progress_interval = 5
-        log.debug('fetching %s', url)
-        for i in range(config.searchers.easynews.retries or 1):
-            try:
-                status = yield c.get(url, outfile)
-                break
-            except CurlError, e:
-                # TODO: don't retry on permanent errors
-                log.warning('download failed (%s), retrying %d of %d', e.args[0], i + 1,
-                            config.searchers.easynews.retries)
-        else:
-            raise RetrieverError('download failed too many times')
-        
+        status, pos = yield download(url, retry=config.searchers.easynews.retries, userpwd='%s:%s' % (user, pwd),
+                                     progress=kaa.Callable(download_progress_cb, progress), progress_interval=5)
         if status == 416 and c.content_length_download == 0:
             log.info('file already fully retrieved')
         elif status not in (200, 206):
