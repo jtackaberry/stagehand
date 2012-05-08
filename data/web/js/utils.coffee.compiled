@@ -101,6 +101,9 @@
         n = notifications[_j];
         for (key in n) {
           value = n[key];
+          if (typeof value === 'string') {
+            value = value.replace(/{{root}}/g, this.root);
+          }
           n['pnotify_' + key] = value;
         }
         _results.push($.pnotify(n));

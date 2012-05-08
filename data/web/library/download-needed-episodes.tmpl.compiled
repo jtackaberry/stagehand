@@ -40,9 +40,9 @@
       var found, msg, need;
       need = _arg.need, found = _arg.found;
       if (!need) {
-        msg = 'No episodes need downloading.';
+        msg = "No episodes of " + ('{{showid}}' ? 'this' : 'any') + " series need downloading.";
       } else {
-        msg = "Found " + found + " of " + need + " episodes.";
+        msg = "Found " + found + " of " + need + " episodes " + ('{{showid}}' ? 'for this' : 'across all') + " series.";
       }
       return pn.show().pnotify({
         pnotify_text: msg,

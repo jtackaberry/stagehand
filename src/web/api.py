@@ -175,6 +175,33 @@ def show_episodes_status(id, epcode):
     return {'statuses': statuses}
 
 
+@web.route('/api/shows/downloads')
+def show_downloads():
+    """
+    Returns a list of queued downloads.
+
+    [(showid, epcode, progress), ...]
+
+    If progress is not None, the episode is being downloaded, in which case
+    progress is a tuple: (percent, size_current, size_total, speed)
+    """
+    manager = web.request['stagehand.manager']
+    downloads = []
+    for ep, results in manager.retrieve_queue:
+        ip = manager.get_episode_retrieve_inprogress(ep)
+        if ip:
+            progress = (
+                ip.progress.percentage,
+                '%.1f' % (ip.progress.pos / 1024.0),
+                '%.1f' % (ip.progress.max / 1024.0),
+                int(ip.progress.speed)
+            )
+        else:
+            progress = None
+        downloads.append((ep.series.id, ep.code, progress))
+    return {'queue': downloads}
+
+
 @web.route('/api/restart')
 def restart():
     web.restart()

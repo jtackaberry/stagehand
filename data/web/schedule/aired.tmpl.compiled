@@ -1,22 +1,16 @@
 %from datetime import datetime, timedelta
 %from stagehand.utils import episode_status_icon_info
-%episodes = [ep for s in manager.tvdb.series for ep in s.episodes if ep.aired and not ep.is_older_than(weeks*7)]
-%if status == 'need':
-    %episodes = [ep for ep in episodes if ep.ready]
-%elif status == 'have':
-    %episodes = [ep for ep in episodes if ep.status == ep.STATUS_HAVE]
-%end
+%episodes = [ep for s in manager.tvdb.series for ep in s.episodes if ep.aired]
 
-<div style='padding: 0 1em; display: table; margin: 2em auto'>
+<div style='padding: 0 64px; display: table; margin: 2em auto'>
     <div>
         <div style='float: left; padding-right: 2em'>
-            Show
+            Include 
             <select id='select-status' style='width: 11em'>
-                <option value='all' class='image-all'>all</option>
                 <option value='have' class='image-have'>downloaded</option>
-                <option value='need' class='image-need'>needed</option>
+                <option value='all' class='image-all'>all</option>
             </select>
-            in the
+            from the
             <select id='select-weeks' style='width: 12em'>
                 <option value='1'>last week</option>
                 <option value='2'>last 2 weeks</option>
@@ -79,13 +73,61 @@
         </tr>
         </thead>
         <tbody>
+        %if manager.retrieve_queue:
+            <tr class='heading' id='group-downloads'>
+                <td style='padding: 0'><input type='checkbox' /></td>
+                <td colspan="5" style='text-align: left; padding-left: 0.5em'>
+                    <b>Queued Downloads</b>
+                </td>
+            </tr>
+            %for ep, results in manager.retrieve_queue:
+                <tr id='{{ep.series.id}}-{{ep.code}}' class='ep download' >
+                    <td style='padding: 0'><input type='checkbox' /></td>
+                    <td style='text-align: left'>{{ep.series.name}}</td>
+                    <td style='padding:0'>{{ep.season.number}}x{{ep.number}}</td>
+                    <td style='text-align: left'>{{ep.name}}</td>
+                    <td style='text-align: left; white-space: nowrap'>{{ep.airdate.strftime('%Y-%m-%d')}}</td>
+                %ip = manager.get_episode_retrieve_inprogress(ep)
+                %if ip:
+                    <td align='valign' title='{{int(ip.progress.speed)}} KB/s'>
+                        <div id="{{ep.series.id}}-{{ep.code}}-progressbar" style='height: 1.5em; width: 150px'>
+                            <div style='position: absolute; width: 150px; text-align: center; color:white; font-size: 11px; padding-top: 3px' class='overlay'>
+                                {{'%.1f' % (ip.progress.pos/1024.0)}} / {{'%.1f' % (ip.progress.max/1024)}} MB
+                            </div>
+                        </div>
+                        <script type='text/javascript'>
+(function() {
+
+  $("[id='{{ep.series.id}}-{{ep.code}}-progressbar']").progressbar({
+    value: {{ip.progress.percentage}}
+  });
+
+}).call(this);
+</script>
+                    </td>
+                %else:
+                    <td>
+                        %icon, title = episode_status_icon_info(ep)
+                        <img src='{{root}}/static/img/icon-20-status-{{icon}}.png' alt='{{title}}' title='{{title}}' />
+                    </td>
+                %end
+                </tr>
+            %end
+
+        %end
         %today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
         %sunday = today - timedelta(days=5-today.weekday())
         %last_week = None
         %for ep in sorted(episodes, key=lambda e: e.airdate, reverse=True):
             %week = ((sunday - ep.airdate).days + 6) / 7
-            %if last_week != week:
-                %last_week = week 
+            %icon, title = episode_status_icon_info(ep)
+            %if manager.is_episode_queued_for_retrieval(ep):
+                %continue
+            %elif icon in ('ignore', 'have') and week >= weeks:
+                %continue
+            %end
+            %if last_week != min(week, 8):
+                %last_week = min(week, 8)
                 <tr class='heading' id='group-{{week}}'>
                     <td style='padding: 0'><input type='checkbox' /></td>
                     <td colspan="5" style='text-align: left; padding-left: 0.5em'>
@@ -93,8 +135,10 @@
                             <b>This Week</b>
                         %elif week == 1:
                             <b>Last Week</b>
-                        %else:
+                        %elif week <= 7:
                             <b>{{week}} Weeks Ago</b>
+                        %else:
+                            <b>Older than 2 Months</b>
                         %end
                     </td>
                 </tr>
@@ -106,7 +150,6 @@
                 <td style='text-align: left'>{{ep.name}}</td>
                 <td style='text-align: left; white-space: nowrap'>{{ep.airdate.strftime('%Y-%m-%d')}}</td>
                 <td>
-                    %icon, title = episode_status_icon_info(ep)
                     <img src='{{root}}/static/img/icon-20-status-{{icon}}.png' alt='{{title}}' title='{{title}}' />
                 </td>
             </tr>
@@ -118,6 +161,7 @@
 
 <script type='text/javascript'>
 (function() {
+  var last_download_queue;
 
   $('table.grid tr.ep td:not(:first-child)').wrapInner('<a />');
 
@@ -128,6 +172,46 @@
   $('select').change(function() {
     return window.location = "{{root}}/schedule/aired?weeks=" + ($('#select-weeks').val()) + "&status=" + ($('#select-status').val());
   });
+
+  last_download_queue = [{{!','.join('["%s", "%s"]' % (ep.series.id, ep.code) for ep, results in manager.retrieve_queue)}}];
+
+  if (last_download_queue.length > 0) {
+    repeat(2000, function() {
+      return stagehand.api('/api/shows/downloads').done(function(_arg) {
+        var bar, code, current, current_download_queue, idx, item, percentage, progress, queue, queue_changed, row, showid, speed, total, _i, _len, _ref, _ref1, _ref2;
+        queue = _arg.queue;
+        queue_changed = queue.length !== last_download_queue.length;
+        current_download_queue = (function() {
+          var _i, _len, _results;
+          _results = [];
+          for (_i = 0, _len = queue.length; _i < _len; _i++) {
+            item = queue[_i];
+            _results.push(item.slice(0, 2));
+          }
+          return _results;
+        })();
+        for (idx = _i = 0, _len = queue.length; _i < _len; idx = ++_i) {
+          _ref = queue[idx], showid = _ref[0], code = _ref[1], progress = _ref[2];
+          if (((_ref1 = last_download_queue[idx]) != null ? _ref1[0] : void 0) !== showid || ((_ref2 = last_download_queue[idx]) != null ? _ref2[1] : void 0) !== code) {
+            queue_changed = true;
+          }
+          row = $("[id='" + showid + "-" + code + "'].download");
+          if (progress) {
+            percentage = progress[0], current = progress[1], total = progress[2], speed = progress[3];
+            bar = row.find('.ui-progressbar');
+            bar.progressbar({
+              value: percentage
+            });
+            bar.parent().attr('title', "" + speed + " KB/s");
+            bar.children('.overlay').text("" + current + " / " + total + " MB");
+          }
+        }
+        if (queue_changed) {
+          return window.location.reload();
+        }
+      });
+    });
+  }
 
 }).call(this);
 </script>

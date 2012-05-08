@@ -102,15 +102,9 @@ def schedule():
 @shview('schedule/aired.tmpl')
 def schedule_aired():
     return {
-        'weeks': int(web.request.query.weeks) if web.request.query.weeks.isdigit() else 4,
-        'status': web.request.query.status or 'all'
+        'weeks': int(web.request.query.weeks) if web.request.query.weeks.isdigit() else 1,
+        'status': web.request.query.status or 'downloaded'
     }
-
-
-@web.route('/schedule/downloads')
-@shview('schedule/downloads.tmpl')
-def schedule():
-    return {}
 
 
 @web.route('/settings/')

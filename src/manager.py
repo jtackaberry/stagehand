@@ -433,12 +433,12 @@ class Manager(object):
 
         msg = 'Starting retrieval of %s %s (%s)' % (ep.series.name, ep.code, search_result.searcher)
         log.info(msg)
-        msg += '<br/><br/>Check progress of <a href="{{root}}/schedule/downloads">active downloads</a>.'
+        msg += '<br/><br/>Check progress of <a href="{{root}}/schedule/aired">active downloads</a>.'
         web.notify('Episode Download', msg)
 
         try:
-            #log.debug('not actually retrieving %s %s', ep.series.name, ep.code)
             ip = retrieve(search_result, target, ep)
+            #log.debug('not actually retrieving %s %s', ep.series.name, ep.code)
             #ip = fake_download(search_result, target, ep)
             self._retrieve_inprogress[ep] = ip
             yield ip
