@@ -143,7 +143,8 @@ def download(url, target=None, resume=True, retry=0, progress=None, noraise=True
                 # Done retrying, reraise this exception.
                 if noraise:
                     yield 0, str(e)
-                raise
+                else:
+                    raise
             errmsg = str(e)
         else:
             errmsg = 'status %d' % status
