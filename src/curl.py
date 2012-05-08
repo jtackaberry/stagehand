@@ -79,17 +79,6 @@ class Curl(kaa.Object):
         self._lock = threading.RLock()
         self._reinit_curl()
 
-        defaults = {
-            'follow_location': True,
-            'max_redirs': 5,
-            'connect_timeout': 30,
-            # FIXME: broken in libcurl/pycurl, need to roll own.
-            'timeout': 0
-        }
-        defaults.update(props)
-        for prop, value in defaults.items():
-            setattr(self, prop, value)
-
         self._curl.setopt(pycurl.NOSIGNAL, True)
         self._state = Curl.STATE_READY
         self._rfds = set()
@@ -103,6 +92,18 @@ class Curl(kaa.Object):
         self._speed_sample_timer = kaa.WeakTimer(self._speed_sample)
         self._speed_up_samples = []
         self._speed_down_samples = []
+
+        defaults = {
+            'follow_location': True,
+            'max_redirs': 5,
+            'connect_timeout': 30,
+            # FIXME: broken in libcurl/pycurl, need to roll own.
+            'timeout': 0
+        }
+        defaults.update(props)
+        for prop, value in defaults.items():
+            setattr(self, prop, value)
+
         self.signals['progress'].changed_cb = self._progress_signal_changed
         kaa.signals['shutdown'].connect_weak(self.abort)
 
@@ -155,7 +156,7 @@ class Curl(kaa.Object):
 
 
     def _calculate_speed(self, samples):
-        if self.state != Curl.STATE_ACTIVE or not samples:
+        if self.state != Curl.STATE_ACTIVE or len(samples) < 2:
             return 0
         deltas = [samples[i] - samples[i-1] for i in range(1, len(samples))]
         return sum(deltas) / len(deltas)
@@ -334,9 +335,10 @@ class Curl(kaa.Object):
             if num_q == 0:
                 break
 
-        if self._last_progress_check == (-1, -1):
-            # We haven't done a progress update yet, the download has clearly
-            # just started.  Emit now that we should have something to report.
+        if self._last_progress_check == (-1, -1) and self.content_length_download != -1:
+            # We haven't done a progress update yet but we now have something
+            # to report on (content size), so emit progress now rather than
+            # waiting for timer.
             self._progress_check()
 
         # TODO: now that multi:easy is 1:1 this can be made more efficient.
