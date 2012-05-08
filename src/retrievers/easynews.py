@@ -39,7 +39,7 @@ class Retriever(RetrieverBase):
         log.debug('fetching %s', url)
         # TODO: once we've fetched enough, get metadata and confirm if HD, abort if
         # not and HD only is required for this search result.
-        status, pos = yield download(url, retry=config.searchers.easynews.retries, userpwd='%s:%s' % (user, pwd),
+        status, pos = yield download(url, outfile, retry=config.searchers.easynews.retries, userpwd='%s:%s' % (user, pwd),
                                      progress=kaa.Callable(download_progress_cb, progress), progress_interval=5)
         if status == 416 and c.content_length_download == 0:
             log.info('file already fully retrieved')
