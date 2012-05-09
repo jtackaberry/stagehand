@@ -132,11 +132,16 @@ class NonBlockingWSGIServer(WSGIServer):
 
 
     def shutdown(self):
-        if self._running:
-            self._running = False
-            # Poke the socket to wake up the socket server loop.  FIXME: IPv6
-            socket.socket().connect(self.socket.getsockname())
-            self._shutdown_event.wait()
+        if not self._running:
+            return
+        self._running = False
+        # Dump all clients.
+        for client in self.clients.keys():
+            # Calling close() on client will remove client from self.clients
+            client.close(force=True)
+        # Poke the socket to wake up the socket server loop.  FIXME: IPv6
+        socket.socket().connect(self.socket.getsockname())
+        self._shutdown_event.wait()
 
 
     def serve_forever(self, poll_interval=30):
