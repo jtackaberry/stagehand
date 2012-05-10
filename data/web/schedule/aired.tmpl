@@ -98,7 +98,7 @@
         %today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
         %sunday = today - timedelta(days=5-today.weekday())
         %last_week = None
-        %for ep in sorted(episodes, key=lambda e: e.airdate, reverse=True):
+        %for ep in sorted(episodes, key=lambda e: (e.airdatetime, e.name), reverse=True):
             %week = ((sunday - ep.airdate).days + 6) / 7
             %icon, title = episode_status_icon_info(ep)
             %if manager.is_episode_queued_for_retrieval(ep):
