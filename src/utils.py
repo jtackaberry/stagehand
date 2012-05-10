@@ -158,4 +158,4 @@ def download(url, target=None, resume=True, retry=0, progress=None, noraise=True
     if isinstance(target, cStringIO.OutputType):
         yield status, target.getvalue()
     else:
-        yield status, c.position
+        yield status, c

@@ -42,8 +42,8 @@ class Retriever(RetrieverBase):
         log.debug('fetching %s', rinfo['url'])
         # TODO: once we've fetched enough, get metadata and confirm if HD, abort if
         # not and HD only is required for this search result.
-        status, pos = yield download(rinfo['url'], outfile, progress=kaa.Callable(download_progress_cb, progress),
-                                     progress_interval=5, **opts)
+        status, c = yield download(rinfo['url'], outfile, progress=kaa.Callable(download_progress_cb, progress),
+                                   progress_interval=5, **opts)
         if status == 416 and c.content_length_download == 0:
             log.info('file already fully retrieved')
         elif status not in (200, 206):

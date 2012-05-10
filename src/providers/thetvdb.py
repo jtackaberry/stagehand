@@ -103,7 +103,7 @@ class Provider(ProviderBase):
         else:
             # Try 3 times before giving up, unless it's a permanent error
             log.debug('fetching zip file %s', url)
-            status, size = yield download(url, tmpname, retry=3, resume=False)
+            status, curl = yield download(url, tmpname, retry=3, resume=False)
         if status != 200:
             if os.path.exists(tmpname):
                 os.unlink(tmpname)
