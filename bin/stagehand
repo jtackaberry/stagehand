@@ -155,8 +155,6 @@ def main():
     httplog.addHandler(handler)
     httplog.propagate = False
 
-    log.info('starting Stagehand %s', stagehand.__version__)
-
     # Instantiate Manager before we fork in case there are errors.
     try:
         mgr = Manager(datadir=opts.data or find_data_path())
@@ -165,6 +163,10 @@ def main():
             print('Stagehand is already running at pid %d.' % rpc('pid'))
             sys.exit(1)
         raise
+
+    # Logging after Manager instantiation but before forking will log to both
+    # stdout and file logs.
+    log.info('starting Stagehand %s', stagehand.__version__)
 
     if opts.background:
         # TODO: need some way of reporting web URL to stdout after daemonization.
