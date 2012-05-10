@@ -7,6 +7,7 @@ import mimetypes
 import itertools
 import time
 import logging
+from datetime import datetime, timedelta
 
 import kaa, kaa.config
 
@@ -15,7 +16,7 @@ from . import api
 from .async import asyncweb, webcoroutine
 from .settings import rename_example
 from .utils import SessionPlugin, shview
-from ..utils import download
+from ..utils import download, episode_status_icon_info
 from ..config import config
 
 log = logging.getLogger('stagehand.web.app')
@@ -101,9 +102,31 @@ def schedule():
 @web.route('/schedule/aired')
 @shview('schedule/aired.tmpl')
 def schedule_aired():
+    manager = web.request['stagehand.manager']
+    weeks = int(web.request.query.weeks) if web.request.query.weeks.isdigit() else 1
+    status = web.request.query.status or 'have'
+
+    # Construct a list of episodes, sorted by air date, that are either needed
+    # or match the criteria for inclusion (based on status and weeks).  Episodes
+    # in the download queue aren't included as they're displayed separately.
+    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    sunday = today - timedelta(days=5-today.weekday())
+    episodes = []
+    for s in manager.tvdb.series:
+        for ep in s.episodes:
+            if not ep.aired or manager.is_episode_queued_for_retrieval(ep):
+                continue
+            icon, title = episode_status_icon_info(ep)
+            week = ((sunday - ep.airdate).days + 6) / 7
+            if (icon in ('ignore', 'have') and week >= weeks) or (icon == 'ignore' and status == 'have'):
+                continue
+            episodes.append((ep, icon, title, week))
+    episodes.sort(key=lambda i: (i[0].airdatetime, i[0].name), reverse=True)
+
     return {
-        'weeks': int(web.request.query.weeks) if web.request.query.weeks.isdigit() else 1,
-        'status': web.request.query.status or 'have'
+        'weeks': weeks,
+        'status': status,
+        'episodes': episodes
     }
 
 

@@ -1,7 +1,3 @@
-%from datetime import datetime, timedelta
-%from stagehand.utils import episode_status_icon_info
-%episodes = [ep for s in manager.tvdb.series for ep in s.episodes if ep.aired]
-
 <div style='padding: 0 64px; display: table; margin: 2em auto'>
     <div>
         <div style='float: left; padding-right: 2em'>
@@ -51,7 +47,7 @@
 }).call(this);
 </script>
 
-    %if not episodes:
+    %if not episodes and not manager.retrieve_queue:
         <div style='text-align: center; padding: 1em'>
             <div style='padding: 0.5em 3em; background-color: #fffcd0; border: 1px solid #e5e1a0; 
                         display: inline-block; border-radius: 10px; font-size: 120%'>
@@ -115,17 +111,8 @@
             %end
 
         %end
-        %today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-        %sunday = today - timedelta(days=5-today.weekday())
         %last_week = None
-        %for ep in sorted(episodes, key=lambda e: (e.airdatetime, e.name), reverse=True):
-            %week = ((sunday - ep.airdate).days + 6) / 7
-            %icon, title = episode_status_icon_info(ep)
-            %if manager.is_episode_queued_for_retrieval(ep):
-                %continue
-            %elif (icon in ('ignore', 'have') and week >= weeks) or (icon == 'ignore' and status == 'have'):
-                %continue
-            %end
+        %for ep, icon, title, week in episodes:
             %if last_week != min(week, 8):
                 %last_week = min(week, 8)
                 <tr class='heading' id='group-{{week}}'>
