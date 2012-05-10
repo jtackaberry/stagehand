@@ -1,5 +1,9 @@
 # Stagehand
 
+** Danger!  This software is half-baked. It's not released yet. If you want to try it,
+expect some pain. **
+
+
 ## What it is
 
 Stagehand is a manager for your favourite TV series.  It automatically
