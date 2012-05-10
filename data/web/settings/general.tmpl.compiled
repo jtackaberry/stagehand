@@ -158,7 +158,6 @@
   });
 
   $('div.help').prev().poshytip({
-    className: 'tip-darkgray',
     showOn: 'focus',
     offsetX: 10,
     alignX: 'right',
