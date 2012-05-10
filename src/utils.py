@@ -27,6 +27,8 @@ def load_plugins(type, scope):
             if hasattr(plugin, 'modconfig'):
                 getattr(config, type).add_variable(name, plugin.modconfig)
             valid[name] = plugin
+            if hasattr(plugin, 'load'):
+                plugin.load()
     return valid
 
 
