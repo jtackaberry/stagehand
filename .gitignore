@@ -1,0 +1,6 @@
+*.pyc
+*.swp
+build/
+dist/
+src/version.py
+stagehand.egg-info/
