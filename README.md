@@ -50,7 +50,7 @@ This is what's needed for Ubuntu or Debian.  Adapt as needed to your distro.
 
 ```bash
 # Install base dependencies
-$ sudo apt-get install python-dev python-beautifulsoup python-pycurl
+$ sudo apt-get install python-dev python-beautifulsoup python-pycurl python-pip
 
 # Install kaa-base from git
 $ sudo pip install -U https://github.com/freevo/kaa-base/zipball/master
