@@ -19,30 +19,31 @@ def download_progress_cb(curl, state, position, total, speed, progress):
 
 
 class Retriever(RetrieverBase):
+    NAME = 'http'
+    PRINTABLE_NAME = 'HTTP'
     SUPPORTED_TYPES = ('http',)
     ALWAYS_ENABLED = True
 
     @kaa.coroutine()
-    def retrieve(self, progress, result, outfile, episode):
+    def _retrieve(self, progress, episode, result, search_entity, outfile):
         """
         Retrieve the given SearchResult object.
         """
-        rinfo = yield get_search_entity(result)
-        if not rinfo or not rinfo.get('url'):
+        if not search_entity.get('url'):
             raise RetrieverError('Searcher did not provide a URL')
 
         opts = {}
-        if 'username' in rinfo:
-            opts['userpwd'] = '%s:%s' % (rinfo['username'], rinfo.get('password', ''))
-        if 'retry' in rinfo:
-            opts['retry'] = rinfo['retry']
+        if 'username' in search_entity:
+            opts['userpwd'] = '%s:%s' % (search_entity['username'], search_entity.get('password', ''))
+        if 'retry' in search_entity:
+            opts['retry'] = search_entity['retry']
 
         # Before we start fetching, initialize progress.
         progress.set(0, result.size / 1024.0, 0)
-        log.debug('fetching %s', rinfo['url'])
+        log.debug('fetching %s', search_entity['url'])
         # TODO: once we've fetched enough, get metadata and confirm if HD, abort if
         # not and HD only is required for this search result.
-        status, c = yield download(rinfo['url'], outfile, progress=kaa.Callable(download_progress_cb, progress),
+        status, c = yield download(search_entity['url'], outfile, progress=kaa.Callable(download_progress_cb, progress),
                                    progress_interval=5, **opts)
         if status == 416 and c.content_length_download == 0:
             log.info('file already fully retrieved')

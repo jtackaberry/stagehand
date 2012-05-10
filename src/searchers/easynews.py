@@ -20,6 +20,7 @@ log = logging.getLogger('stagehand.searchers.easynews')
 
 class Searcher(SearcherBase):
     NAME = 'easynews'
+    PRINTABLE_NAME = 'Easynews Global Search'
     TYPE = 'http'
 
     # TODO: basically the same URLs here: g4 has hInfo and hthm extra, otherwise they are the same.

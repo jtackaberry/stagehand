@@ -8,7 +8,17 @@ class SearcherError(Exception):
     pass
 
 class SearcherBase(object):
+    # Values must be supplied by subclasses.
+    # The internal name of the plugin (lowercase, no spaces).
+    NAME = None
+    # The human-readable name for the plugin.
+    PRINTABLE_NAME = None
+    # The type of retriever plugin required to fetch search results of this
+    # searcher.
+    TYPE = None
+    # False if the user may disable the plugin, or True if it is always active.
     ALWAYS_ENABLED = False
+
 
     # Constants for clean_title()
     CLEAN_APOSTROPHE_LEAVE = 0
@@ -184,6 +194,8 @@ class SearcherBase(object):
         special key of None means the SearchResult list is not yet mapped
         to an episode object, and it will be up to the caller (i.e. the main
         search() method) to determine that.
+
+        Subclasses must override this method.
         """
         raise NotImplementedError
 
