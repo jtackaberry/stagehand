@@ -2,7 +2,7 @@
     $('#{{buttonid}}').button icons: primary: 'ui-icon-search'
     $('#{{buttonid}}').click ->
         $(@).button 'disable'
-        need_cells = $('img:[alt=Needed]').parents('tr').children('td')
+        need_cells = $('img').filter(-> /^Needed.*/.test(@alt)).parents('tr').children('td')
         need_cells.animate backgroundColor: '#ffe26f', 500
         pn = $.pnotify(pnotify_title: 'Episode check').hide()
         stagehand.api('/api/shows/check', {id: '{{showid}}'})
