@@ -19,8 +19,8 @@ log = logging.getLogger('stagehand.searchers.easynews')
 
 
 class Searcher(SearcherBase):
-    TYPE = 'easynews'
     NAME = 'easynews'
+    TYPE = 'http'
 
     # TODO: basically the same URLs here: g4 has hInfo and hthm extra, otherwise they are the same.
     DEFAULT_URL_GLOBAL5 = 'https://secure.members.easynews.com/global5/index.html?gps=&sbj={subject}&from=&ns=&fil=&fex=&vc=&ac=&s1=nsubject&s1d=%2B&s2=nrfile&s2d=%2B&s3=dsize&s3d=%2B&pby=500&u=1&svL=&d1={date}&d1t=&d2=&d2t=&b1={size}&b1t=&b2=&b2t=&px1=&px1t=&px2=&px2t=&fps1=&fps1t=&fps2=&fps2t=&bps1=&bps1t=&bps2=&bps2t=&hz1=&hz1t=&hz2=&hz2t=&rn1=&rn1t=&rn2=&rn2t=&fly=2&pno=1&sS=5'
@@ -89,7 +89,12 @@ class Searcher(SearcherBase):
 
     @kaa.coroutine()
     def get_search_entity(self, search_result):
-        yield search_result.url
+        yield {
+            'url': search_result.url,
+            'username': modconfig.username,
+            'password': modconfig.password,
+            'retry': modconfig.retries
+        }
 
 
 def enable(manager):
@@ -97,13 +102,9 @@ def enable(manager):
     Called by the web interface when the plugin is enabled where it was
     previously disabled.
     """
-    # Ensure easynews is one of the active retrievers, or this searcher will
-    # be useless.
-    if 'easynews' not in config.retrievers.enabled:
-        # TODO: copy relative priority of where easynews is in searchers.
-        config.retrievers.enabled.append('easynews')
-        # TODO: need a mechanism to communicate to web user that this change
-        # was made.
+    # http retriever is always enabled, so no special action is needed
+    # when the easynews searcher is enabled.
+    pass
 
 
 def get_config_template(manager):

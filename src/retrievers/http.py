@@ -11,7 +11,7 @@ from ..searchers import get_search_entity
 
 __all__ = ['Retriever']
 
-log = logging.getLogger('stagehand.retrievers.easynews')
+log = logging.getLogger('stagehand.retrievers.http')
 
 def download_progress_cb(curl, state, position, total, speed, progress):
     log.debug('[%s] %d KB/s, %d KB / %d KB', state, speed/1024, position/1024, total/1024)
@@ -19,28 +19,31 @@ def download_progress_cb(curl, state, position, total, speed, progress):
 
 
 class Retriever(RetrieverBase):
-    SUPPORTED_TYPES = ('easynews',)
+    SUPPORTED_TYPES = ('http',)
+    ALWAYS_ENABLED = True
 
     @kaa.coroutine()
     def retrieve(self, progress, result, outfile, episode):
         """
         Retrieve the given SearchResult object.
         """
-        url = yield get_search_entity(result)
-        if not url:
+        rinfo = yield get_search_entity(result)
+        if not rinfo or not rinfo.get('url'):
             raise RetrieverError('Searcher did not provide a URL')
 
-        user, pwd = config.searchers.easynews.username, config.searchers.easynews.password
-        if not user or not pwd:
-            raise RetrieverError('Searcher configuration lacks username and/or password')
+        opts = {}
+        if 'username' in rinfo:
+            opts['userpwd'] = '%s:%s' % (rinfo['username'], rinfo.get('password', ''))
+        if 'retry' in rinfo:
+            opts['retry'] = rinfo['retry']
 
         # Before we start fetching, initialize progress.
         progress.set(0, result.size / 1024.0, 0)
-        log.debug('fetching %s', url)
+        log.debug('fetching %s', rinfo['url'])
         # TODO: once we've fetched enough, get metadata and confirm if HD, abort if
         # not and HD only is required for this search result.
-        status, pos = yield download(url, outfile, retry=config.searchers.easynews.retries, userpwd='%s:%s' % (user, pwd),
-                                     progress=kaa.Callable(download_progress_cb, progress), progress_interval=5)
+        status, pos = yield download(rinfo['url'], outfile, progress=kaa.Callable(download_progress_cb, progress),
+                                     progress_interval=5, **opts)
         if status == 416 and c.content_length_download == 0:
             log.info('file already fully retrieved')
         elif status not in (200, 206):
