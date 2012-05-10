@@ -103,7 +103,7 @@ def schedule():
 def schedule_aired():
     return {
         'weeks': int(web.request.query.weeks) if web.request.query.weeks.isdigit() else 1,
-        'status': web.request.query.status or 'downloaded'
+        'status': web.request.query.status or 'have'
     }
 
 
