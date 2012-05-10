@@ -103,7 +103,7 @@
             %icon, title = episode_status_icon_info(ep)
             %if manager.is_episode_queued_for_retrieval(ep):
                 %continue
-            %elif icon in ('ignore', 'have') and week >= weeks:
+            %elif (icon in ('ignore', 'have') and week >= weeks) or (icon == 'ignore' and status == 'have'):
                 %continue
             %end
             %if last_week != min(week, 8):
