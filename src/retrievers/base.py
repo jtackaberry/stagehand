@@ -5,3 +5,4 @@ class RetrieverError(Exception):
 
 class RetrieverBase(object):
     SUPPORTED_TYPES = ()
+    ALWAYS_ENABLED = False

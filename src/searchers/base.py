@@ -8,6 +8,8 @@ class SearcherError(Exception):
     pass
 
 class SearcherBase(object):
+    ALWAYS_ENABLED = False
+
     # Constants for clean_title()
     CLEAN_APOSTROPHE_LEAVE = 0
     CLEAN_APOSTROPHE_REMOVE = 1

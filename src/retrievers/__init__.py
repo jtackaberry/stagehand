@@ -11,12 +11,13 @@ plugins = load_plugins('retrievers', globals())
 
 @kaa.coroutine(progress=True)
 def retrieve(progress, result, outfile, episode, skip=[]):
-    tried = False
-    for name in config.retrievers.enabled:
-        if name not in plugins or name in skip or result.type not in plugins[name].Retriever.SUPPORTED_TYPES:
+    tried = set()
+    always = [name for name in plugins if plugins[name].Retriever.ALWAYS_ENABLED]
+    for name in config.retrievers.enabled + always:
+        if name not in plugins or name in skip or result.type not in plugins[name].Retriever.SUPPORTED_TYPES or name in tried:
             continue
 
-        tried = True
+        tried.add(name)
         retriever = plugins[name].Retriever()
         try:
             yield retriever.retrieve(progress, result, outfile, episode)

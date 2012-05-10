@@ -12,9 +12,12 @@ plugins = load_plugins('searchers', globals())
 
 @kaa.coroutine(progress=True)
 def search(progress, series, episodes, date=None, min_size=None, ideal_size=None, quality='HD', skip=[]):
-    for name in config.searchers.enabled:
-        if name not in plugins or name in skip:
+    tried = set()
+    always = [name for name in plugins if plugins[name].Searcher.ALWAYS_ENABLED]
+    for name in config.searchers.enabled + always:
+        if name not in plugins or name in skip or name in tried:
             continue
+        tried.add(name)
         searcher = plugins[name].Searcher()
         try:
             results = yield searcher.search(series, episodes, date, min_size, ideal_size, quality)
