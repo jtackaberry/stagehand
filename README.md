@@ -43,20 +43,20 @@ The core of Stagehand is quite robust, but many essential features are missing
 
 Stagehand is Linux software.
 
-Assuming you have a relatively recent distro with a version of pip that can install
-straight from git, installation should be fairly straightforward.
+Assuming your distro has a relatively recent version of pip (0.5 or later),
+installation should be fairly straightforward:
 
 This is what's needed for Ubuntu or Debian.  Adapt as needed to your distro.
 
 ```bash
 # Install base dependencies
-$ sudo apt-get install python-dev python-beautifulsoup python-pycurl git
+$ sudo apt-get install python-dev python-beautifulsoup python-pycurl
 
 # Install kaa-base from git
-$ sudo pip install -U git+https://github.com/freevo/kaa-base.git
+$ sudo pip install -U https://github.com/freevo/kaa-base/zipball/master
 
 # Install Stagehand from git
-$ sudo pip install -U --no-deps git+https://github.com/jtackaberry/stagehand.git
+$ sudo pip install -U --no-deps https://github.com/jtackaberry/stagehand/zipball/master
 ```
 
 Once installed, run it:
