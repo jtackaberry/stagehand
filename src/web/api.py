@@ -168,6 +168,11 @@ def show_episodes_status(id, epcode):
         if ep.status == Episode.STATUS_HAVE and web.request.query.value != 'delete':
             # Asked to ignore or retrieve an episode we already have.  Do nothing.
             pass
+        elif status_val == Episode.STATUS_NEED and ep.season.number == 0:
+            # Special case: user scheduled a special episode for download.  Normally
+            # a special episode set as STATUS_NEED is ignored.  So we set to NEED_FORCED
+            # instead.
+            ep.status = Episode.STATUS_NEED_FORCED
         else:
             ep.status = status_val
         statuses[ep.code] = episode_status_icon_info(ep)
