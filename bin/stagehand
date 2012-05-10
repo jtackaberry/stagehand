@@ -93,8 +93,7 @@ def web_start_server(mgr, opts):
             return
 
     # If we get here, web server couldn't start
-    log.critical('failed to start webserver')
-    sys.exit(1)
+    log.critical('failed to start webserver; edit %s or restart with different arguments', mgr.cfgfile)
 
 
 @kaa.timed(0, timer=kaa.OneShotTimer, policy=kaa.POLICY_ONCE)
