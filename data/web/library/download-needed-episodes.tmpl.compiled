@@ -11,7 +11,9 @@
     var need_cells, pn,
       _this = this;
     $(this).button('disable');
-    need_cells = $('img:[alt=Needed]').parents('tr').children('td');
+    need_cells = $('img').filter(function() {
+      return /^Needed.*/.test(this.alt);
+    }).parents('tr').children('td');
     need_cells.animate({
       backgroundColor: '#ffe26f'
     }, 500);

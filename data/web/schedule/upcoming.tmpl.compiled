@@ -1,6 +1,6 @@
 %from datetime import datetime, timedelta
 %today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-%future = today + timedelta(days=21)
+%future = today + timedelta(days=14)
 
 %eps = [ep for series in manager.tvdb.series for ep in series.episodes if ep.airdate and ep.airdate >= today and ep.airdate <= future]
 %eps.sort(key=lambda ep: ep.airdatetime)
@@ -9,7 +9,7 @@
     <div style='margin: 3em; text-align: center'>
         <span style='padding: 1.5em; background-color: #fffcd0; border: 1px solid #e5e1a0; border-radius: 10px'>
             <img src='{{root}}/static/img/face-sad.png' width='48' height='48' align='absmiddle' />
-            There are no upcoming episodes.
+            There are no upcoming episodes in the next two weeks.
         </span>
     </div>
 %end

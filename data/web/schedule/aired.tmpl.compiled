@@ -55,7 +55,7 @@
         <div style='text-align: center; padding: 1em'>
             <div style='padding: 0.5em 3em; background-color: #fffcd0; border: 1px solid #e5e1a0; 
                         display: inline-block; border-radius: 10px; font-size: 120%'>
-                There are no episodes that match this criteria.
+                No episodes are needed, and no others match the above criteria.
             </div>
         </div>
     %else:
@@ -118,12 +118,12 @@
         %today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
         %sunday = today - timedelta(days=5-today.weekday())
         %last_week = None
-        %for ep in sorted(episodes, key=lambda e: e.airdate, reverse=True):
+        %for ep in sorted(episodes, key=lambda e: (e.airdatetime, e.name), reverse=True):
             %week = ((sunday - ep.airdate).days + 6) / 7
             %icon, title = episode_status_icon_info(ep)
             %if manager.is_episode_queued_for_retrieval(ep):
                 %continue
-            %elif icon in ('ignore', 'have') and week >= weeks:
+            %elif (icon in ('ignore', 'have') and week >= weeks) or (icon == 'ignore' and status == 'have'):
                 %continue
             %end
             %if last_week != min(week, 8):
@@ -176,7 +176,7 @@
   last_download_queue = [{{!','.join('["%s", "%s"]' % (ep.series.id, ep.code) for ep, results in manager.retrieve_queue)}}];
 
   if (last_download_queue.length > 0) {
-    repeat(2000, function() {
+    repeat(5000, function() {
       return stagehand.api('/api/shows/downloads').done(function(_arg) {
         var bar, code, current, current_download_queue, idx, item, percentage, progress, queue, queue_changed, row, showid, speed, total, _i, _len, _ref, _ref1, _ref2;
         queue = _arg.queue;
