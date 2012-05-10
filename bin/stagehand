@@ -59,6 +59,57 @@ def rpc(cmd):
             # Process shuts down immediately before RPC response.
             pass
 
+
+@kaa.coroutine()
+def web_start_server(mgr, opts):
+    web.TEMPLATE_PATH.append(os.path.join(mgr.datadir, 'web'))
+    webkwargs = {}
+    if config.web.username:
+        webkwargs['user'] = config.web.username
+        webkwargs['passwd'] = config.web.password
+    if config.web.bind_address:
+        webkwargs['host'] = config.web.bind_address
+    if len(opts.verbose) >= 2:
+        # Beware: debug=True disables template caching
+        webkwargs['debug'] = True
+
+    userdata = {'stagehand.manager': mgr, 'coffee.cachedir': os.path.join(mgr.cachedir, 'web')}
+    # Try a number of different ports until we find out.  Now that the manager
+    # is instantiated, the config file will have been loaded and
+    # config.web.port will be the user-configured value (if any).
+    ports = [opts.port or config.web.port] + range(8088, 8100) + range(18088, 18100)
+    for port in ports:
+        try:
+            yield web.start(port=port, log=logging.getLogger('stagehand.http'), userdata=userdata, **webkwargs)
+        except IOError as e:
+            if e.errno == errno.EACCES:
+                log.error('could not start webserver on port %d: %s', port, str(e))
+            elif e.errno == errno.EADDRNOTAVAIL:
+                log.error('could not start webserver on interface %s: %s', config.web.bind_address, str(e))
+                break
+            else:
+                raise
+        else:
+            return
+
+    # If we get here, web server couldn't start
+    log.critical('failed to start webserver')
+    sys.exit(1)
+
+
+@kaa.timed(0, timer=kaa.OneShotTimer, policy=kaa.POLICY_ONCE)
+def web_config_changed(var, old, new, mgr, opts):
+    """
+    Invoked when any value in the config.web group changes.
+
+    This is put in a timer so that if multiple variables in the config.web
+    group change, this function only actually gets executed once.
+    """
+    log.warning('restarting webserver due to changed configuration')
+    web.stop()
+    web_start_server(mgr, opts)
+
+
 def main():
     kaa.utils.set_process_name('stagehand')
 
@@ -69,7 +120,7 @@ def main():
                  help='log more detail (twice or thrice logs even more)')
     p.add_option('-b', '--bg', dest='background', action='store_true',
                  help='run stagehand in the background (daemonize)')
-    p.add_option('-p', '--port', dest='port', action='store', type='int', default=config.web.port,
+    p.add_option('-p', '--port', dest='port', action='store', type='int', default=0,
                  help='port the embedded webserver listens on (default is %d)' % config.web.port)
     p.add_option('-d', '--data', dest='data', action='store', metavar='PATH',
                  help="path to Stagehand's static data directory")
@@ -104,10 +155,11 @@ def main():
     httplog.addHandler(handler)
     httplog.propagate = False
 
+    log.info('starting Stagehand %s', stagehand.__version__)
 
     # Instantiate Manager before we fork in case there are errors.
     try:
-        m = Manager(datadir=opts.data or find_data_path())
+        mgr = Manager(datadir=opts.data or find_data_path())
     except IOError as e:
         if e.errno == errno.EADDRINUSE:
             print('Stagehand is already running at pid %d.' % rpc('pid'))
@@ -115,28 +167,22 @@ def main():
         raise
 
     if opts.background:
+        # TODO: need some way of reporting web URL to stdout after daemonization.
         kaa.utils.daemonize()
     
-    m.start()
+    mgr.start()
 
-    signal.signal(signal.SIGHUP, kaa.Callable(reload, m))
-    signal.signal(signal.SIGUSR1, kaa.Callable(reload, m))
+    signal.signal(signal.SIGHUP, kaa.Callable(reload, mgr))
+    signal.signal(signal.SIGUSR1, kaa.Callable(reload, mgr))
 
-    web.TEMPLATE_PATH.append(os.path.join(m.datadir, 'web'))
-    webkwargs = {'port': opts.port}
-    if config.web.username:
-        webkwargs['user'] = config.web.username
-        webkwargs['passwd'] = config.web.password
-    if len(opts.verbose) >= 2:
-        # Beware: debug=True disables template caching
-        webkwargs['debug'] = True
+    # Monitor config.web group to restart web server if any config options
+    # change.
+    config.web.add_monitor(kaa.Callable(web_config_changed, mgr, opts))
+    web_start_server(mgr, opts)
 
-
-    userdata = {'stagehand.manager': m, 'coffee.cachedir': os.path.join(m.cachedir, 'web')}
-    web.start(log=httplog, userdata=userdata, **webkwargs)
     kaa.main.run()
     # Return manager for interactive interpreter
-    return m
+    return mgr
 
 if __name__ == '__main__':
     m = main()
