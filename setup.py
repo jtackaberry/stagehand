@@ -1,6 +1,6 @@
 NAME = 'stagehand'
-VERSION = '0.1.0'
-REQUIRES = ['kaa-base>=0.99.2dev-20120415', 'kaa-metadata', 'pycurl', 'BeautifulSoup']
+VERSION = '0.1.1'
+REQUIRES = ['kaa-base>=0.99.2dev-20120507', 'kaa-metadata', 'pycurl', 'BeautifulSoup']
 
 import sys
 import os
