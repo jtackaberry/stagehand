@@ -14,7 +14,7 @@ class RetrieverBase(object):
     # torrent).
     SUPPORTED_TYPES = ()
     # False if the user may disable the plugin, or True if it is always active.
-    ALWAYS_EABLED = False
+    ALWAYS_ENABLED = False
 
     @kaa.coroutine()
     def _retrieve(self, progress, episode, result, search_entity, outfile):
