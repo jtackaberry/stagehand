@@ -239,9 +239,17 @@ class SearcherBase(object):
 
 
     @kaa.coroutine()
-    def get_search_entity(self, search_result):
+    def _get_retriever_data(self, search_result):
+        """
+        Returns type-specific retriever data for the given search result.
+
+        See :meth:`SearchResult.get_retriever_data`
+        """
         raise NotImplementedError
 
+
+    def _check_results_equal(self, a, b):
+        raise NotImplementedError
 
 
 class SearchResult(object):
@@ -265,5 +273,87 @@ class SearchResult(object):
         self.searcher = searcher.NAME
         [setattr(self, k, v) for k, v in kwargs.items()]
 
+        # The cached entity from get_retriever_data().  This must not be
+        # pickled, since it could reference data that is not accessible between
+        # invocations.  Just use NotImplemented as a sentinel to indicate it
+        # has not been populated.
+        self._rdata = NotImplemented
+
     def __repr__(self):
         return '<%s %s at 0x%x>' % (self.__class__.__name__, self.filename, id(self))
+
+
+    def __getstate__(self):
+        # Return all attributes except _rdata which mustn't be pickled.
+        d = self.__dict__.copy()
+        del d['_rdata']
+        return d
+
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self._rdata = NotImplemented
+
+
+    def _get_searcher(self):
+        """
+        Return a new instance of the searcher plugin that provided this search
+        result.
+
+        It's possible that the plugin that provided the search result is no
+        longer available (because, e.g. the SearchResult object was pickled and
+        unpickled between invocations of Stagehand where the searcher plugin
+        has since failed to load).
+
+        It might be tempting to have searcher plugins subclass SearchResult and
+        implement the result-specific logic there rather than taking this
+        approach.  But because the SearchResults are pickled and stored in the
+        database, and because plugins can fail (and so must be considered
+        transient), unpickling would fail.  So we must only ever pickle core
+        SearchResult objects.
+        """
+        # We commit this cardinal sin of importing inside a function in order
+        # to prevent an import loop, since __init__ imports us for SearcherError.
+        # It's safe from the usual pitfalls (i.e. importing inside a thread) since
+        # the module is guaranteed to already be loaded.
+        from . import plugins
+        if self.searcher not in plugins:
+            raise SearcherError('search result for unknown searcher plugin %s' % self.searcher)
+        return plugins[self.searcher].Searcher()
+
+
+    def __eq__(self, other):
+        if not isinstance(other, SearchResult) or self.searcher != other.searcher:
+            return False
+        return self._get_searcher()._check_results_equal(self, other)
+
+
+    @kaa.coroutine()
+    def get_retriever_data(self, force=False):
+        """
+        Fetch whatever data is needed for a retriever to fetch this result.
+
+        The actual return value is dependent on the searcher type, and no
+        format is assumed or enforced here.  It is a contract between the
+        searcher plugin and a retriever plugin.
+
+        :param force: if False (default), the data is cached so that subsequent
+                      invocations don't call out to the plugin.  If True,
+                      it wil ask the plugin regardless of whether the value
+                      was cached.
+        :returns: a type-specific object from the searcher plugin, guaranteed
+                  to be non-zero
+        """
+        if self._rdata is NotImplemented or force:
+            # Fetch the data and cache it for subsequent calls.  We cache because
+            # retrievers may call get_retriever_data() multiple times (for
+            # multiple retriever plugins) but the actual operation could be
+            # expensive (e.g. fetching a torrent or nzb file off the network).
+            self._rdata = yield self._get_searcher()._get_retriever_data(self)
+
+        if not self._rdata:
+            # This shouldn't happen.  It's a bug in the searcher, which should
+            # have raised SearcherError instead.
+            raise SearcherError('searcher plugin did not provide retriever data for this result')
+
+        yield self._rdata

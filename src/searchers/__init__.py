@@ -33,11 +33,3 @@ def search(progress, series, episodes, date=None, min_size=None, ideal_size=None
             else:
                 log.debug2('%s found no results', name)
     yield {}
-
-
-@kaa.coroutine()
-def get_search_entity(search_result):
-    if search_result.searcher not in plugins:
-        raise SearcherError('Searcher plugin %s not present' % search_result.searcher)
-    entity = yield plugins[search_result.searcher].Searcher().get_search_entity(search_result)
-    yield entity

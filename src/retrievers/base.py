@@ -4,6 +4,9 @@ import kaa
 class RetrieverError(Exception):
     pass
 
+class RetrieverAbortedError(RetrieverError, kaa.InProgressAborted):
+    pass
+
 class RetrieverBase(object):
     # Values must be populated by subclasses.
     # The internal name of the plugin (lowercase, no spaces).
@@ -17,13 +20,12 @@ class RetrieverBase(object):
     ALWAYS_ENABLED = False
 
     @kaa.coroutine()
-    def _retrieve(self, progress, episode, result, search_entity, outfile):
+    def _retrieve(self, progress, episode, result, outfile):
         """
         Retrieve the given SearchResult object.
         """
         raise NotImplementedError
 
 
-    def retrieve(self, progress, episode, result, search_entity, outfile):
-        # This doesn't do anything special yet.
-        return self._retrieve(progress, episode, result, search_entity, outfile)
+    def retrieve(self, progress, episode, result, outfile):
+        return self._retrieve(progress, episode, result, outfile)

@@ -89,13 +89,26 @@ class Searcher(SearcherBase):
 
 
     @kaa.coroutine()
-    def get_search_entity(self, search_result):
+    def _get_retriever_data(self, search_result):
         yield {
             'url': search_result.url,
             'username': modconfig.username,
             'password': modconfig.password,
             'retry': modconfig.retries
         }
+
+
+    def _check_results_equal(self, a, b):
+        try:
+            # Easynews URLs contain hashes of the file, which is a convenient
+            # value to compare, because it means that even different URLs can
+            # end up being the same file.
+            a_hash = re.search(r'/([0-9a-f]{32,})', a.url).group(1)
+            b_hash = re.search(r'/[0-9a-f]{32,})', b.url).group(1)
+            return a_hash == b_hash
+        except AttributeError:
+            # Wasn't able to find hash in URL, so compare the URLs directly.
+            return a.url == b.url
 
 
 def enable(manager):
