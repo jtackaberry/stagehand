@@ -175,6 +175,8 @@ def show_episodes_status(id, epcode):
             ep.status = Episode.STATUS_NEED_FORCED
         else:
             ep.status = status_val
+            # Clear any stored search result
+            ep.search_result = None
         statuses[ep.code] = episode_status_icon_info(ep)
 
     return {'statuses': statuses}
