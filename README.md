@@ -1,6 +1,7 @@
 # Stagehand
 
-**Danger!  This software is half-baked. It's not released yet. If you want to try it,
+**Danger!  This software is half-baked. At the moment, it only works with
+[Easynews](http://easynews.com). It's not released yet. If you want to try it,
 expect some pain.**
 
 
@@ -13,7 +14,7 @@ interface to download previously aired episodes.
 Here are some of the main features:
 
 * Pretty, modern-looking UI
-* Support for multiple TV metadata provider (currently TheTVDB and TVRage): easily choose the authoritative provider per-series
+* Support for multiple TV metadata providers (currently TheTVDB and TVRage): easily choose the authoritative provider per-series
 * A Just Works design principle: no cumbersome setup or external tools
 * Support for Easynews HTTP-based global search
 
@@ -103,13 +104,14 @@ $ stagehand -vvb
 
 ## Haven't you heard of $APP?
 
-I realize there are several popular programs that do what Stagehand does,
-including and especially the very popular Sickbeard.
+I realize there are several programs that do what Stagehand does, including and
+especially the very popular Sick Beard.
 
 There are a few reasons Stagehand exists:
 
-* I was a bit annoyed at Sickbeard's need for SABnzbd
-* I suffer horribly from [NIH](http://en.wikipedia.org/wiki/Not_invented_here)
-* to provide a real-world application to exercise the [Kaa application
+* I needed an excuse to learn [CoffeeScript](http://coffeescript.org/)
+* I wanted a real-world application to exercise the [Kaa application
   framework](https://github.com/freevo/kaa-base), which is another project of mine.
+* I was a bit annoyed at Sick Beard's need for SABnzbd
+* I suffer horribly from [NIH](http://en.wikipedia.org/wiki/Not_invented_here)
 
