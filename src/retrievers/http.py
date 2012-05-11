@@ -19,6 +19,24 @@ class Retriever(RetrieverBase):
     SUPPORTED_TYPES = ('http',)
     ALWAYS_ENABLED = True
 
+    @kaa.timed(1)
+    def _verify_timer(self, progress, episode, result, outfile, curl_ip):
+        if progress.pos < 512:
+            # Wait until we have 512KB before checking file.
+            return
+        try:
+            r = self.verify_result_file(episode, result, outfile)
+        except RetrieverError as e:
+            # Verify failed, abort download.
+            curl_ip.abort(RetrieverAbortedError(*e.args))
+            return False
+        else:
+            if r is not False:
+                # verify function returned either True (verified ok) or None
+                # (no ability to get metadata).  Either way, stop the timer.
+                return False
+
+
     def _download_progress_cb(self, curl, state, position, total, speed, progress):
         # We set the InProgressStatus object at curl's progress interval ...
         progress.set(position/1024, total/1024, speed/1024)
@@ -49,6 +67,7 @@ class Retriever(RetrieverBase):
         log.debug('fetching %s', rdata['url'])
         ip = download(rdata['url'], outfile, progress=kaa.Callable(self._download_progress_cb, progress),
                       progress_interval=1, **opts)
+        self._verify_timer(progress, episode, result, outfile, ip)
         status, c = yield ip
         if status == 416 and c.content_length_download == 0:
             log.info('file already fully retrieved')
