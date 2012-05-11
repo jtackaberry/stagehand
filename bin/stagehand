@@ -109,6 +109,19 @@ def web_config_changed(var, old, new, mgr, opts):
     web_start_server(mgr, opts)
 
 
+def handle_uncaught_exception(tp, value, tb):
+    """
+    Global exception handler which just logs the exception and prevents the
+    main loop from aborting.
+    """
+    # Do not prevent ^C and exit.
+    if not isinstance(value, (KeyboardInterrupt, SystemExit)):
+        log.exception('uncaught exception')
+        # Returning False from the signal handler prevents the kaa main loop
+        # from aborting.
+        return False
+
+
 def main():
     kaa.utils.set_process_name('stagehand')
 
@@ -181,6 +194,7 @@ def main():
     config.web.add_monitor(kaa.Callable(web_config_changed, mgr, opts))
     web_start_server(mgr, opts)
 
+    kaa.signals['exception'].connect(handle_uncaught_exception)
     kaa.main.run()
     # Return manager for interactive interpreter
     return mgr
