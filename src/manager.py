@@ -272,6 +272,13 @@ class Manager(object):
         #yield notify([])
         #yield self.tvdb._update_series(self.tvdb.providers['thetvdb'], u'75897', dirty=[self.tvdb.providers['thetvdb']])
 
+        # Resume downloading any episodes we aborted.
+        for series in self.tvdb.series:
+            for ep in series.episodes:
+                if ep.ready and ep.search_result:
+                    self._retrieve_queue.append((ep, [ep.search_result]))
+                    self._process_retrieve_queue()
+
 
     @kaa.coroutine(policy=kaa.POLICY_SINGLETON)
     def check_new_episodes(self, only=[], force_next=False):
@@ -379,7 +386,11 @@ class Manager(object):
             elif ep.filename and os.path.exists(os.path.join(ep.season.path, ep.filename)):
                 # The episode filename exists.  Do we need to resume?
                 if ep.search_result:
-                    # Yes, there is a search result for this episode, so resume it.
+                    # Yes, there is a search result for this episode, so resume it.  First
+                    # remove this result from ep_results so we don't try it again in
+                    # case this attempt fails.
+                    if ep.search_result in ep_results:
+                        ep_results.remove(ep.search_result)
                     log.info('resuming download from last search result')
                     success = yield self._get_episode(ep, ep.search_result)
                     if success:
@@ -388,7 +399,6 @@ class Manager(object):
                         continue
                     else:
                         log.warning('download failed, trying other search results')
-                        ep.filename = ep.search_result = None
                 else:
                     # XXX: should we move it out of the way and try again?
                     log.error('retriever was scheduled to fetch %s but it already exists, skipping', 
@@ -437,17 +447,18 @@ class Manager(object):
         web.notify('Episode Download', msg)
 
         try:
+            # retrieve() ensures that only RetrieverError is raised
             ip = retrieve(search_result, target, ep)
             #log.debug('not actually retrieving %s %s', ep.series.name, ep.code)
             #ip = fake_download(search_result, target, ep)
             self._retrieve_inprogress[ep] = ip
             yield ip
         except RetrieverError, e:
-            ep.filename = None
+            ep.filename = ep.search_result = None
             if os.path.exists(target):
                 # TODO: handle permission problem
-                #os.unlink(target)
-                print('WOULD DELETE', target)
+                log.debug('deleting failed attempt %s', target)
+                os.unlink(target)
             log.error(e.args[0])
             yield False
         else:
