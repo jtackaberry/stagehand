@@ -41,9 +41,14 @@ class SearcherBase(object):
 
 
     def _cmp_result(self, a, b, ep, ideal_size):
-        # Ugh.  This function is hideous and in serious need of refactoring.
+        # Hideous and improperly hardcoded logic follows.
         inf = float('inf')
-        exts = {'mkv': 2, 'avi': 1, 'wmv': -inf, 'mpg': -inf, 'ts': -inf}
+        exts = {
+            # Want.
+            'mkv': 3, 'mp4': 2, 'avi': 1,
+            # Don't want.
+            'wmv': -inf, 'mpg': -inf, 'ts': -inf
+        }
         av = {
             (r'[xh]\.?264', r'(ac-?3|dts)'): 10,
             (r'[xh]\.?264', None): 9,
