@@ -1,6 +1,6 @@
 NAME = 'stagehand'
-VERSION = '0.1.1'
-REQUIRES = ['kaa-base>=0.99.2dev-20120507', 'kaa-metadata', 'pycurl', 'BeautifulSoup']
+VERSION = '0.1.2'
+REQUIRES = ['kaa-base>=0.99.2dev-380-d84b7045', 'kaa-metadata', 'BeautifulSoup']
 
 import sys
 import os
@@ -72,9 +72,17 @@ def lsdata():
 
 try:
     # kaa base imports
+    import kaa
     from kaa.distribution.core import Extension, setup
 except ImportError:
     print('kaa.base not installed')
+    sys.exit(1)
+
+
+# Verify kaa-base version
+if kaa.__version__ < REQUIRES[0].split('=')[1]:
+    print('Error: kaa.base %s is too old.  Try this to upgrade it:' % kaa.__version__)
+    print('sudo pip install -U git+git://github.com/freevo/kaa-base.git')
     sys.exit(1)
 
 setup(
