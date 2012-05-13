@@ -89,6 +89,7 @@ setup(
     cmdclass={'build_scripts': build_scripts},
     name=NAME,
     version=VERSION,
+    auto_changelog=True,
     license='MIT',
     scripts = ['bin/stagehand'],
     data_files=list(lsdata()),

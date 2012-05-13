@@ -1,3 +1,4 @@
 recursive-include src *.py *.cxml
 recursive-include data/web *
 global-exclude *.swp
+include ChangeLog MANIFEST MIT-LICENSE.txt README.md
