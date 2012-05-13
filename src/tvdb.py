@@ -653,10 +653,6 @@ class TVDB(kaa.db.Database):
                 # known ids to the series cache.
                 for id in series.ids:
                     cache[id] = series
-                #cache[data['id']] = series
-                #for provider in self.providers.values():
-                #    if data[provider.IDATTR] is not None:
-                #        cache['%s:%s' % (provider.NAME, data[provider.IDATTR])] = series
 
         self._series_cache = cache
         self._series_cache_ver = self._version
