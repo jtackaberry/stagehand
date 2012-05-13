@@ -55,6 +55,10 @@ class Manager(object):
             config.save(self.cfgfile)
         else:
             config.load(self.cfgfile)
+            # If the config schema changed (new version of Stagehand installed?)
+            # then write out a new config file.
+            config.save(force=False)
+
         # Monitor config file for changes.
         config.watch()
         config.autosave = True
