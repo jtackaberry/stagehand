@@ -142,6 +142,12 @@
               
     <group name="searchers">
         <desc>Methods of searching for TV series</desc>
+        <var name='hours' type='str' default='4, 11, 16, 21'>
+            <desc>
+                Comma-separated list of hours when needed episodes are
+                searched.  (Minutes are randomized on startup.)
+            </desc>
+        </var>
         <list name='enabled'>
             <desc>List of enabled searcher plugins and their order of preference.</desc>
             <var type='str' />

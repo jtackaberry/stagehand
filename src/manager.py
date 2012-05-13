@@ -62,7 +62,7 @@ class Manager(object):
         # Monitor config file for changes.
         config.watch()
         config.autosave = True
-        config.signals['reloaded'].connect(self._config_reloaded)
+        config.signals['reloaded'].connect(self._load_config)
 
         if not os.path.exists(os.path.join(self.cachedir, 'web')):
             os.makedirs(os.path.join(self.cachedir, 'web'))
@@ -103,9 +103,23 @@ class Manager(object):
             return self._retrieve_queue
 
 
-    def _config_reloaded(self, changed):
-        log.info('config file changed; reloading')
-        self._load_series_from_config()
+    @kaa.coroutine()
+    def _load_config(self, changed=None):
+        if changed is not None:
+            # if changed is given (even if it's an empty list), it means we've
+            # been invoked from the config reloaded signal.
+            log.info('config file changed; reloading')
+        yield self._load_series_from_config()
+
+        try:
+            check_hours = [int(h) for h in config.searchers.hours.split(',')]
+        except ValueError:
+            log.warning('invalid searchers.hours config value (%s), using default', config.searchers.hours)
+            check_hours = [int(h) for h in kaa.config.get_default(config.searchers.hours).split(',')]
+        check_min = random.randint(0, 59)
+        if self._check_new_timer.hours != tuple(sorted(check_hours)):
+            log.info('scheduling checks at %s', ', '.join('%d:%02d' % (hour, check_min) for hour in check_hours))
+            self._check_new_timer.start(hour=check_hours, min=check_min)
 
 
     @kaa.rpc.expose()
@@ -261,20 +275,7 @@ class Manager(object):
         kaa.Timer(self._check_update_tvdb).start(60*60, now=True)
         kaa.signals['shutdown'].connect_once(self._shutdown)
         #web.notify('Global alert', 'Stagehand was restarted')
-        yield self._load_series_from_config()
-        # TODO: need a "light" check where we don't actually search but resume
-        # any aborted downloads
-        #yield self.check_new_episodes()
-        #kaa.OneShotTimer(self.tvdb._update_series,79349).start(2)
-
-        # TODO: make hours configurable
-        check_hours = (4, 11, 16, 21)
-        check_min = random.randint(0, 59)
-        log.info('scheduling checks at %s', ', '.join('%d:%02d' % (hour, check_min) for hour in check_hours))
-        self._check_new_timer.start(hour=check_hours, min=check_min)
-        #yield self._check_new_episodes(only=[self.series[73762]])
-        #yield notify([])
-        #yield self.tvdb._update_series(self.tvdb.providers['thetvdb'], u'75897', dirty=[self.tvdb.providers['thetvdb']])
+        yield self._load_config()
 
         # Resume downloading any episodes we aborted.
         for series in self.tvdb.series:
