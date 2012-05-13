@@ -89,7 +89,7 @@ setup(
     cmdclass={'build_scripts': build_scripts},
     name=NAME,
     version=VERSION,
-    license='GPL',
+    license='MIT',
     scripts = ['bin/stagehand'],
     data_files=list(lsdata()),
     opts_2to3 = {
