@@ -51,13 +51,13 @@ This is what's needed for Ubuntu or Debian.  Adapt as needed to your distro.
 
 ```bash
 # Install base dependencies
-$ sudo apt-get install python-dev python-beautifulsoup python-pycurl python-pip libglib2.0-dev
+$ sudo apt-get install python-dev python-beautifulsoup python-pycurl python-pip libglib2.0-dev git-core
 
 # Install kaa-base and kaa-metadata from git
-$ sudo pip install -U https://github.com/freevo/kaa-base/zipball/master https://github.com/freevo/kaa-metadata/zipball/master
+$ sudo pip install -U git+git://github.com/freevo/kaa-base.git git+git://github.com/freevo/kaa-metadata.git
 
 # Install Stagehand from git
-$ sudo pip install -U --no-deps https://github.com/jtackaberry/stagehand/zipball/master
+$ sudo pip install -U --no-deps git+git://github.com/jtackaberry/stagehand.git
 ```
 
 Once installed, run it:
