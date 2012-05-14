@@ -110,14 +110,16 @@ def schedule_aired():
     # or match the criteria for inclusion (based on status and weeks).  Episodes
     # in the download queue aren't included as they're displayed separately.
     today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    sunday = today - timedelta(days=5-today.weekday())
+    # The most recent past Sunday (or today, if today is Sunday)
+    sunday = today if today.weekday() == 6 else today - timedelta(days=today.weekday() + 1)
     episodes = []
     for s in manager.tvdb.series:
         for ep in s.episodes:
             if not ep.aired or manager.is_episode_queued_for_retrieval(ep):
                 continue
             icon, title = episode_status_icon_info(ep)
-            week = ((sunday - ep.airdate).days + 6) / 7
+            # week 0 is anything on or after sunday
+            week = (max(0, (sunday - ep.airdate).days) + 6) / 7
             if (icon in ('ignore', 'have') and week >= weeks) or (icon == 'ignore' and status == 'have'):
                 continue
             episodes.append((ep, icon, title, week))
