@@ -85,10 +85,37 @@ if kaa.__version__ < REQUIRES[0].split('=')[1]:
     print('sudo pip install -U git+git://github.com/freevo/kaa-base.git')
     sys.exit(1)
 
+
+# Automagically construct version.  If installing from a git clone, the
+# version is based on the number of revisions since the last tag.  Otherwise,
+# if PKG-INFO exists, assume it's a dist tarball and pull the version from
+# that.
+version = VERSION
+if os.path.isdir('.git'):
+    # Current tag object id and name
+    tagid = os.popen('git rev-list --tags --max-count=1').read().strip()
+    tagname = os.popen('git describe --tags %s' % tagid).read().strip()
+    # Fetch all revisions since last tag.  The first item is the current HEAD object name
+    # and the last is the tag object name.
+    revs = os.popen('git rev-list --all | grep -B9999 %s' % tagid).read().splitlines()
+    if len(revs) > 1 or version != tagname:
+        # We're at least one commit past the last tag or there were no new
+        # commits but the current version doesn't match the tagged version, so
+        # this is considered a dev release.
+        version = '%sdev-%d-%s' % (VERSION, len(revs)-1, revs[0][:8])
+elif os.path.isfile('PKG-INFO'):
+    ver = [l.split(':')[1].strip() for l in open('PKG-INFO') if l.startswith('Version')]
+    if ver:
+        version = ver[0]
+else:
+    # Lack of PKG-INFO means installation was not from an official dist bundle,
+    # so treat it as a development version.
+    version += 'dev'
+
 setup(
     cmdclass={'build_scripts': build_scripts},
     name=NAME,
-    version=VERSION,
+    version=version,
     auto_changelog=True,
     license='MIT',
     scripts = ['bin/stagehand'],
