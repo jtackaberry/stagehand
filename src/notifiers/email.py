@@ -47,5 +47,5 @@ class Notifier(NotifierBase):
 
         try:
             yield self._do_smtp(mime, recipients)
-        except smtplib.SMTPException, e:
-            log.exception('unable to send email notification')
+        except smtplib.SMTPException as e:
+            log.error('unable to send email notification: %s', e)
