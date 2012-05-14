@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<config>
+    <desc lang="en">E-Mail notifier</desc>
+    <var name='hostname' type='str' default='localhost' />
+    <var name='tcp_port' type='int' default='25' />
+    <var name='mail_from' type='str' default='stagehand@localhost' />
+    <var name='rcpt_to' type='str' />
+</config>
