@@ -5,7 +5,6 @@ import logging
 import kaa
 
 from .base import NotifierBase, NotifierError
-from ..config import config
 from .email_config import config as modconfig
 
 __all__ = ['Notifier']
