@@ -26,6 +26,9 @@
     <div id='banner'>
         <img style='position: absolute; left: 272px; top: 10px; opacity: 1.5' src='{{root}}/static/img/masks.png' alt='' />
         <div id='logo'></div>
+        <div id='progress' title='Click to view active downloads' style='display: none'>
+            <span></span>
+        </div>
         <div id='menubar'>
             <ul class='menu' id='main'>
                 <li id='m-home'><a href='{{root}}/'><img src='{{root}}/static/img/home.png' alt='Home' /></a></li>
@@ -77,6 +80,20 @@
     $('#menubar').mouseleave ->
         $('.submenu').hide()
         $("#submenu-{{section}}").show()
+
+    $('#banner #progress').click ->
+        window.location = '{{root}}/schedule/aired'
+
+    stagehand.bind 'dlprogress', ({queue}) ->
+        if queue.length > 0
+            # TODO: tally progress for all active downloads
+            [showid, code, progress] = queue[0]
+            if progress
+                [percentage, current, total, speed] = progress
+                $('#banner #progress:hidden').show()
+                $('#banner #progress span').css width: "#{percentage}%"
+        else
+            $('#banner #progress:visible').hide()
 
     async = `{{!json(async)}}`
     stagehand.handle_response async

@@ -26,7 +26,31 @@ a:hover {
     height: 120px;
 }
 
+#banner #progress {
+    position: absolute;
+    top: 85px;
+    right: 1em;
+    border-radius: 8px;
+    color: white;
+    border: 1px solid white;
+    height: 15px;
+    width: 100px;
+    opacity: 0.4;
+    cursor: pointer;
+}
 
+#banner #progress:hover {
+    opacity: 0.8;
+}
+
+#banner #progress span {
+    display: block;
+    border-radius: 4px;
+    height: 100%;
+    overflow: hidden;
+    background-color: white;
+    color: white;
+}
 
 .menu {
     color: white;
