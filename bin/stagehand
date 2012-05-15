@@ -82,7 +82,7 @@ def web_start_server(mgr, opts):
         try:
             yield web.start(port=port, log=logging.getLogger('stagehand.http'), userdata=userdata, **webkwargs)
         except IOError as e:
-            if e.errno == errno.EACCES:
+            if e.errno in (errno.EACCES, errno.EADDRINUSE):
                 log.error('could not start webserver on port %d: %s', port, str(e))
             elif e.errno == errno.EADDRNOTAVAIL:
                 log.error('could not start webserver on interface %s: %s', config.web.bind_address, str(e))
