@@ -269,6 +269,27 @@ class Manager(object):
         config.save(self.cfgfile)
 
 
+    def _notify_web_retriever_progress(self, progress=None):
+        """
+        Issues a notification to web clients about the state of the current
+        download queue.
+        """
+        queue = []
+        for ep, results in self.retrieve_queue:
+            ip = self.get_episode_retrieve_inprogress(ep)
+            if ip:
+                progress = (
+                    ip.progress.percentage,
+                    '%.1f' % (ip.progress.pos / 1024.0),
+                    '%.1f' % (ip.progress.max / 1024.0),
+                    int(ip.progress.speed)
+                )
+            else:
+                progress = None
+            queue.append((ep.series.id, ep.code, progress))
+        web.notify('dlprogress', queue=queue, replace=True, universal=True)
+
+
     @kaa.coroutine()
     def start(self):
         # TODO: randomize time, twice a day
@@ -420,9 +441,9 @@ class Manager(object):
                     break
 
         self._retrieve_queue_active = None
+        self._notify_web_retriever_progress()
         if retrieved:
             yield notify(retrieved)
-
 
     @kaa.coroutine()
     def _get_episode(self, ep, search_result):
@@ -456,6 +477,7 @@ class Manager(object):
             ip = retrieve(search_result, target, ep)
             #log.debug('not actually retrieving %s %s', ep.series.name, ep.code)
             #ip = fake_download(search_result, target, ep)
+            ip.progress.connect(self._notify_web_retriever_progress)
             self._retrieve_inprogress[ep] = ip
             yield ip
         except RetrieverError, e:

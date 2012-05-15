@@ -136,24 +136,21 @@
         window.location = "{{root}}/schedule/aired?weeks=#{$('#select-weeks').val()}&status=#{$('#select-status').val()}"
 
     last_download_queue = [`{{!','.join('["%s", "%s"]' % (ep.series.id, ep.code) for ep, results in manager.retrieve_queue)}}`]
-    if last_download_queue.length > 0
-        repeat 5000, ->
-           stagehand.api('/api/shows/downloads')
-            .done ({queue}) ->
-                queue_changed = (queue.length != last_download_queue.length)
-                current_download_queue = (item[..1] for item in queue)
-                for [showid, code, progress], idx in queue
-                    if last_download_queue[idx]?[0] != showid or last_download_queue[idx]?[1] != code
-                        queue_changed = true
-                    row = $("[id='#{showid}-#{code}'].download")
-                    if progress
-                        [percentage, current, total, speed] = progress
-                        bar = row.find('.ui-progressbar')
-                        bar.progressbar value: percentage
-                        bar.parent().attr('title', "#{speed} KB/s")
-                        bar.children('.overlay').text "#{current} / #{total} MB"
-                if queue_changed
-                    window.location.reload()
+    stagehand.bind 'dlprogress', ({queue}) ->
+        queue_changed = (queue.length != last_download_queue.length)
+        current_download_queue = (item[..1] for item in queue)
+        for [showid, code, progress], idx in queue
+            if last_download_queue[idx]?[0] != showid or last_download_queue[idx]?[1] != code
+                queue_changed = true
+            row = $("[id='#{showid}-#{code}'].download")
+            if progress
+                [percentage, current, total, speed] = progress
+                bar = row.find('.ui-progressbar')
+                bar.progressbar value: percentage
+                bar.parent().attr('title', "#{speed} KB/s")
+                bar.children('.overlay').text "#{current} / #{total} MB"
+        if queue_changed
+            window.location.reload()
 </script>
 
 %rebase layout.tmpl title='Aired Episodes | Schedule', section="schedule", subsection='aired'
