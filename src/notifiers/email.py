@@ -31,15 +31,15 @@ class Notifier(NotifierBase):
             log.error('invalid recipients, skipping email notification')
             yield
 
-        summary = 'Summary of Episodes\n'
-        overview = '\nOverview of Episodes\n'
+        summary = u'Summary of Episodes\n'
+        overview = u'\nOverview of Episodes\n'
         recipients = [addr.strip() for addr in modconfig.recipients.split(',')]
 
         for i, ep in enumerate(episodes, 1):
-            summary += '%02d: %s %s %s\n' % (i, ep.series.name, ep.code, ep.name)
-            overview += '%02d: %s %s %s (%s)\n%s\n\n' % (i, ep.series.name, ep.code, ep.name, ep.airdatetime, ep.overview)
+            summary += u'%02d: %s %s %s\n' % (i, ep.series.name, ep.code, ep.name)
+            overview += u'%02d: %s %s %s (%s)\n%s\n\n' % (i, ep.series.name, ep.code, ep.name, ep.airdatetime, ep.overview)
 
-        mime = MIMEText('%s\n%s' % (summary, overview))
+        mime = MIMEText('%s\n%s' % (kaa.py3_b(summary, 'utf-8'), kaa.py3_b(overview, 'utf-8')), 'plain', 'utf-8')
         mime['Subject'] = '[stagehand] downloaded %d episodes' % len(episodes)
         mime['From'] = modconfig.sender
         mime['To'] = ', '.join(recipients)
