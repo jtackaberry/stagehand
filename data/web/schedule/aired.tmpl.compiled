@@ -7,13 +7,13 @@
                 <option value='have' class='image-have'>downloaded</option>
                 <option value='all' class='image-all'>all</option>
             </select>
-            from the
-            <select id='select-weeks' style='width: 12em'>
-                <option value='1'>last week</option>
-                <option value='2'>last 2 weeks</option>
-                <option value='4'>last month</option>
-                <option value='8'>last 2 months</option>
-                <option value='24'>last 6 months</option>
+            from
+            <select id='select-weeks' style='width: 14.5em'>
+                <option value='1'>this week</option>
+                <option value='2'>the last 2 weeks</option>
+                <option value='4'>the last month</option>
+                <option value='8'>the last 2 months</option>
+                <option value='24'>the last 6 months</option>
             </select>
         </div>
         <button style='float: right' id='button-search'>
@@ -163,43 +163,39 @@
 
   last_download_queue = [{{!','.join('["%s", "%s"]' % (ep.series.id, ep.code) for ep, results in manager.retrieve_queue)}}];
 
-  if (last_download_queue.length > 0) {
-    repeat(5000, function() {
-      return stagehand.api('/api/shows/downloads').done(function(_arg) {
-        var bar, code, current, current_download_queue, idx, item, percentage, progress, queue, queue_changed, row, showid, speed, total, _i, _len, _ref, _ref1, _ref2;
-        queue = _arg.queue;
-        queue_changed = queue.length !== last_download_queue.length;
-        current_download_queue = (function() {
-          var _i, _len, _results;
-          _results = [];
-          for (_i = 0, _len = queue.length; _i < _len; _i++) {
-            item = queue[_i];
-            _results.push(item.slice(0, 2));
-          }
-          return _results;
-        })();
-        for (idx = _i = 0, _len = queue.length; _i < _len; idx = ++_i) {
-          _ref = queue[idx], showid = _ref[0], code = _ref[1], progress = _ref[2];
-          if (((_ref1 = last_download_queue[idx]) != null ? _ref1[0] : void 0) !== showid || ((_ref2 = last_download_queue[idx]) != null ? _ref2[1] : void 0) !== code) {
-            queue_changed = true;
-          }
-          row = $("[id='" + showid + "-" + code + "'].download");
-          if (progress) {
-            percentage = progress[0], current = progress[1], total = progress[2], speed = progress[3];
-            bar = row.find('.ui-progressbar');
-            bar.progressbar({
-              value: percentage
-            });
-            bar.parent().attr('title', "" + speed + " KB/s");
-            bar.children('.overlay').text("" + current + " / " + total + " MB");
-          }
-        }
-        if (queue_changed) {
-          return window.location.reload();
-        }
-      });
-    });
-  }
+  stagehand.bind('dlprogress', function(_arg) {
+    var bar, code, current, current_download_queue, idx, item, percentage, progress, queue, queue_changed, row, showid, speed, total, _i, _len, _ref, _ref1, _ref2;
+    queue = _arg.queue;
+    queue_changed = queue.length !== last_download_queue.length;
+    current_download_queue = (function() {
+      var _i, _len, _results;
+      _results = [];
+      for (_i = 0, _len = queue.length; _i < _len; _i++) {
+        item = queue[_i];
+        _results.push(item.slice(0, 2));
+      }
+      return _results;
+    })();
+    for (idx = _i = 0, _len = queue.length; _i < _len; idx = ++_i) {
+      _ref = queue[idx], showid = _ref[0], code = _ref[1], progress = _ref[2];
+      if (((_ref1 = last_download_queue[idx]) != null ? _ref1[0] : void 0) !== showid || ((_ref2 = last_download_queue[idx]) != null ? _ref2[1] : void 0) !== code) {
+        queue_changed = true;
+      }
+      row = $("[id='" + showid + "-" + code + "'].download");
+      if (progress) {
+        percentage = progress[0], current = progress[1], total = progress[2], speed = progress[3];
+        bar = row.find('.ui-progressbar');
+        bar.progressbar({
+          value: percentage
+        });
+        bar.parent().attr('title', "" + speed + " KB/s");
+        bar.children('.overlay').text("" + current + " / " + total + " MB");
+      }
+    }
+    if (queue_changed) {
+      return window.location.reload();
+    }
+  });
 
 }).call(this);
 </script>

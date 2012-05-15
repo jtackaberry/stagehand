@@ -30,6 +30,9 @@
     <div id='banner'>
         <img style='position: absolute; left: 272px; top: 10px; opacity: 1.5' src='{{root}}/static/img/masks.png' alt='' />
         <div id='logo'></div>
+        <div id='progress' title='Click to view active downloads' style='display: none'>
+            <span></span>
+        </div>
         <div id='menubar'>
             <ul class='menu' id='main'>
                 <li id='m-home'><a href='{{root}}/'><img src='{{root}}/static/img/home.png' alt='Home' /></a></li>
@@ -90,6 +93,27 @@
   $('#menubar').mouseleave(function() {
     $('.submenu').hide();
     return $("#submenu-{{section}}").show();
+  });
+
+  $('#banner #progress').click(function() {
+    return window.location = '{{root}}/schedule/aired';
+  });
+
+  stagehand.bind('dlprogress', function(_arg) {
+    var code, current, percentage, progress, queue, showid, speed, total, _ref;
+    queue = _arg.queue;
+    if (queue.length > 0) {
+      _ref = queue[0], showid = _ref[0], code = _ref[1], progress = _ref[2];
+      if (progress) {
+        percentage = progress[0], current = progress[1], total = progress[2], speed = progress[3];
+        $('#banner #progress:hidden').show();
+        return $('#banner #progress span').css({
+          width: "" + percentage + "%"
+        });
+      }
+    } else {
+      return $('#banner #progress:visible').hide();
+    }
   });
 
   async = {{!json(async)}};
