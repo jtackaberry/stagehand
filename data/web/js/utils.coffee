@@ -24,8 +24,15 @@ class @Stagehand
     constructor: (@root) ->
         @jobs = {}
         @timer = null
+        @min_interval = 1000
         @max_interval = 10000
-        @poll(1000)
+        @handlers = {}
+        @poll @min_interval
+
+    bind: (ntype , f) ->
+        @handlers[ntype] ?= []
+        @handlers[ntype].push(f)
+
 
     api: (url, data={}, type='GET') ->
         dfd = $.Deferred()
@@ -61,14 +68,26 @@ class @Stagehand
                 else
                     @jobs[job.id].resolve job.result
                 delete @jobs[job.id]
+
         for n in notifications
-            for key, value of n
-                if typeof value == 'string'
-                    # Replace instances of {{root}} in string-based values with
-                    # root.  Poor-man's template variable for notifications.
-                    value = value.replace(/{{root}}/g, @root)
-                n['pnotify_' + key] = value
-            $.pnotify n
+            if @handlers[n._ntype]?
+                for f in @handlers[n._ntype]
+                    f(n)
+
+            if n._ntype == 'alert'
+                # Initialize alert defaults
+                n.type ?= 'notice'
+                n.nonblock ?= false
+                n.animation ?= 'fade'
+                n.closer ?= true
+                n.delay ?= 8000
+                for key, value of n
+                    if typeof value == 'string'
+                        # Replace instances of {{root}} in string-based values with
+                        # root.  Poor-man's template variable for notifications.
+                        value = value.replace(/{{root}}/g, @root)
+                    n['pnotify_' + key] = value
+                $.pnotify n
 
     poll: (interval=@interval) ->
         if @timer
@@ -89,6 +108,9 @@ class @Stagehand
                     # then back off.
                     if $.isEmptyObject(@jobs) and notifications.length == 0 and @interval < @max_interval
                         @poll @interval * 2
+                    else if @interval > @min_interval
+                        # There was activity, so drop to the min interval
+                        @poll @min_interval
 
                 .fail (xhr, status, error) =>
                     # Some type of error occured (network failure?), so drop to

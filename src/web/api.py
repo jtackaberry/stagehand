@@ -26,15 +26,15 @@ def get_series_from_request(id):
 @webcoroutine()
 def show_add(job, id):
     manager = web.request['stagehand.manager']
-    job.notify('Adding series', 'Retrieving episode information for this series ...')
+    job.notify('alert', title='Adding series', text='Retrieving episode information for this series ...')
     try:
         series = yield manager.add_series(id)
         #yield kaa.delay(1)
         #series = manager.tvdb.get_series_by_substring('aliforni')
     except Exception, e:
-        job.notify_after('Failed to add series', str(e), timeout=2)
+        job.notify_after('alert', title='Failed to add series', text=str(e), timeout=2)
     else:
-        job.notify_after('Series added', 'Added series %s to database.' % series.name, timeout=2)
+        job.notify_after('alert', title='Series added', text='Added series %s to database.' % series.name, timeout=2)
     yield {}
 
 
@@ -47,7 +47,7 @@ def show_delete(job, id):
     # Notify the session about the removal, but do it via a timer so that
     # the notification happens on the next page load rather than in response
     # to the API call.
-    job.notify_after('Series Deleted', 'Series <b>%s</b> was removed from the database' % name)
+    job.notify_after('alert', title='Series Deleted', text='Series <b>%s</b> was removed from the database' % name)
     yield {}
 
 
@@ -115,7 +115,7 @@ def show_search(job):
 
     t0 = time.time()
     results = yield manager.tvdb.search(q.name)
-    job.notify('Search results', 'Search took %.3fs' % (time.time() - t0))
+    job.notify('alert', title='Search results', text='Search took %.3fs' % (time.time() - t0))
     # JSONify the SearchResult objects
     dictlist = []
     for r in results:

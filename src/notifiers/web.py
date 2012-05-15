@@ -12,5 +12,5 @@ class Notifier(NotifierBase):
         # TODO: don't spam individual notifications if # of episodes is more
         # than say 5.
         for ep in episodes:
-            web.notify('Episode retrieved', 'Downloaded %s %s' % (ep.series.name, ep.code))
+            web.notify('alert', title='Episode retrieved', text='Downloaded %s %s' % (ep.series.name, ep.code))
         yield

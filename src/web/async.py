@@ -26,11 +26,11 @@ class AsyncWebJob(object):
         self.result = None
         [setattr(self, k, v) for k, v in kwargs.items()]
 
-    def notify(self, title, text, **kwargs):
-        asyncweb.notify(title, text, session=self.session, id=self.id, **kwargs)
+    def notify(self, **kwargs):
+        asyncweb.notify(session=self.session, id=self.id, **kwargs)
 
-    def notify_after(self, title, text, **kwargs):
-        asyncweb.notify_after(title, text, session=self.session, **kwargs)
+    def notify_after(self, **kwargs):
+        asyncweb.notify_after(session=self.session, **kwargs)
 
 
     def finish(self, ip):
@@ -70,6 +70,7 @@ class AsyncWeb(object):
         if not self._job_queue and not self._notification_queue:
             # No more cleanup needed.
             self._cleanup_timer.stop()
+
 
     def new_job(self):
         session = web.request.cookies['stagehand.session']
@@ -117,7 +118,7 @@ class AsyncWeb(object):
         # Get all global notifications not seen by this session.
         global_notifications = self._notification_queue.get(None, [])
         for i, n in renumerate(global_notifications):
-            if session not in n.seen:
+            if session not in n.seen or n.universal:
                 response['notifications'].insert(0, n.result)
                 n.seen.add(session)
             if time.time() - n.timestamp > self.notification_timeout:
@@ -126,22 +127,47 @@ class AsyncWeb(object):
         return response
 
 
-    def notify(self, title, text, session=None, id=None, **kwargs):
-        n = AsyncWebJob(session=session, id=id, seen=set())
+    def notify(self, ntype, **kwargs):
+        """
+        Issue a notification for one or more web clients.
+
+        :param ntype: the type of this notification (e.g. ``alert``).  The
+                      web client will hook callbacks for certain types.
+        :type ntype: str
+        :param session: the session id the notification applies to, or None
+                        for all sessions
+        :type session: str
+        :param id: the job id the notification applies to, or None if no job is
+                   involved
+        :type id: str
+        :param replace: if True, replace all existing notifications of this type
+                        for the given session with the new notification (default: False)
+        :type replace: bool
+        :param universal: if True, do not track which sessions have seen the notification,
+                          and show it each time the client polls, until the notification
+                          expires.  Useful to ensure multiple windows from the same
+                          browser session receive the notification.
+        :type universal: bool
+        """
+        session = kwargs.pop('session', None)
+        replace = kwargs.pop('replace', False)
+        universal = kwargs.pop('universal', False)
+        n = AsyncWebJob(session=session, id=kwargs.pop('id', None), seen=set(), universal=universal)
         n.result = {
-            'title': title,
-            'text': text,
-            'nonblock': kwargs.get('nonblock', False),
-            'type': kwargs.get('type', 'notice'),
-            'animation': kwargs.get('animation', 'fade'),
-            'closer': kwargs.get('closer', True),
-            'delay': kwargs.get('delay', 8000)
+            '_ntype': ntype,
+            '_nid': self._next_id()
         }
+        n.result.update(kwargs)
+        if replace and session in self._notification_queue:
+            # Remove any notification for this type from the queue.
+            self._notification_queue[session] = [job for job in self._notification_queue[session]
+                                                     if n.result['_ntype'] != ntype]
         self._notification_queue.setdefault(session, []).append(n)
         self._cleanup_timer.start(60)
      
-    def notify_after(self, *args, **kwargs):
-        kaa.OneShotTimer(self.notify, *args, **kwargs).start(kwargs.get('timeout', 0))
+    def notify_after(self, **kwargs):
+        timeout = kwargs.pop('timeout', 0)
+        kaa.OneShotTimer(self.notify, **kwargs).start(timeout)
 
 
 asyncweb = AsyncWeb()

@@ -274,7 +274,7 @@ class Manager(object):
         # TODO: randomize time, twice a day
         kaa.Timer(self._check_update_tvdb).start(60*60, now=True)
         kaa.signals['shutdown'].connect_once(self._shutdown)
-        #web.notify('Global alert', 'Stagehand was restarted')
+        #web.notify('alert', title='Global alert', text='Stagehand was restarted')
         yield self._load_config()
 
         # Resume downloading any episodes we aborted.
@@ -449,7 +449,7 @@ class Manager(object):
         msg = 'Starting retrieval of %s %s (%s)' % (ep.series.name, ep.code, search_result.searcher)
         log.info(msg)
         msg += '<br/><br/>Check progress of <a href="{{root}}/schedule/aired">active downloads</a>.'
-        web.notify('Episode Download', msg)
+        web.notify('alert', title='Episode Download', text=msg)
 
         try:
             # retrieve() ensures that only RetrieverError is raised
