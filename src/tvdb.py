@@ -83,6 +83,16 @@ class Episode(object):
         return '<%s %s %s at 0x%x>' % (self.__class__.__name__, self.series.name, self.code, id(self))
 
 
+    def __eq__(self, other):
+        if isinstance(other, Episode) and self.id in other.ids:
+            if self is not other:
+                # XXX: temporary (debugging)
+                log.warning('episode %s has multiple instances', self)
+            return True
+        else:
+            return False
+
+
     def _dbattr(self, attr):
         if self._version != self._db._version:
             # dbrow cache may be stale, refresh.
@@ -282,6 +292,17 @@ class Season(object):
     def __repr__(self):
         return '<%s %s s%02d at 0x%x>' % (self.__class__.__name__, self.series.name, self.number, id(self))
 
+
+    def __eq__(self, other):
+        if isinstance(other, Season) and self.series == other.series and self.number == other.number:
+            if self is not other:
+                # XXX: temporary (debugging)
+                log.warning('season %s has multiple instances', self)
+            return True
+        else:
+            return False
+
+
     @property
     def path(self):
         if not self.series.cfg.flat:
@@ -348,6 +369,17 @@ class Series(object):
 
     def __repr__(self):
         return '<%s %s at 0x%x>' % (self.__class__.__name__, self.name, id(self))
+
+
+    def __eq__(self, other):
+        if isinstance(other, Series) and self.id in other.ids:
+            if self is not other:
+                # XXX: temporary (debugging)
+                log.warning('series %s has multiple instances', self)
+            return True
+        else:
+            return False
+
 
     def _dbattr(self, attr):
         if self._version != self._db._version:
