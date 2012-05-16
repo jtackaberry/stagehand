@@ -26,11 +26,11 @@ class AsyncWebJob(object):
         self.result = None
         [setattr(self, k, v) for k, v in kwargs.items()]
 
-    def notify(self, **kwargs):
-        asyncweb.notify(session=self.session, id=self.id, **kwargs)
+    def notify(self, ntype, **kwargs):
+        asyncweb.notify(ntype, session=self.session, id=self.id, **kwargs)
 
-    def notify_after(self, **kwargs):
-        asyncweb.notify_after(session=self.session, **kwargs)
+    def notify_after(self, ntype, **kwargs):
+        asyncweb.notify_after(ntype, session=self.session, **kwargs)
 
 
     def finish(self, ip):
@@ -165,9 +165,9 @@ class AsyncWeb(object):
         self._notification_queue.setdefault(session, []).append(n)
         self._cleanup_timer.start(60)
      
-    def notify_after(self, **kwargs):
+    def notify_after(self, ntype, **kwargs):
         timeout = kwargs.pop('timeout', 0)
-        kaa.OneShotTimer(self.notify, **kwargs).start(timeout)
+        kaa.OneShotTimer(self.notify, ntype, **kwargs).start(timeout)
 
 
 asyncweb = AsyncWeb()
