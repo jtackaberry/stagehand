@@ -192,6 +192,15 @@ class Episode(object):
     def preferred_path(self):
         return os.path.join(self.season.path, self.preferred_filename)
 
+    @property
+    def path(self):
+        """
+        The actual full path to the file if it has been downloaded.
+
+        If it hasn't been downloaded, None.
+        """
+        if self.filename:
+            return os.path.join(self.season.path, self.filename)
 
     @property
     def search_result(self):
