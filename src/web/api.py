@@ -147,25 +147,27 @@ def show_check(job):
 
 
 @web.route('/api/shows/<id>/episodes/<epcode>/status', method='POST')
-def show_episodes_status(id, epcode):
+@webcoroutine()
+def show_episodes_status(job, id, epcode):
     series = get_series_from_request(id)
     eps = [series.get_episode_by_code(code) for code in epcode.split(',')]
     if None in eps:
         raise web.HTTPError(404, 'Unknown episode for this show.')
 
+    action = web.request.query.value
     status_map = {
         'need': Episode.STATUS_NEED,
         'ignore': Episode.STATUS_IGNORE,
         'delete': Episode.STATUS_IGNORE
     }
     try:
-        status_val = status_map[web.request.query.value]
+        status_val = status_map[action]
     except KeyError:
         raise web.HTTPError(404, 'Invalid status code.')
 
     statuses = {}
     for ep in eps:
-        if ep.status == Episode.STATUS_HAVE and web.request.query.value != 'delete':
+        if ep.status == Episode.STATUS_HAVE and action != 'delete':
             # Asked to ignore or retrieve an episode we already have.  Do nothing.
             pass
         elif status_val == Episode.STATUS_NEED and ep.season.number == 0:
@@ -177,9 +179,19 @@ def show_episodes_status(id, epcode):
             ep.status = status_val
             # Clear any stored search result
             ep.search_result = None
+
+        if action == 'delete' and ep.filename and os.path.isfile(ep.path):
+            try:
+                os.unlink(ep.path)
+            except OSError as e:
+                job.notify('alert', title='Delete Episode', text='Failed to delete %s: %s' % (ep.path, e), type='error')
+            else:
+                job.notify('alert', title='Delete Episode', text='%s deleted' % ep.filename)
+                ep.filename = None
+
         statuses[ep.code] = episode_status_icon_info(ep)
 
-    return {'statuses': statuses}
+    yield {'statuses': statuses}
 
 
 @web.route('/api/restart')
