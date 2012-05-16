@@ -33,6 +33,20 @@ def load_plugins(type, scope):
     return valid, invalid
 
 
+def invoke_plugins(plugins, func, *args):
+    """
+    Invokes an async function (coroutine or threaded function) in parallel on
+    all supplied plugins.
+
+    :param plugins: a dict of plugins (name -> plugin)
+    :param func: the name of the function to invoke if it exists
+    :type func: str
+    :param *args: the arguments to pass to the plugin function
+    :returns: InProgressAll instance
+    """
+    return kaa.InProgressAll(getattr(p, func)(*args) for p in plugins.values() if hasattr(p, func))
+
+
 def fixsep(s, path=True):
     """
     Applies the configured separator policy to the given string.

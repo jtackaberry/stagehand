@@ -8,13 +8,13 @@ import gc
 from datetime import datetime, timedelta
 import kaa, kaa.rpc, kaa.config
 
-from . import web
+from . import web, searchers, retrievers, notifiers, providers
 from .tvdb import TVDB
 from .config import config
 from .utils import fixsep
-from .searchers import search, SearcherError
-from .retrievers import retrieve, RetrieverError
-from .notifiers import notify, NotifierError
+from .searchers import SearcherError
+from .retrievers import RetrieverError
+from .notifiers import NotifierError
 
 log = logging.getLogger('stagehand.manager')
 
@@ -298,6 +298,10 @@ class Manager(object):
         #web.notify('alert', title='Global alert', text='Stagehand was restarted')
         yield self._load_config()
 
+        # Start all plugins in parallel
+        yield kaa.InProgressAll(searchers.start(self), retrievers.start(self),
+                                notifiers.start(self), providers.start(self))
+
         # Resume downloading any episodes we aborted.
         for series in self.tvdb.series:
             for ep in series.episodes:
@@ -366,8 +370,8 @@ class Manager(object):
 
             log.info('searching for %d episode(s) of %s', len(episodes), series.name)
             # TODO: ideal_size
-            results = yield search(series, episodes, date=earliest, ideal_size=ideal_size,
-                                   min_size=min_size, quality=series.cfg.quality)
+            results = yield searchers.search(series, episodes, date=earliest, ideal_size=ideal_size,
+                                             min_size=min_size, quality=series.cfg.quality)
             if results:
                 # We have results, so add them to the retrieve queue and start
                 # the retriever coroutine (which is a no-op if it's already
@@ -443,7 +447,7 @@ class Manager(object):
         self._retrieve_queue_active = None
         self._notify_web_retriever_progress()
         if retrieved:
-            yield notify(retrieved)
+            yield notifiers.notify(retrieved)
 
     @kaa.coroutine()
     def _get_episode(self, ep, search_result):
@@ -474,7 +478,7 @@ class Manager(object):
 
         try:
             # retrieve() ensures that only RetrieverError is raised
-            ip = retrieve(search_result, target, ep)
+            ip = retrievers.retrieve(search_result, target, ep)
             #log.debug('not actually retrieving %s %s', ep.series.name, ep.code)
             #ip = fake_download(search_result, target, ep)
             ip.progress.connect(self._notify_web_retriever_progress)

@@ -3,12 +3,21 @@ import logging
 import re
 import kaa
 
-from ..utils import load_plugins
+from ..utils import load_plugins, invoke_plugins
 from ..config import config
 from .base import SearcherError
 
 log = logging.getLogger('stagehand.searchers')
 plugins, plugins_broken  = load_plugins('searchers', globals())
+
+
+@kaa.coroutine()
+def start(manager):
+    """
+    Called when the manager is starting.
+    """
+    yield invoke_plugins(plugins, 'start', manager)
+
 
 @kaa.coroutine(progress=True)
 def search(progress, series, episodes, date=None, min_size=None, ideal_size=None, quality='HD', skip=[]):

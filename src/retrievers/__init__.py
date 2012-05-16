@@ -2,12 +2,21 @@ from __future__ import absolute_import
 import logging
 import kaa
 
-from ..utils import load_plugins
+from ..utils import load_plugins, invoke_plugins
 from ..config import config
 from .base import RetrieverError, RetrieverAbortedError
 
 log = logging.getLogger('stagehand.retrievers')
 plugins, plugins_broken = load_plugins('retrievers', globals())
+
+
+@kaa.coroutine()
+def start(manager):
+    """
+    Called when the manager is starting.
+    """
+    yield invoke_plugins(plugins, 'start', manager)
+
 
 @kaa.coroutine(progress=True)
 def retrieve(progress, result, outfile, episode, skip=[]):

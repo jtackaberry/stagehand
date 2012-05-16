@@ -2,12 +2,21 @@ from __future__ import absolute_import
 import logging
 import kaa
 
-from ..utils import load_plugins
+from ..utils import load_plugins, invoke_plugins
 from ..config import config
 from .base import NotifierError
 
 log = logging.getLogger('stagehand.notifiers')
 plugins, plugins_broken = load_plugins('notifiers', globals())
+
+
+@kaa.coroutine()
+def start(manager):
+    """
+    Called when the manager is starting.
+    """
+    yield invoke_plugins(plugins, 'start', manager)
+
 
 @kaa.coroutine()
 def notify(episodes, skip=[]):
