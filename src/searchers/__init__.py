@@ -8,7 +8,7 @@ from ..config import config
 from .base import SearcherError
 
 log = logging.getLogger('stagehand.searchers')
-plugins = load_plugins('searchers', globals())
+plugins, plugins_broken  = load_plugins('searchers', globals())
 
 @kaa.coroutine(progress=True)
 def search(progress, series, episodes, date=None, min_size=None, ideal_size=None, quality='HD', skip=[]):

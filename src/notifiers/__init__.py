@@ -7,7 +7,7 @@ from ..config import config
 from .base import NotifierError
 
 log = logging.getLogger('stagehand.notifiers')
-plugins = load_plugins('notifiers', globals())
+plugins, plugins_broken = load_plugins('notifiers', globals())
 
 @kaa.coroutine()
 def notify(episodes, skip=[]):

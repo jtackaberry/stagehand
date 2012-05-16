@@ -7,7 +7,7 @@ from ..config import config
 from .base import RetrieverError, RetrieverAbortedError
 
 log = logging.getLogger('stagehand.retrievers')
-plugins = load_plugins('retrievers', globals())
+plugins, plugins_broken = load_plugins('retrievers', globals())
 
 @kaa.coroutine(progress=True)
 def retrieve(progress, result, outfile, episode, skip=[]):

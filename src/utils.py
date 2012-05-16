@@ -19,9 +19,10 @@ log = logging.getLogger('stagehand')
 def load_plugins(type, scope):
     filter = lambda name: name != 'base' and '_config' not in name
     plugins = get_plugins(group='stagehand.'+type, location=scope['__file__'], filter=filter, scope=scope)
-    valid = {}
+    valid, invalid = {}, {}
     for name, plugin in plugins.items():
         if isinstance(plugin, Exception):
+            invalid[name] = plugin
             log.error('failed to load %s plugin %s: %s', type[:-1], name, plugin)
         else:
             if hasattr(plugin, 'modconfig'):
@@ -29,7 +30,7 @@ def load_plugins(type, scope):
             valid[name] = plugin
             if hasattr(plugin, 'load'):
                 plugin.load()
-    return valid
+    return valid, invalid
 
 
 def fixsep(s, path=True):
