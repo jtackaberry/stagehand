@@ -1,8 +1,8 @@
 from __future__ import absolute_import
 import os
 import urllib
-import StringIO
 import logging
+import re
 import kaa
 import kaa.dateutils
 from BeautifulSoup import BeautifulStoneSoup
