@@ -38,7 +38,8 @@ class Searcher(SearcherBase):
 
         url = modconfig.url or Searcher.DEFAULT_URL_GLOBAL4
         url = url.format(subject=urllib.quote_plus(title), date=urllib.quote_plus(date), size=size)
-        status, rss = yield download(url, userpwd='%s:%s' % (modconfig.username, modconfig.password))
+        status, rss = yield download(url, retry=modconfig.retries,
+                                     userpwd='%s:%s' % (modconfig.username, modconfig.password))
         if status != 200:
             # TODO: handle status codes like 401 (unauth)
             raise SearcherError('HTTP status not ok (%d)' % status)
@@ -64,15 +65,7 @@ class Searcher(SearcherBase):
         """
         
         log.debug('searching for "%s" with minimum size %s', query, size)
-        for i in range(modconfig.retries or 1):
-            try:
-                rss = yield self._search_global5(query, size, date or '')
-                break
-            except CurlError, e:
-                # TODO: don't retry on permanent errors
-                log.warning('query failed (%s), retrying %d of 5', e.args[0], i+1)
-        else:
-            raise SearcherError('query failed too many times')
+        rss = yield self._search_global5(query, size, date or '')
 
         soup = BeautifulStoneSoup(rss)
         results = []
