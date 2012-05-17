@@ -27,6 +27,6 @@ def notify(episodes, skip=[]):
         try:
             yield notifier.notify(episodes)
         except NotifierError, e:
-            log.warning('notifier %s failed: %s', name, e.args[0])
+            log.error('notifier %s failed: %s', name, e.args[0])
         except Exception:
             log.exception('notifier failed with unhandled error')

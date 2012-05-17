@@ -33,7 +33,7 @@ def retrieve(progress, result, outfile, episode, skip=[]):
         except RetrieverAbortedError as e:
             log.info('retriever %s aborted transfer of %s: %s', name, result.filename, e.args[0])
         except RetrieverError as e:
-            log.warning('retriever %s failed to retrieve %s: %s', name, result.filename, e.args[0])
+            log.error('retriever %s failed to retrieve %s: %s', name, result.filename, e.args[0])
         except Exception:
             log.exception('retriever failed with unhandled error')
         else:

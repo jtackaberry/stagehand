@@ -31,7 +31,7 @@ def search(progress, series, episodes, date=None, min_size=None, ideal_size=None
         try:
             results = yield searcher.search(series, episodes, date, min_size, ideal_size, quality)
         except SearcherError, e:
-            log.warning('%s failed: %s', name, e.args[0])
+            log.error('%s failed: %s', name, e.args[0])
         except Exception:
             log.exception('%s failed with unhandled error', name)
         else:
