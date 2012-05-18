@@ -1250,29 +1250,45 @@ class TVDB(kaa.db.Database):
 
         # XXX: should remove conflicts from non-preferred providers?
         max_season = max(ep['season'] for idmap, ep in episodes)
-        provider_epids = {}  # idattr -> [id, id, ...]
+        # Keep track of database ids for episodes added/updated
+        dbids = []
         for idmap, ep in episodes:
-            [provider_epids.setdefault(idattr, []).append(epid) for idattr, epid in idmap.items()]
-            self._add_or_update(
+            obj = self._add_or_update(
                 'episode', idmap, addattrs={'status': Episode.STATUS_NONE}, parent=parent, 
                 name=fixquotes(ep['name']), season=ep['season'], episode=ep['episode'],
                 airdate=ep.get('airdate'), overview=fixquotes(ep.get('overview'))
             )
+            dbids.append(obj['id'])
 
-        # Remove from local database any episodes that were removed from
-        # providers' databases.
-        qattrs = dict((idattr, kaa.db.QExpr('not in', ids)) for idattr, ids in provider_epids.items())
-        obsolete = self.query(type='episode', parent=parent, orattrs=qattrs.keys(), **qattrs)
-        for row in obsolete:
-            self.delete(row)
-            epinfo = '%s s%02de%02d: %s' % (series['name'], row['season'], row['episode'], row['name'])
-            log.debug('removing obsolete episode %s', epinfo)
-            dupes = self.query(type='episode', parent=parent, season=row['season'], episode=row['episode'])
+        # Now fetch all episodes in the database that _weren't_ modified.  These were
+        # likely removed on the providers' databases and we need to remove them locally.
+        #
+        # Another scenario is that an episode was previously unmatched between two or
+        # more providers which generated multiple rows, but has since been matched
+        # (perhaps due to updates to the air date and/or episode name that allowed for
+        # the match).  In this case, the first instance of the episode in the table
+        # will get updated above to sync the provider ids, causing the remaining row(s)
+        # to be orphaned.
+        #
+        # There may be (probably are) other corner cases as well that could cause
+        # orphaned rows.
+        orphans = self.query(type='episode', parent=parent, id=kaa.db.QExpr('not in', dbids))
+        for orphan in orphans:
+            epinfo = '%s s%02de%02d: %s' % (series['name'], orphan['season'], orphan['episode'], orphan['name'])
+            log.debug('removing orphaned entry for %s', epinfo)
+            dupes = self.query(type='episode', parent=parent, id=kaa.db.QExpr('!=', orphan['id']),
+                               season=orphan['season'], episode=orphan['episode'])
             if dupes:
-                # FIXME: we might need to reconcile local attributes like status, filename, blacklist,
-                # search_result.  For now, log a warning if status of the obsolete row was changed.
-                if row['status'] != dupes[0]['status']:
+                # FIXME: ugly, and will only get uglier as we add other attributes to check
+                if (orphan['status'] != Episode.STATUS_NONE and orphan['status'] not in (d['status'] for d in dupes)) or \
+                   (orphan['filename'] and orphan['filename'] not in (d['filename'] for d in dupes)) or \
+                   (orphan['search_result'] and orphan['search_result'] not in (d['search_result'] for d in dupes)):
+                    # FIXME: we might need to reconcile local attributes like status, filename,
+                    # blacklist, search_result.  This might not actually be a problem, but until we
+                    # handle it properly, log a warning.
                     log.warning('FIXME: removal of obsolete episode (%s) discards local attributes', epinfo)
+            self.delete(orphan)
+
         self.purge_caches()
 
 
