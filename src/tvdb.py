@@ -84,13 +84,17 @@ class Episode(object):
 
 
     def __eq__(self, other):
-        if isinstance(other, Episode) and self.id in other.ids:
+        if isinstance(other, Episode) and self._dbattr('id') == other._dbattr('id'):
             if self is not other:
                 # XXX: temporary (debugging)
                 log.warning('episode %s has multiple instances', self)
             return True
         else:
             return False
+
+
+    def __hash__(self):
+        return hash((Episode, self._dbattr('id')))
 
 
     def _dbattr(self, attr):
@@ -303,6 +307,10 @@ class Season(object):
             return False
 
 
+    def __hash__(self):
+        return hash((Season, self.series._dbattr('id')), self.number)
+
+
     @property
     def path(self):
         if not self.series.cfg.flat:
@@ -372,13 +380,17 @@ class Series(object):
 
 
     def __eq__(self, other):
-        if isinstance(other, Series) and self.id in other.ids:
+        if isinstance(other, Series) and self._dbattr('id') == other._dbattr('id'):
             if self is not other:
                 # XXX: temporary (debugging)
                 log.warning('series %s has multiple instances', self)
             return True
         else:
             return False
+
+
+    def __hash__(self):
+        return hash((Series, self._dbattr('id')))
 
 
     def _dbattr(self, attr):
