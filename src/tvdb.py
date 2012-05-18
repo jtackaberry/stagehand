@@ -1012,6 +1012,8 @@ class TVDB(kaa.db.Database):
         :param dirty: a list of provider objects known to have changes relative to the
                       local cached copy in the database.  (This list is ignored if
                       the series is not yet in the database.)
+        :param preferred: the provider object which should be considered the authoritative
+                          source of episode data for this series
         :param fast: if True, return as soon as series data has been retrieved from
                      the given provider (if necessary), and the other providers
                      will be contacted in the background; if False, all providers
