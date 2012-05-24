@@ -36,12 +36,14 @@ class @Stagehand
 
     api: (url, data={}, type='GET') ->
         dfd = $.Deferred()
-        $.ajax(url: @root + url, data: data, type: type.toUpperCase())
+        xhr = $.ajax(url: @root + url, data: data, type: type.toUpperCase())
             .done (response) =>
                 if not response.jobid?
                     # Not a webcoroutine
+                    response.xhr = xhr
                     return dfd.resolve(response)
-                @jobs[response.jobid] = dfd
+
+                @jobs[response.jobid] = [dfd, xhr]
                 if response.pending
                     dfd.notify response.jobid
                 if response.pending and @interval > response.interval
@@ -55,7 +57,7 @@ class @Stagehand
                     @poll(1000)
                 @handle_response response
 
-            .fail (xhr, status, error) =>
+            .fail (xhr, status) =>
                 dfd.reject message: "HTTP #{xhr.status}: #{xhr.statusText}", xhr: xhr
         return dfd.promise()
 
@@ -63,11 +65,13 @@ class @Stagehand
     handle_response: ({jobs, notifications}) ->
         for job in jobs
             if @jobs[job.id]
-                if job.error
-                    @jobs[job.id].reject job.error
-                else
-                    @jobs[job.id].resolve job.result
+                [dfd, xhr] = @jobs[job.id]
                 delete @jobs[job.id]
+                if job.error
+                    job.error.xhr = xhr
+                    dfd.reject job.error
+                else
+                    dfd.resolve job.result
 
         for n in notifications
             if @handlers[n._ntype]?
