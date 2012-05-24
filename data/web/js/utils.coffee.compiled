@@ -41,7 +41,7 @@
       this.root = root;
       this.jobs = {};
       this.timer = null;
-      this.min_interval = 1000;
+      this.min_interval = 5000;
       this.max_interval = 10000;
       this.handlers = {};
       this.poll(this.min_interval);
@@ -56,7 +56,7 @@
     };
 
     Stagehand.prototype.api = function(url, data, type) {
-      var dfd,
+      var dfd, xhr,
         _this = this;
       if (data == null) {
         data = {};
@@ -65,15 +65,16 @@
         type = 'GET';
       }
       dfd = $.Deferred();
-      $.ajax({
+      xhr = $.ajax({
         url: this.root + url,
         data: data,
         type: type.toUpperCase()
       }).done(function(response) {
         if (!(response.jobid != null)) {
+          response.xhr = xhr;
           return dfd.resolve(response);
         }
-        _this.jobs[response.jobid] = dfd;
+        _this.jobs[response.jobid] = [dfd, xhr];
         if (response.pending) {
           dfd.notify(response.jobid);
         }
@@ -83,7 +84,7 @@
           _this.poll(1000);
         }
         return _this.handle_response(response);
-      }).fail(function(xhr, status, error) {
+      }).fail(function(xhr, status) {
         return dfd.reject({
           message: "HTTP " + xhr.status + ": " + xhr.statusText,
           xhr: xhr
@@ -93,26 +94,28 @@
     };
 
     Stagehand.prototype.handle_response = function(_arg) {
-      var f, job, jobs, key, n, notifications, value, _i, _j, _k, _len, _len1, _len2, _ref, _results;
+      var dfd, f, job, jobs, key, n, notifications, value, xhr, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _results;
       jobs = _arg.jobs, notifications = _arg.notifications;
       for (_i = 0, _len = jobs.length; _i < _len; _i++) {
         job = jobs[_i];
         if (this.jobs[job.id]) {
-          if (job.error) {
-            this.jobs[job.id].reject(job.error);
-          } else {
-            this.jobs[job.id].resolve(job.result);
-          }
+          _ref = this.jobs[job.id], dfd = _ref[0], xhr = _ref[1];
           delete this.jobs[job.id];
+          if (job.error) {
+            job.error.xhr = xhr;
+            dfd.reject(job.error);
+          } else {
+            dfd.resolve(job.result);
+          }
         }
       }
       _results = [];
       for (_j = 0, _len1 = notifications.length; _j < _len1; _j++) {
         n = notifications[_j];
         if (this.handlers[n._ntype] != null) {
-          _ref = this.handlers[n._ntype];
-          for (_k = 0, _len2 = _ref.length; _k < _len2; _k++) {
-            f = _ref[_k];
+          _ref1 = this.handlers[n._ntype];
+          for (_k = 0, _len2 = _ref1.length; _k < _len2; _k++) {
+            f = _ref1[_k];
             f(n);
           }
         }
@@ -184,8 +187,10 @@
             jobs: jobs,
             notifications: notifications
           });
-          if ($.isEmptyObject(_this.jobs) && notifications.length === 0 && _this.interval < _this.max_interval) {
-            return _this.poll(_this.interval * 2);
+          if ($.isEmptyObject(_this.jobs) && notifications.length === 0) {
+            if (_this.interval < _this.max_interval) {
+              return _this.poll(_this.interval * 2);
+            }
           } else if (_this.interval > _this.min_interval) {
             return _this.poll(_this.min_interval);
           }
