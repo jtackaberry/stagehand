@@ -24,7 +24,7 @@ class @Stagehand
     constructor: (@root) ->
         @jobs = {}
         @timer = null
-        @min_interval = 1000
+        @min_interval = 5000
         @max_interval = 10000
         @handlers = {}
         @poll @min_interval
@@ -106,8 +106,9 @@ class @Stagehand
                     @handle_response {jobs, notifications}
                     # If we have no active jobs or notifications and we're below the max interval,
                     # then back off.
-                    if $.isEmptyObject(@jobs) and notifications.length == 0 and @interval < @max_interval
-                        @poll @interval * 2
+                    if $.isEmptyObject(@jobs) and notifications.length == 0
+                        if @interval < @max_interval
+                            @poll @interval * 2
                     else if @interval > @min_interval
                         # There was activity, so drop to the min interval
                         @poll @min_interval
