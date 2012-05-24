@@ -13,7 +13,7 @@ log = logging.getLogger('stagehand.retrievers')
 class RetrieverError(Exception):
     pass
 
-class RetrieverAbortedError(RetrieverError, kaa.InProgressAborted):
+class RetrieverAborted(RetrieverError, kaa.InProgressAborted):
     pass
 
 class RetrieverBase(object):
