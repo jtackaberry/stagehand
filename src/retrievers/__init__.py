@@ -40,6 +40,6 @@ def retrieve(progress, result, outfile, episode, skip=[]):
             return
 
     if not tried:
-        raise RetrieverError('No enabled retriever found for the given result')
+        raise RetrieverError('No enabled retriever found for the given result (%s)' % result.type)
     else:
         raise RetrieverError('No retriever plugins were able to fetch the file')
