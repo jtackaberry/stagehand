@@ -99,7 +99,7 @@ class Searcher(SearcherBase):
             # value to compare, because it means that even different URLs can
             # end up being the same file.
             a_hash = re.search(r'/([0-9a-f]{32,})', a.url).group(1)
-            b_hash = re.search(r'/[0-9a-f]{32,})', b.url).group(1)
+            b_hash = re.search(r'/([0-9a-f]{32,})', b.url).group(1)
             return a_hash == b_hash
         except AttributeError:
             # Wasn't able to find hash in URL, so compare the URLs directly.
