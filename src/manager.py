@@ -133,7 +133,7 @@ class Manager(object):
     @kaa.coroutine()
     def _check_update_tvdb(self):
         servertime = self.tvdb.get_last_updated()
-        if servertime and time.time() - float(servertime) > 60*60*12:
+        if servertime and time.time() - float(servertime) > 60*60*24:
             count = yield self.tvdb.sync()
             # FIXME: if count, need to go through all episodes and mark future episodes as STATUS_NEED
 
