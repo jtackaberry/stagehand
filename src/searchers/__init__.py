@@ -22,7 +22,11 @@ def start(manager):
 
 @kaa.coroutine(progress=True)
 def search(progress, series, episodes, skip=[]):
-    earliest = min(ep.airdate for ep in episodes if ep.airdate) or None
+    try:
+        earliest = min(ep.airdate for ep in episodes if ep.airdate)
+    except ValueError:
+        # Empty sequence: no eps had an airdate.
+        earliest = None
     if earliest:
         # Allow for episodes to be posted 10 days before the supposed
         # air date.

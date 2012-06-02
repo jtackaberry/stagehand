@@ -69,7 +69,9 @@
                     <td style='text-align: left'>{{ep.series.name}}</td>
                     <td style='padding:0'>{{ep.season.number}}x{{ep.number}}</td>
                     <td style='text-align: left'>{{ep.name}}</td>
-                    <td style='text-align: left; white-space: nowrap'>{{ep.airdate.strftime('%Y-%m-%d')}}</td>
+                    <td style='text-align: left; white-space: nowrap'>
+                        {{ep.airdate.strftime('%Y-%m-%d') if ep.airdate else 'Not aired'}}
+                    </td>
                 %ip = manager.get_episode_retrieve_inprogress(ep)
                 %if ip:
                     <td align='valign' title='{{int(ip.progress.speed)}} KB/s'>
@@ -92,14 +94,16 @@
             %end
 
         %end
-        %last_week = None
+        %last_week = object() # sentinel
         %for ep, icon, title, week in episodes:
             %if last_week != min(week, 8):
                 %last_week = min(week, 8)
                 <tr class='heading' id='group-{{week}}'>
                     <td style='padding: 0'><input type='checkbox' /></td>
                     <td colspan="5" style='text-align: left; padding-left: 0.5em'>
-                        %if week == 0:
+                        %if week == None:
+                            <b>Unknown Air Date</b>
+                        %elif week == 0:
                             <b>This Week</b>
                         %elif week == 1:
                             <b>Last Week</b>
@@ -116,7 +120,9 @@
                 <td style='text-align: left'>{{ep.series.name}}</td>
                 <td style='padding:0'>{{ep.season.number}}x{{ep.number}}</td>
                 <td style='text-align: left'>{{ep.name}}</td>
-                <td style='text-align: left; white-space: nowrap'>{{ep.airdate.strftime('%Y-%m-%d')}}</td>
+                <td style='text-align: left; white-space: nowrap'>
+                    {{ep.airdate.strftime('%Y-%m-%d') if ep.airdate else 'Not aired'}}
+                </td>
                 <td>
                     <img src='{{root}}/static/img/icon-20-status-{{icon}}.png' alt='{{title}}' title='{{title}}' />
                 </td>

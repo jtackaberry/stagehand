@@ -115,15 +115,21 @@ def schedule_aired():
     episodes = []
     for s in manager.tvdb.series:
         for ep in s.episodes:
-            if not ep.aired or manager.is_episode_queued_for_retrieval(ep):
+            if ep.status != ep.STATUS_NEED_FORCED and (not ep.aired or manager.is_episode_queued_for_retrieval(ep)):
                 continue
             icon, title = episode_status_icon_info(ep)
-            # week 0 is anything on or after sunday
-            week = (max(0, (sunday - ep.airdate).days) + 6) / 7
-            if (icon in ('ignore', 'have') and week >= weeks) or (icon == 'ignore' and status == 'have'):
-                continue
+            if ep.airdate:
+                # week 0 is anything on or after sunday
+                week = (max(0, (sunday - ep.airdate).days) + 6) // 7
+                if (icon in ('ignore', 'have') and week >= weeks) or (icon == 'ignore' and status == 'have'):
+                    continue
+            else:
+                # Episode is STATUS_NEED_FORCED without an airdate.
+                week = None
             episodes.append((ep, icon, title, week))
-    episodes.sort(key=lambda i: (i[0].airdatetime, i[0].name), reverse=True)
+    # For episodes without an airdate, just use 1900-01-01 for sorting
+    # purposes, so they sorted last.
+    episodes.sort(key=lambda i: (i[0].airdatetime or datetime(1900, 1, 1), i[0].name), reverse=True)
 
     return {
         'weeks': weeks,

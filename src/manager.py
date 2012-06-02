@@ -314,7 +314,8 @@ class Manager(object):
                 # for the latest season regardless of airdate.  (Gives the user a way
                 # to force an update if airdate is not correct on tvdb.)
                 if ep.ready and not ep.series.cfg.paused:
-                    log.debug('need %s %s (%s): %s', series.name, ep.code, ep.airdatetime.strftime('%Y-%m-%d %H:%M'), ep.name)
+                    airdate = ep.airdatetime.strftime('%Y-%m-%d %H:%M') if ep.airdatetime else 'unknown air date'
+                    log.debug('need %s %s (%s): %s', series.name, ep.code, airdate, ep.name)
                     if self.is_episode_queued_for_retrieval(ep):
                         log.debug('episode is already queued for retrieval, skipping')
                         log.debug('retrieve queue is %s', self.retrieve_queue)
