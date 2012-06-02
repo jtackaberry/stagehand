@@ -13,7 +13,7 @@ from .tvdb import TVDB
 from .config import config
 from .utils import fixsep
 from .searchers import SearcherError
-from .retrievers import RetrieverError, RetrieverAborted, RetrieverAbortedHard
+from .retrievers import RetrieverError, RetrieverAborted, RetrieverAbortedHard, RetrieverAbortedSoft
 from .notifiers import NotifierError
 
 log = logging.getLogger('stagehand.manager')
