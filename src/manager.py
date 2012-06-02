@@ -21,7 +21,6 @@ log = logging.getLogger('stagehand.manager')
 
 class Manager(object):
     def __init__(self, cfgdir=None, datadir=None, cachedir=None):
-        self.series_by_name = {}
         # A list of episodes to be retrieved.
         # [(Episode, [SearchResult, ...]), (Episode, [SearchResult, ...])]
         self._retrieve_queue = []
@@ -131,11 +130,6 @@ class Manager(object):
         return os.getpid()
 
 
-    def _build_series_by_name_dict(self):
-        # XXX: what about different series with the same name?
-        self.series_by_name = dict((s.name_as_url_segment, s) for s in self.tvdb.series)
-
-
     @kaa.coroutine()
     def _check_update_tvdb(self):
         servertime = self.tvdb.get_last_updated()
@@ -175,7 +169,6 @@ class Manager(object):
             series = yield self._add_series_to_db(id, fast=True)
             if not self.tvdb.get_config_for_series(id, series):
                 config.series.append(config.series(id=id, path=fixsep(series.name)))
-            self._build_series_by_name_dict()
         yield series
 
 
@@ -190,7 +183,6 @@ class Manager(object):
         except ValueError:
             pass
         self.tvdb.delete_series(series)
-        self._build_series_by_name_dict()
 
 
     @kaa.coroutine()
@@ -233,8 +225,6 @@ class Manager(object):
 
             # Add all ids for this series to the seen list.
             seen.update(series.ids)
-
-        self._build_series_by_name_dict()
 
         # Check the database for series that aren't in the config.  This indicates the
         # DB is out of sync with config.  Log an error, and mark the series as
