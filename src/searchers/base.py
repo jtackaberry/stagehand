@@ -328,7 +328,7 @@ class SearchResult(object):
 
 
     def __eq__(self, other):
-        if not isinstance(other, SearchResult) or self.searcher != other.searcher:
+        if not isinstance(other, SearchResult) or self.type != other.type:
             return False
         return self._get_searcher()._check_results_equal(self, other)
 
