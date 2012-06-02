@@ -47,7 +47,7 @@ class SearcherBase(object):
             # Want.
             'mkv': 3, 'mp4': 2, 'avi': 1,
             # Don't want.
-            'wmv': -inf, 'mpg': -inf, 'ts': -inf
+            'wmv': -inf, 'mpg': -inf, 'ts': -inf, 'rar': -inf
         }
         av = {
             (r'[xh]\.?264', r'(ac-?3|dts)'): 10,
