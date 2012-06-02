@@ -28,7 +28,13 @@ class Retriever(RetrieverBase):
             r = self.verify_result_file(episode, result, outfile)
         except RetrieverError as e:
             # Verify failed, abort download.
-            curl_ip.abort(RetrieverAbortedSoft(*e.args))
+            try:
+                curl_ip.abort(RetrieverAbortedSoft(*e.args))
+            except kaa.InProgressAborted:
+                # curl doesn't handle this so abort() reraises.  We can just
+                # absorb this silently, since it will bubble up through
+                # _retrieve()
+                pass
             return False
         else:
             if r is not False:
