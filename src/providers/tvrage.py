@@ -110,8 +110,8 @@ class Provider(ProviderBase):
         url = self.hostname + '/feeds/full_show_info.php?sid=' + id
         log.debug2('fetching series data from %s', url)
         STAY_LOCAL = os.getenv('STAY_LOCAL', 0)
-        if STAY_LOCAL and os.path.exists('%s-tvrage.xml' % id):
-            url = '%s-tvrage.xml' % id
+        if STAY_LOCAL and os.path.exists(kaa.tempfile('%s-tvrage.xml' % id)):
+            url = kaa.tempfile('%s-tvrage.xml' % id)
 
         eps = []
         for tag, attrs, data in (yield parse_xml(url, nest=['Episodelist', 'Season', 'episode'])):
