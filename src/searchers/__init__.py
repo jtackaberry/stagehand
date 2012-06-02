@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 import logging
 import re
+from datetime import timedelta
 import kaa
 
 from ..utils import load_plugins, invoke_plugins
@@ -20,7 +21,19 @@ def start(manager):
 
 
 @kaa.coroutine(progress=True)
-def search(progress, series, episodes, date=None, min_size=None, ideal_size=None, quality='HD', skip=[]):
+def search(progress, series, episodes, skip=[]):
+    earliest = min(ep.airdate for ep in episodes if ep.airdate) or None
+    if earliest:
+        # Allow for episodes to be posted 10 days before the supposed
+        # air date.
+        earliest = (earliest - timedelta(days=10)).strftime('%Y-%m-%d')
+
+    # XXX: should probably review these wild-ass min size guesses
+    mb_per_min = 5.5 if series.cfg.quality == 'HD' else 3
+    min_size = (series.runtime or 30) * mb_per_min * 1024 * 1024
+    # FIXME: magic factor
+    ideal_size = min_size * (10 if series.cfg.quality == 'Any' else 5)
+
     tried = set()
     always = [name for name in plugins if plugins[name].Searcher.ALWAYS_ENABLED]
     for name in config.searchers.enabled + always:
@@ -29,7 +42,7 @@ def search(progress, series, episodes, date=None, min_size=None, ideal_size=None
         tried.add(name)
         searcher = plugins[name].Searcher()
         try:
-            results = yield searcher.search(series, episodes, date, min_size, ideal_size, quality)
+            results = yield searcher.search(series, episodes, earliest, min_size, ideal_size, series.cfg.quality)
         except SearcherError, e:
             log.error('%s failed: %s', name, e.args[0])
         except Exception:

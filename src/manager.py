@@ -346,22 +346,8 @@ class Manager(object):
         """
         episodes_found = []
         for series, episodes in need.items():
-            earliest = min(ep.airdate for ep in episodes if ep.airdate) or None
-            if earliest:
-                # Allow for episodes to be posted 10 days before the supposed
-                # air date.
-                earliest = (earliest - timedelta(days=10)).strftime('%Y-%m-%d')
-
-            # XXX: should probably review these wild-ass min size guesses
-            mb_per_min = 5.5 if series.cfg.quality == 'HD' else 3
-            min_size = (series.runtime or 30) * mb_per_min * 1024 * 1024
-            # FIXME: magic factor
-            ideal_size = min_size * (10 if series.cfg.quality == 'Any' else 5)
-
             log.info('searching for %d episode(s) of %s', len(episodes), series.name)
-            # TODO: ideal_size
-            results = yield searchers.search(series, episodes, date=earliest, ideal_size=ideal_size,
-                                             min_size=min_size, quality=series.cfg.quality)
+            results = yield searchers.search(series, episodes)
             if results:
                 # We have results, so add them to the retrieve queue and start
                 # the retriever coroutine (which is a no-op if it's already
