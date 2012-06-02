@@ -13,8 +13,27 @@ log = logging.getLogger('stagehand.retrievers')
 class RetrieverError(Exception):
     pass
 
-class RetrieverAborted(RetrieverError, kaa.InProgressAborted):
+
+class RetrieverAborted(kaa.InProgressAborted, RetrieverError):
     pass
+
+
+class RetrieverAbortedSoft(RetrieverAborted):
+    """
+    A retrieve() InProgress may be aborted with this exception to abort the
+    retrieval of the active search result.  If there are other search results
+    for the episode being downloaded, they will be tried.
+    """
+    pass
+
+
+class RetrieverAbortedHard(RetrieverAborted):
+    """
+    Like RetrieverAbortedSoft, except no further results will be tried for the
+    episode.
+    """
+    pass
+
 
 class RetrieverBase(object):
     # Values must be populated by subclasses.

@@ -13,7 +13,7 @@ from .tvdb import TVDB
 from .config import config
 from .utils import fixsep
 from .searchers import SearcherError
-from .retrievers import RetrieverError
+from .retrievers import RetrieverError, RetrieverAborted, RetrieverAbortedHard
 from .notifiers import NotifierError
 
 log = logging.getLogger('stagehand.manager')
@@ -253,6 +253,20 @@ class Manager(object):
         return False
 
 
+    def cancel_episode_retrieval(self, ep):
+        # If the episode is in the pending queue, remove it.
+        for qep, results in self._retrieve_queue[:]:
+            if ep == qep:
+                self._retrieve_queue.remove((qep, results))
+
+        # If the episode is being actively downloaded, abort it.
+        ip = self.get_episode_retrieve_inprogress(ep)
+        if ip:
+            try:
+                ip.abort(RetrieverAbortedHard('download cancelled by request'))
+            except RetrieverAbortedHard:
+                pass
+
 
     def _shutdown(self):
         log.info('shutting down')
@@ -393,19 +407,12 @@ class Manager(object):
             elif ep.filename and os.path.exists(os.path.join(ep.season.path, ep.filename)):
                 # The episode filename exists.  Do we need to resume?
                 if ep.search_result:
-                    # Yes, there is a search result for this episode, so resume it.  First
-                    # remove this result from ep_results so we don't try it again in
-                    # case this attempt fails.
+                    # Yes, there is a search result for this episode, so move it to the
+                    # front of the result list so it will be tried first.
                     if ep.search_result in ep_results:
                         ep_results.remove(ep.search_result)
+                    ep_results = [ep.search_result] + ep_results
                     log.info('resuming download from last search result')
-                    success = yield self._get_episode(ep, ep.search_result)
-                    if success:
-                        retrieved.append(ep)
-                        # Move onto the next episode.
-                        continue
-                    else:
-                        log.warning('download failed, trying other search results')
                 else:
                     # XXX: should we move it out of the way and try again?
                     log.error('retriever was scheduled to fetch %s but it already exists, skipping', 
@@ -415,7 +422,14 @@ class Manager(object):
             # Find the highest scoring item for this episode and retrieve it.
             # TODO: also validate series name.
             for result in ep_results:
-                success = yield self._get_episode(ep, result)
+                try:
+                    success = yield self._get_episode(ep, result)
+                except RetrieverAbortedHard:
+                    # Hard abort: we're done.
+                    break
+                except RetrieverAbortedSoft:
+                    # Soft abort: try another result.
+                    continue
                 if success:
                     retrieved.append(ep)
                     # Break result list for this episode and move onto next episode.
@@ -461,14 +475,20 @@ class Manager(object):
             ip.progress.connect(self._notify_web_retriever_progress)
             self._retrieve_inprogress[ep] = ip
             yield ip
-        except RetrieverError, e:
+        except RetrieverError as e:
             ep.filename = ep.search_result = None
             if os.path.exists(target):
                 # TODO: handle permission problem
-                log.debug('deleting failed attempt %s', target)
+                log.debug('deleting failed/aborted attempt %s', target)
                 os.unlink(target)
-            log.error(e.args[0])
-            yield False
+            if isinstance(e, RetrieverAborted):
+                # Reraise RetrieverAborted errors so _process_retrieve_queue() can
+                # handle appropriately.
+                raise
+            else:
+                # Otherwise log the error
+                log.error(e.args[0])
+                yield False
         else:
             # TODO: notify per episode (as well as batches)
             log.info('successfully retrieved %s %s', ep.series.name, ep.code)

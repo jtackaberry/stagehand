@@ -4,7 +4,7 @@ import kaa
 
 from ..utils import load_plugins, invoke_plugins
 from ..config import config
-from .base import RetrieverError, RetrieverAborted
+from .base import RetrieverError, RetrieverAborted, RetrieverAbortedSoft, RetrieverAbortedHard
 
 log = logging.getLogger('stagehand.retrievers')
 plugins, plugins_broken = load_plugins('retrievers', globals())
@@ -30,8 +30,16 @@ def retrieve(progress, result, outfile, episode, skip=[]):
         retriever = plugins[name].Retriever()
         try:
             yield retriever.retrieve(progress, episode, result, outfile)
-        except RetrieverAborted as e:
+        except RetrieverAbortedSoft as e:
+            # Happens when the retriever itself aborts the download, e.g. because
+            # the file failed to meet the resolution requirements.
             log.info('retriever %s aborted transfer of %s: %s', name, result.filename, e.args[0])
+            raise
+        except RetrieverAbortedHard as e:
+            # Happens when something outside (like the manager) wants to abort
+            # retrieval of this episode altogether.
+            log.info('transfer of %s was aborted: %s', result.filename, e.args[0])
+            raise
         except RetrieverError as e:
             log.error('retriever %s failed to retrieve %s: %s', name, result.filename, e.args[0])
         except Exception:

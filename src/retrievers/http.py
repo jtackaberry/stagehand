@@ -7,7 +7,7 @@ import kaa
 from ..utils import Curl, download
 from ..curl import CurlError
 from ..config import config
-from .base import RetrieverBase, RetrieverError, RetrieverAborted
+from .base import RetrieverBase, RetrieverError, RetrieverAbortedSoft
 
 __all__ = ['Retriever']
 
@@ -28,7 +28,7 @@ class Retriever(RetrieverBase):
             r = self.verify_result_file(episode, result, outfile)
         except RetrieverError as e:
             # Verify failed, abort download.
-            curl_ip.abort(RetrieverAborted(*e.args))
+            curl_ip.abort(RetrieverAbortedSoft(*e.args))
             return False
         else:
             if r is not False:
