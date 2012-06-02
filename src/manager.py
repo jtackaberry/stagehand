@@ -366,12 +366,12 @@ class Manager(object):
                                    self.retrieve_queue)
                         continue
                     for r in ep_results:
-                        log.debug2('result %s (%dM)', r.filename, r.size / 1048576.0)
+                        log.debug2('result %s (%dM) (%s)', r.filename, r.size / 1048576.0, r.searcher)
                 episodes_found.extend(results.keys())
                 self._retrieve_queue.extend(results.items())
                 self._process_retrieve_queue()
 
-        log.info('new episode check finished, found %d results', len(episodes_found))
+        log.info('new episode check finished, found %d/%d episodes', len(episodes_found), len(need))
         yield episodes_found
 
 
