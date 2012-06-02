@@ -149,6 +149,7 @@ def show_check(job):
 @web.route('/api/shows/<id>/episodes/<epcode>/status', method='POST')
 @webcoroutine()
 def show_episodes_status(job, id, epcode):
+    manager = web.request['stagehand.manager']
     series = get_series_from_request(id)
     eps = [series.get_episode_by_code(code) for code in epcode.split(',')]
     if None in eps:
@@ -166,6 +167,7 @@ def show_episodes_status(job, id, epcode):
         raise web.HTTPError(404, 'Invalid status code.')
 
     statuses = {}
+    do_check_new_episodes = False
     for ep in eps:
         if ep.status == Episode.STATUS_HAVE and action != 'delete':
             # Asked to ignore or retrieve an episode we already have.  Do nothing.
@@ -180,6 +182,11 @@ def show_episodes_status(job, id, epcode):
             # Clear any stored search result
             ep.search_result = None
 
+        if ep.status == Episode.STATUS_IGNORE:
+            manager.cancel_episode_retrieval(ep)
+        elif (ep.status == Episode.STATUS_NEED and ep.aired) or ep.status == Episode.STATUS_NEED_FORCED:
+            # Episode either forced or marked as needed and is aired.  Ask the manager to do a search.
+            do_check_new_episodes = True
         if action == 'delete' and ep.filename and os.path.isfile(ep.path):
             try:
                 os.unlink(ep.path)
@@ -191,6 +198,8 @@ def show_episodes_status(job, id, epcode):
 
         statuses[ep.code] = episode_status_icon_info(ep)
 
+    if do_check_new_episodes:
+        manager.check_new_episodes()
     yield {'statuses': statuses}
 
 
