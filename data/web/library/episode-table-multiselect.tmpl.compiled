@@ -68,6 +68,7 @@
         });
       }
     });
+    $(this).trigger('scroll.stagehand');
     return open_button_bar_if_needed();
   });
 

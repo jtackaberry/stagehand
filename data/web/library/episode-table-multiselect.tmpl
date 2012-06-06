@@ -48,6 +48,7 @@
                 bar.css position: 'fixed', top: 0, marginTop: '40px'
             else
                 bar.css position: 'absolute', top: 'inherit', marginTop: '80px'
+        $(@).trigger 'scroll.stagehand'
         open_button_bar_if_needed()
         #$('#episode-button-bar').css(display: 'none', visibility: 'visible')
 
