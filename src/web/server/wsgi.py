@@ -128,7 +128,6 @@ class NonBlockingWSGIServer(WSGIServer):
         self.limit = 1000
         # Number of seconds before we bounce idle clients.
         self.timeout = 60
-        self._shutdown_event = threading.Event()
 
 
     def shutdown(self):
@@ -141,13 +140,11 @@ class NonBlockingWSGIServer(WSGIServer):
             client.close(force=True)
         # Poke the socket to wake up the socket server loop.  FIXME: IPv6
         socket.socket().connect(self.socket.getsockname())
-        self._shutdown_event.wait()
 
 
     def serve_forever(self, poll_interval=30):
         host, port = self.server_address
         self._running = True
-        self._shutdown_event.clear()
         while self._running:
             self.kill_idle_clients()
             rfds = [self] + self.clients.keys()
@@ -180,8 +177,6 @@ class NonBlockingWSGIServer(WSGIServer):
                 except:
                     log.exception('unhandled error writing to client')
                     fd.close()
-
-        self._shutdown_event.set()
 
 
     def kill_idle_clients(self):
@@ -468,28 +463,32 @@ class KaaBottleAdaptor(bottle.ServerAdapter):
     def __init__(self, *args, **kwargs):
         super(KaaBottleAdaptor, self).__init__(*args, **kwargs)
         self.running = False
+        self._shutdown_event = threading.Event()
 
 
     def run(self, handler):
         self._srv = make_server(self.host, self.port, handler, server_class=NonBlockingWSGIServer, 
                                 handler_class=NonBlockingWSGIRequestHandler, **self.options)
-        kaa.signals['shutdown'].connect_first(self._srv.shutdown)
+        kaa.signals['shutdown'].connect_first(self.shutdown)
         host = self.host if self.host else socket.gethostname()
         log.info('starting webserver at http://%s:%d/', host, self.port)
 
         self.running = True
+        self._shutdown_event.clear()
         self._srv.serve_forever()
         self._srv.server_close()
-        kaa.signals['shutdown'].disconnect(self._srv.shutdown)
+        kaa.signals['shutdown'].disconnect(self.shutdown)
         self._srv = None
         self.running = False
 
         log.info('webserver stopped')
+        self._shutdown_event.set()
 
 
     def shutdown(self):
         if self.running:
             self._srv.shutdown()
+            self._shutdown_event.wait()
 
 
 
@@ -500,7 +499,7 @@ class Server(object):
         self._adaptor = KaaBottleAdaptor()
 
 
-    @kaa.threaded()
+    @kaa.threaded(wait=True)
     def start(self, **kwargs):
         args = self._default_args.copy()
         args.update(kwargs)
