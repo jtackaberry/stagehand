@@ -174,7 +174,7 @@
             width: 400
             modal: true
             buttons:
-                'Delete {{series.name}}': ->
+                'Delete {{!series.name.replace("\'", "\\\'")}}': ->
                     stagehand.api("/api/shows/{{series.id}}", null, 'DELETE')
                         .always =>
                             $(@).dialog 'close'
