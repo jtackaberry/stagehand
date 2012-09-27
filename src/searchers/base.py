@@ -35,7 +35,14 @@ class SearcherBase(object):
             return 0
         sz = float(parts[0].replace(',', ''))
         if len(parts) == 2:
-            mult = {'gb': 1024*1024*1024, 'mb': 1024*1024, 'kb': 1024}.get(parts[1], 1)
+            mult = {
+                'gib': 1024*1024*1024,
+                'gb': 1000*1000*1000,
+                'mib': 1024*1024,
+                'mb': 1000*1000,
+                'kib': 1024,
+                'kb': 1000
+            }.get(parts[1], 1)
             return int(sz * mult)
         return int(sz)
 
