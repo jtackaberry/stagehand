@@ -82,7 +82,8 @@ def cfgdesc2html(item):
     Given a kaa.config item, returns the description with paragraph breaks
     (double newline) converted to <br> for use in HTML.
     """
-    return kaa.config.get_description(item).replace('\n\n', '<br/><br/>')
+    desc = kaa.config.get_description(item)
+    return re.sub(r'\n\s*\n', '<br/><br/>', desc)
 
 
 def name_to_url_segment(name):
