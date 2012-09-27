@@ -114,7 +114,9 @@ class Provider(ProviderBase):
             url = kaa.tempfile('%s-tvrage.xml' % id)
 
         eps = []
-        for tag, attrs, data in (yield parse_xml(url, nest=['Episodelist', 'Season', 'episode'])):
+        # These tags we want to recurse into while walking the tree
+        nested_tags = 'Episodelist', 'Season', 'episode', 'genres', 'genre'
+        for tag, attrs, data in (yield parse_xml(url, nest=nested_tags)):
             if tag == 'showid':
                 series['id'] = data
             elif tag in ('name', 'airtime'):
@@ -138,6 +140,8 @@ class Provider(ProviderBase):
                     series['runtime'] = int(data)
                 except Valueerror:
                     pass
+            elif tag in ('classification', 'genre'):
+                series.setdefault('genres', []).append(data.strip().lower())
             elif tag == 'Season':
                 season = int(attrs['no'])
                 for ep in eps:

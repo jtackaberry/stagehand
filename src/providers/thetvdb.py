@@ -193,6 +193,7 @@ class Provider(ProviderBase):
                     'poster': self.hostname + '/banners/' + data.get('poster'),
                     'banner': self.hostname + '/banners/' + kaa.py3_str(banner[1]),
                     'overview': data.get('Overview'),
+                    'genres': [g.strip().lower() for g in data.get('Genre', '').split('|') if g],
                     # TODO: do a sanity check on FirstAired format.
                     'started': data.get('FirstAired'),
                     # TODO: use constants for status

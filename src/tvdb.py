@@ -540,6 +540,11 @@ class Series(object):
 
 
     @property
+    def genres(self):
+        return self._dbattr('genres') or []
+
+
+    @property
     def seasons(self):
         """
         A list of all seasons as Season objects for this series.  The list is
@@ -576,6 +581,18 @@ class Series(object):
         for ep in self.episodes:
             if ep.code == code:
                 return ep
+
+
+    def has_genre(self, *genres, **kwargs):
+        startswith = kwargs.get('startswith', True)
+        all = kwargs.get('all', False)
+        matches = []
+        for requested in genres:
+            requested = requested.lower()
+            for genre in genres:
+                if startswith and genre.startswith(requested) or genre == requested:
+                    matches.append(requested)
+        return bool((all and len(matches) == len(genres)) or matches)
 
 
 class SearchResult(object):
@@ -652,6 +669,7 @@ class TVDB(kaa.db.Database):
             banner_data = (kaa.db.RAW_TYPE, kaa.db.ATTR_SIMPLE),
             poster = (unicode, kaa.db.ATTR_SEARCHABLE),
             poster_data = (kaa.db.RAW_TYPE, kaa.db.ATTR_SIMPLE),
+            genres = (list, kaa.db.ATTR_SIMPLE)
         )
 
         self.register_object_type_attrs('episode',
@@ -1245,7 +1263,7 @@ class TVDB(kaa.db.Database):
             overview=fixquotes(series.get('overview')), started=series.get('started'),
             runtime=series.get('runtime'), airtime=series.get('airtime'), 
             imdbid=series.get('imdbid'), status=series.get('status', Series.STATUS_UNKNOWN),
-            conflict=Series.CONFLICT_UNACKED, **kwargs
+            genres=series.get('genres'), conflict=Series.CONFLICT_UNACKED, **kwargs
         )
 
         # XXX: should remove conflicts from non-preferred providers?
