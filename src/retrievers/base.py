@@ -1,4 +1,6 @@
 from __future__ import absolute_import
+import os
+import re
 import logging
 import kaa
 
@@ -7,6 +9,9 @@ try:
     import kaa.metadata
 except ImportError:
     kaa.metadata = None
+
+from ..config import config
+
 
 log = logging.getLogger('stagehand.retrievers')
 
@@ -73,6 +78,10 @@ class RetrieverBase(object):
             return
         info = kaa.metadata.parse(outfile)
         if not info:
+            if os.path.getsize(outfile) > 1024*1024*10:
+                # We have 10MB of the file and still can't parse it.  Consider
+                # it corrupt or unknown.
+                raise RetrieverError('could not identify file after 10MB')
             return False
         if info.media != u'MEDIA_AV':
             raise RetrieverError('file is not a video file (is %s)' % info.media)
@@ -87,6 +96,22 @@ class RetrieverBase(object):
             raise RetrieverError('video resolution %dx%d does not satisfy requested %s quality' % \
                                  (video.width, video.height, result.quality))
 
+        # See if the audio is the right language.  If the language is specified in any of
+        # the tracks, make sure one of them is the user-preferred language.
+        langs = set(track.langcode or 'und' for track in info.audio)
+        if langs == set(['und']):
+            # No languages specified in any track. Disqualify if 'dubbed' appears in
+            # the result filename.
+            if re.search(r'\bdubbed\b', result.filename, re.I):
+                raise RetrieverError('filename indicates dubbed audio but no language codes specified')
+        else:
+            lang2to3 = dict((c[1], c[0]) for c in kaa.metadata.language.codes if len(c) == 3)
+            threecode = lang2to3.get(config.misc.language)
+            if (not threecode or threecode not in langs) and config.misc.language not in langs:
+                raise RetrieverError('no %s audio track in file' % threecode)
+
         # TODO: verify codecs too
-        log.debug('%s looks good (%dx%d %s)', result.filename, video.width, video.height, video.codec)
+        log.debug('%s looks good (%dx%d %s, audio languages: %s)', result.filename, video.width, video.height, video.codec,
+                  ', '.join(langs))
+
         return True
