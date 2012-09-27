@@ -82,12 +82,6 @@ class Manager(object):
 
 
     @property
-    def series(self):
-        import traceback
-        traceback.print_stack()
-        return self.tvdb.series
-
-    @property
     def retrieve_queue(self):
         """
         The current retrieve queue, in the form:
