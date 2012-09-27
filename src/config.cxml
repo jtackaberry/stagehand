@@ -23,7 +23,10 @@
         </group>
         <var name='bind_address' type='str'>
             <desc>
-                Source address for outbound Internet communication.  Not used if a proxy is enabled.
+                Source address for all outbound Internet communication.  If
+                unspecified, the OS default will be used.
+
+                Not used if a proxy is enabled.
             </desc>
         </var>
         <var name='logdir' type='str' default='~/.cache/stagehand/logs/'>
@@ -92,9 +95,6 @@
                 The preferred metadata provider for this series.  This provider will
                 be used for episode codes and air dates, and will take precedence
                 for episode summaries.
-
-                Note that this doesn't need to be the same provider as specified
-                in the id field.
             </desc>
         </var>
         <var name='warn_conflicts' default='True'>
@@ -120,6 +120,14 @@
             </desc>
         </var>
         <var name='quality' default='HD'>
+            <desc>
+                The required resolution for downloaded episodes.
+
+                HD is 1080p or 720p, SD is anything less than HD, and Any will
+                download whatever is available.  In all cases, if there are
+                multiple options within the preferred resolution, Stagehand
+                will try to choose the one with the best quality.
+            </desc>
             <enum>
                 <value>HD</value>
                 <value>SD</value>
