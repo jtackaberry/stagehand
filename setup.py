@@ -1,5 +1,5 @@
 NAME = 'stagehand'
-VERSION = '0.1.3'
+VERSION = '0.1.4'
 REQUIRES = ['kaa-base>=0.99.2dev-406-2796ba76', 'kaa-metadata', 'BeautifulSoup']
 
 import sys
@@ -121,6 +121,7 @@ setup(
     scripts = ['bin/stagehand'],
     data_files=list(lsdata()),
     opts_2to3 = {
+        'exclude': ['web/server/bottle.py'],
         'nofix': {
             '*.py': ['import'],
         }
