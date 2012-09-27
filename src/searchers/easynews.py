@@ -49,14 +49,17 @@ class Searcher(SearcherBase):
 
     @kaa.coroutine()   
     def _search(self, series, episodes, date, min_size, quality):
+        title = series.cfg.search_string or series.name
         # Strip problem characters from the title, and substitute alternative apostrophe
-        title = self.clean_title(series.name, apostrophe=Searcher.CLEAN_APOSTROPHE_REGEXP)
+        title = self.clean_title(title, apostrophe=Searcher.CLEAN_APOSTROPHE_REGEXP)
         # Insert word boundary regexp to title
         title = ' '.join(r'\b%s\b' % w for w in title.split())
         size = '%dM' % (min_size / 1048576) if min_size else '100M'
         query = '%s %s' % (title, self._get_episode_codes_regexp(episodes))
         if quality == 'HD':
             query += ' (720p|1080p)'
+
+        log.debug('searching for "%s" with minimum size %s', query, size)
 
         """
         log.debug('generating bogus results')
@@ -66,7 +69,6 @@ class Searcher(SearcherBase):
         yield {None: results}
         """
         
-        log.debug('searching for "%s" with minimum size %s', query, size)
         rss = yield self._search_global5(query, size, date or '')
 
         soup = BeautifulStoneSoup(rss)

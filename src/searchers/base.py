@@ -104,7 +104,7 @@ class SearcherBase(object):
                 bscore = score if score > bscore or score < 0 else bscore
         if ascore != bscore:
             return 1 if bscore > ascore else -1
-        
+
         # Sort by ideal size (if specified).
         if ideal_size:
             aratio = a.size / float(ideal_size)
@@ -145,10 +145,17 @@ class SearcherBase(object):
         return 0
 
 
-    def _get_episode_codes_regexp(self, episodes):
+    def _get_episode_codes_regexp(self, episodes, codes=True, dates=True):
         parts = []
         for ep in episodes or ():
-            parts.append(ep.code)
+            if codes:
+                parts.append(ep.code)
+                parts.append('{0}x{1:02}'.format(ep.season.number, ep.number))
+            if dates:
+                dt = ep.airdatetime
+                if dt:
+                    parts.append(r'{0}[-.]?{1:02}[-.]?{2:02}'.format(dt.year, dt.month, dt.day))
+
         if not parts:
             return ''
         elif len(parts) == 1:
@@ -158,7 +165,7 @@ class SearcherBase(object):
 
 
     def _is_name_for_episode(self, name, ep):
-        recode = re.compile(r'\b(%s|%dx%02d)\b' % (ep.code, ep.season.number, ep.number), re.I)
+        recode = re.compile(r'\b{0}\b'.format(self._get_episode_codes_regexp([ep])), re.I)
         # TODO: verify title
         return True if recode.search(name) else False
 
@@ -235,8 +242,11 @@ class SearcherBase(object):
                                 break
             del results[None]
 
-        # Remove disqualified results, set common result attributes, and then sort.
+        # Sort, remove disqualified results, and set common result attributes.
         for ep, l in results.items():
+            # Sorting also sets the disqualified attribute on the bad
+            # results.
+            l.sort(cmp=kaa.Callable(self._cmp_result, ep, ideal_size))
             for result in l[:]:
                 if result.disqualified or result.size < min_size:
                     l.remove(result)
@@ -245,7 +255,10 @@ class SearcherBase(object):
                     # We str(quality) because it may be a kaa.config Var object which can't
                     # be pickled, and we do need to be able to pickle SearchResult objects.
                     result.quality = str(quality)
-            l.sort(cmp=kaa.Callable(self._cmp_result, ep, ideal_size))
+            if not l:
+                # We ended up disqualifying all the results.  So remove this episode
+                # from the result set.
+                del results[ep]
 
         yield results
 

@@ -70,6 +70,7 @@
         <var name='separator' type='str' default='_' />
         <var name='season_dir_format' type='str' default='s{season}' />
         <var name='code_style' type='str' default='s{season:02}e{episode:02}' />
+        <var name='date_style' type='str' default='%Y.%m.%d' />
         <var name='episode_format' type='str' default='{show}-{code}-{title}' />
     </group>
 
@@ -144,6 +145,34 @@
         <var name='paused' type='bool' default='False'>
             <desc>
                 If True, new episodes will not be searched for or downloaded.
+            </desc>
+        </var>
+        <var name='identifier' default='epcode'>
+            <desc>
+                The style of identier used in episode naming and searching.
+
+                Episode code (e.g. s02e05) is almost always the identifier
+                used in episode names, but some TV series, particularly
+                news programs and talk shows, will use dates as identifiers.
+            </desc>
+            <enum>
+                <value>epcode</value>
+                <value>date</value>
+            </enum>
+        </var>
+        <var name='search_string' type='str'>
+            <desc>
+                A custom search string for this series.
+
+                Normally the search string is derived from the show name, but
+                it can be overridden if episodes are regularly posted under a
+                different or abbreviated name.
+
+                For example, "The Daily Show with Jon Stewart" is often posted
+                as just "The Daily Show".
+
+                If unspecified, the series title will be used as the search
+                string.
             </desc>
         </var>
     </list>

@@ -163,7 +163,8 @@ class Manager(object):
         if not series:
             series = yield self._add_series_to_db(id, fast=True)
             if not self.tvdb.get_config_for_series(id, series):
-                config.series.append(config.series(id=id, path=fixsep(series.name)))
+                identifier = 'date' if series.has_genre('talk show', 'news') else 'epcode'
+                config.series.append(config.series(id=id, path=fixsep(series.name), identifier=identifier))
         yield series
 
 
@@ -202,7 +203,7 @@ class Manager(object):
 
                 if not series:
                     # Could not be added to DB, probably because it doesn't exist.
-                    # _add_series_to_db() will log an error about it.
+                    # _add_series_to_db() will have logged an error about it.
                     continue
 
             if cfg.path == kaa.config.get_default(cfg.path):

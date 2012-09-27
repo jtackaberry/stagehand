@@ -198,8 +198,14 @@ class Episode(object):
     def preferred_filename(self):
         # This is a filename, so convert unicode series and episode names to
         # bytes
-        style, fmt = kaa.py3_b(config.naming.code_style), kaa.py3_b(config.naming.episode_format)
-        code = style.format(season=self.season.number, episode=self.number)
+        fmt = kaa.py3_b(config.naming.episode_format)
+        dt = self.airdate
+        if self.series.cfg.identifier == 'date' and dt:
+            style = kaa.py3_b(config.naming.date_style)
+            code = dt.strftime(style)
+        else:
+            style = kaa.py3_b(config.naming.code_style)
+            code = style.format(season=self.season.number, episode=self.number)
         return fmt.format(show=kaa.py3_b(fixsep(self.series.name)), code=code, title=kaa.py3_b(fixsep(self.name)))
 
     @property
