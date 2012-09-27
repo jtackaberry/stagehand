@@ -48,8 +48,8 @@ def cscompile(src, dst=None, is_html=None):
     if not hasattr(cscompile, 'coffee'):
         # Poorman's static variable
         cscompile.coffee = which('coffee')
-        if not cscompile.coffee:
-            raise CSCompileError('coffee compiler not found in $PATH', None)
+    if not cscompile.coffee:
+        raise CSCompileError('coffee compiler not found in $PATH', None)
     
     csargs = [cscompile.coffee, '-p', '-s']
     data = open(src).read()
