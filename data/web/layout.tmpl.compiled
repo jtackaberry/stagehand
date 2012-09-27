@@ -17,6 +17,9 @@
     <script type='text/javascript' src='{{root}}/static/js/jquery.poshytip.min.js.gz'></script>
     <script type='text/javascript' src='{{root}}/static/js/jquery.toggleswitch.coffee'></script>
     <script type='text/javascript' src='{{root}}/static/js/utils.coffee'></script>
+    %if defined('header'):
+        %header()
+    %end
 </head>
 <body>
     <script type='text/javascript'>
