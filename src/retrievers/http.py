@@ -37,7 +37,7 @@ class Retriever(RetrieverBase):
                 pass
             return False
         else:
-            if r is not False:
+            if r is not False or progress.percentage == 100:
                 # verify function returned either True (verified ok) or None
                 # (no ability to get metadata).  Either way, stop the timer.
                 return False
