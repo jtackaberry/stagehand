@@ -154,11 +154,6 @@ h1 {
     text-shadow: #aaa 2px 2px 2px;
 }
 
-h1 img {
-    position: relative;
-    top: 2px;
-}
-
 div.section {
     padding-left: 1em;
     font-family: Arial, Sans-Serif;

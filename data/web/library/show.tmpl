@@ -1,5 +1,80 @@
 %import kaa.config
 %from stagehand.utils import cfgdesc2html, episode_status_icon_info
+
+%def header():
+    <style>
+        div.tip-twitter {
+            max-width: 20em;
+        }
+
+        #advanced-toggle-bar:hover span {
+            text-decoration: underline;
+        }
+
+        div.option {
+            display: inline-block;
+        }
+
+        #advanced-toggle-bar {
+            color: #888;
+            font-size: 80%;
+            border-bottom: 1px solid #ddd;
+            width: 600px;
+            cursor: pointer;
+        }
+        #advanced-toggle-bar > div {
+            position: relative;
+            top: 0.85em;
+            left: 20px;
+            background-color: white;
+            display: inline-block;
+            padding-right: 1em;
+        }
+        #advanced-toggle-bar div.ui-icon {
+            float: left;
+        }
+
+        #advanced-section {
+            display: none;
+            border-left: 1px solid #ddd;
+            padding: 0.8em 0 0.8em 0;
+            box-shadow:inset 20px 0 20px -15px #eee;
+            border-bottom: 1px solid #ddd;
+            width: 600px;
+        }
+
+        #button-delete-dialog {
+            display: none;
+        }
+
+        #button-delete-dialog span.ui-icon-alert {
+            float: left;
+            margin: 0 7px 3em 0;
+        }
+        #episode-list {
+            z-index: 2;
+            position: relative;
+        }
+
+        tr.ep {
+            position: relative;
+        }
+
+        tr.ep td:nth-child(1), tr.ep td:nth-child(2) {
+            padding: 0;
+        }
+
+        tr.ep td:nth-child(3) {
+            text-align: left;
+        }
+
+        tr.ep td:nth-child(4) {
+            white-space: nowrap;
+        }
+
+    </style>
+%end
+
 <h1>
     <img id='status-icon-notpaused'
         %if series.status == series.STATUS_RUNNING:
@@ -18,51 +93,102 @@
 <div class='section'>
     <div style='text-align: left; padding: 0.5em 0'>
         <label></label>
-        <img src='{{root}}/api/shows/{{series.id}}/banner' width='650' alt='' style='border: 1px solid black' />
+        <a href='http://thetvdb.com/?tab=series&id={{series.get_id_for_provider("thetvdb")}}&lid=7'>
+            <img src='{{root}}/api/shows/{{series.id}}/banner' width='650' alt=''
+                 style='border: 1px solid black' />
+        </a>
     </div>
     <form>
-        <div id='series-quality' class='ui-buttons-small'>
+        <div id='series-quality' class='ui-buttons-small option'>
             <label>Quality:</label>
             %for quality in kaa.config.get_type(series.cfg.quality):
-                <input type="radio" id="series-quality-{{quality}}" name='quality' value='{{quality}}'
+                <input type="radio" id="series-quality-{{quality}}"
+                       name='quality' value='{{quality}}'
                       {{!'checked="checked"' if series.cfg.quality == quality else ''}} />
                 <label for="series-quality-{{quality}}">{{quality}}</label>
             %end
+            <div class='help'>{{!cfgdesc2html(series.cfg.quality)}}</div>
         </div>
-        <div>
-            <label>Directory:</label>
-            <input type='text' id='series-path' name='series-path' size='25' value='{{series.cfg.path}}' />
-            <div class='help' id='series-path-help'>{{!cfgdesc2html(series.cfg.path)}}</div>
-        </div>
-        <div>
+        <br />
+
+        <div class='option'>
             <label>Flatten Seasons:</label>
             <input type='checkbox' name='series-flat' id='series-flat'
                   {{'checked="checked"' if series.cfg.flat else ''}} />
+            <div class='help'>{{!cfgdesc2html(series.cfg.flat)}}</div>
         </div>
+        <br />
+
         <!--div>
             <label>Upgrade Episodes:</label>
             <input type='checkbox' name='series-upgrade' id='series-upgrade'
                   {{'checked="checked"' if series.cfg.upgrade else ''}} />
         </div-->
-        <div>
+
+        <div class='option'>
             <label>Downloads Paused:</label>
             <input type='checkbox' name='series-paused' id='series-paused'
                   {{'checked="checked"' if series.cfg.paused else ''}} />
+            <div class='help'>{{!cfgdesc2html(series.cfg.paused)}}</div>
+        </div>
+        <br />
+
+        <div id='advanced-toggle-bar'>
+            <div>
+                <div class='ui-icon ui-icon-triangle-1-e'></div>
+                <span>Advanced Options</span>
+            </div>
+        </div>
+
+        <div id='advanced-section' style=''>
+
+            <div id='series-identifier' class='ui-buttons-small option'>
+                <label>Episode Identifier:</label>
+                %labels = {'epcode': 'Episode Code', 'date': 'Air Date'}
+                %for identifier in kaa.config.get_type(series.cfg.identifier):
+                    <input type="radio" id="series-identifier-{{identifier}}"
+                           name='identifier' value='{{identifier}}'
+                          {{!'checked="checked"' if series.cfg.identifier == identifier else ''}} />
+                    <label for="series-identifier-{{identifier}}">{{labels[identifier]}}</label>
+                %end
+                <div class='help'>{{!cfgdesc2html(series.cfg.identifier)}}</div>
+            </div>
+            <br />
+
+            <div class='option'>
+                <label>Directory Name:</label>
+                <input type='text' id='series-path' name='series-path' size='25'
+                       value='{{series.cfg.path}}' />
+                <div class='help'>{{!cfgdesc2html(series.cfg.path)}}</div>
+            </div>
+            <br />
+
+            <div class='option'>
+                <label>Search String:</label>
+                <input type='text' id='series-search-string' name='series-search-string' size='25'
+                       value='{{series.cfg.search_string}}' />
+                <div class='help'>{{!cfgdesc2html(series.cfg.search_string)}}</div>
+            </div>
+            <br />
+
+            <div id='providers-list' class='ui-buttons-small option'>
+                <label>Provider:</label>
+                %for p in series.providers:
+                    <input type="radio" id="provider-{{p.NAME}}" name='provider'
+                           {{'checked="checked"' if p == series.provider else ''}}/>
+                    <label for="provider-{{p.NAME}}">{{p.NAME_PRINTABLE}}</label>
+                %end
+                <div class='help'>{{!cfgdesc2html(series.cfg.provider)}}</div>
+            </div>
+            <br />
+
         </div>
     </form>
 
-    <div id='providers-list' class='ui-buttons-small'>
-        <label>Provider:</label>
-        %for p in series.providers:
-            <input type="radio" id="provider-{{p.NAME}}" name='provider'
-                  {{'checked="checked"' if p == series.provider else ''}}/>
-            <label for="provider-{{p.NAME}}">{{p.NAME_PRINTABLE}}</label>
-        %end
-    </div>
     <div style='margin-top: 1.5em'>
         <label></label>
-        <div id="button-delete-dialog" title="Delete this series?" style='display: none'>
-            <span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>
+        <div id="button-delete-dialog" title="Delete this series?">
+            <span class="ui-icon ui-icon-alert"></span>
             This series will be permanently deleted from the local database, however no
             video files will be deleted.  Are you sure you want to do this?
         </div>
@@ -78,7 +204,7 @@
 %include library/download-needed-episodes.tmpl root=root, buttonid='button-search', showid=series.id
 
 <script type='text/coffeescript'>
-    $('#providers-list, #series-quality').buttonset()
+    $('#providers-list, #series-quality, #series-identifier').buttonset()
     $('#button-delete').button icons: primary: 'ui-icon-trash'
     $('#button-refresh').button icons: primary: 'ui-icon-refresh'
     $('#series-flat, #series-upgrade, #series-paused').toggleswitch yesno: true
@@ -91,7 +217,7 @@
 
 %include library/episode-table-multiselect.tmpl tableid='episode-list', root=root
 
-<table id='episode-list' class='grid align-center interactive' width='100%' style='z-index: 2; position: relative'>
+<table id='episode-list' class='grid align-center interactive' width='100%'>
 <thead id='episode-list-header'>
 <tr> 
     <th style='padding: 0 0.7em'><input type='checkbox' /></th>
@@ -117,11 +243,11 @@
             </td>
         </tr>
     %end
-    <tr id='{{series.id}}-{{ep.code}}' class='group-{{season}} ep' style='position: relative'>
-        <td style='padding: 0'><input type='checkbox' /></td>
-        <td style='padding:0'>{{ep.number}}</td>
-        <td style='text-align: left'>{{ep.name}}</td>
-        <td style='white-space: nowrap'>
+    <tr id='{{series.id}}-{{ep.code}}' class='group-{{season}} ep'>
+        <td><input type='checkbox' /></td>
+        <td>{{ep.number}}</td>
+        <td>{{ep.name}}</td>
+        <td>
             %if ep.airdate:
                 {{ep.airdate.strftime('%Y-%m-%d')}}
             %else:
@@ -143,6 +269,7 @@
         settings =
             quality: $('input:radio[name="quality"]:checked').val()
             path: $('#series-path').val()
+            search_string: $('#series-search-string').val()
             upgrade: $('#series-upgrade').is(':checked')
             paused: $('#series-paused').is(':checked')
             flat: $('#series-flat').is(':checked')
@@ -224,13 +351,22 @@
                     content: overview
                 tip.poshytip 'show'
 
-    $('div.help').prev().poshytip
-        showOn: 'focus'
+
+    $('div.help').parents('.option').poshytip
+        showOn: 'hover'
+        showTimeout: 300
         offsetX: 10
         alignX: 'right'
         alignY: 'center'
         alignTo: 'target'
-        content: -> $("##{@.name}-help").html()
+        content: -> $(@).children('div.help').html()
+
+
+    $('#advanced-toggle-bar').click ->
+        icon = $('#advanced-toggle-bar div.ui-icon')
+        dir = if $('#advanced-section').is(':visible') then 'e' else 's'
+        icon.removeClass('ui-icon-triangle-1-e ui-icon-triangle-1-s').addClass("ui-icon-triangle-1-#{dir}")
+        $('#advanced-section').slideToggle('fast')
 </script>
 
-%rebase layout.tmpl title=series.name, section="library", subsection="series"
+%rebase layout.tmpl title=series.name, section="library", subsection="series", header=header
