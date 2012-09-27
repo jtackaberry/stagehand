@@ -276,6 +276,12 @@ class Episode(object):
         return airdatetime and datetime.now() >= airdatetime and self.airdatetime <= cutoff
         
 
+    def get_id_for_provider(self, name):
+        for p in self.providers:
+            if p.NAME == name:
+                return self._dbattr(p.IDATTR)
+        else:
+            raise ValueError('invalid provider given')
 
 
 
@@ -581,6 +587,14 @@ class Series(object):
         for ep in self.episodes:
             if ep.code == code:
                 return ep
+
+
+    def get_id_for_provider(self, name):
+        for p in self.providers:
+            if p.NAME == name:
+                return self._dbattr(p.IDATTR)
+        else:
+            raise ValueError('invalid provider given')
 
 
     def has_genre(self, *genres, **kwargs):
