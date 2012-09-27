@@ -101,6 +101,7 @@ a:hover {
     display: inline-block;
     color: white;
     padding: 5px 1em;
+    text-shadow: rgba(0, 0, 0, 0.5) 2px 2px 3px;
 }
 
 .menu li a img {
@@ -339,6 +340,7 @@ table.grid.interactive tr {
 table.grid.interactive tr:not(.heading):hover td {
     background-color: #493e57;
     color: white;
+    text-shadow: rgba(0, 0, 0, 0.5) 1px 1px 2px;
 }
 
 table.grid tr.heading {
