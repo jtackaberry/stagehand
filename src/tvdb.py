@@ -799,6 +799,11 @@ class TVDB(kaa.db.Database):
         if aggressive:
             # Remove anything in brackets.
             name = re.sub(r'\([^)]+\)', '', name)
+            # Some shows have a "with Firstname Lastname" suffix, like "The Daily Show
+            # with Jon Stewart".  Strip this out.
+            # FIXME: hardcoded English
+            name = re.sub(r'with +\w+ +\w+\b', '', name)
+
         # Replace & with 'and' and remove other non-word characters
         name = re.sub(r'\W', ' ', name.replace('&', 'and').replace('.', '').lower())
         # Remove stop words
@@ -1057,6 +1062,7 @@ class TVDB(kaa.db.Database):
                   emitted once all work is complete.
         """
         log.debug('updating series %s:%s (fast=%s)', provider.NAME, id, fast)
+        assert(not isinstance(provider, basestring) and not isinstance(preferred, basestring))
 
         # Series dicts from providers, populated later.
         pseries = {}    # provider -> series dict
@@ -1148,6 +1154,7 @@ class TVDB(kaa.db.Database):
             log.info('searching for %s on provider(s) %s', name, ', '.join(p.NAME for p in missing))
             for p, results in (yield self._invoke_providers('search', name, which=missing)):
                 normname = self._normalize_name(name)
+                normnameaggr = self._normalize_name(name, aggressive=True)
                 # List of series dicts that we consider a match
                 matches = []   # [(priority, dict), ...]  
                 # List of series dicts that could be a match, but we need to fetch them
@@ -1158,15 +1165,22 @@ class TVDB(kaa.db.Database):
                     # Year matches require exact names.  Similarly, we can do a fuzzy date match
                     # if name is an exact match.
                     normresult = self._normalize_name(result.name)
-                    log.debug2('%s: result %s (want %s) started %s (want %s)', p.NAME, normresult, 
-                               normname, started, result.started)
+                    normresultaggr = self._normalize_name(result.name, aggressive=True)
+                    log.debug2('%s: result %s [%s] (want %s [%s]) started %s (want %s)', p.NAME, normresult,
+                               normresultaggr, normname, normnameaggr, result.started, started)
                     if normname == normresult:
                         if started == result.started:
+                            # The non-aggressively normalized name matches and the airdate
+                            # matches, this is a solid match.
                             matches.append((0, result))
-                        elif started[:4] == result.year:
-                            matches.append((1, result))
                         else:
                             # We have an exact title match but the airdate doesn't match.
+                            maybe.append(result)
+                    elif normnameaggr == normresultaggr:
+                        # If the aggressively normalized name matches and the start year
+                        # matches, then add this to the maybe list for a more thorough
+                        # comparison.
+                        if started[:4] == result.year:
                             maybe.append(result)
                 if matches:
                     # We match based on full air date or just year, but prefer
@@ -1179,6 +1193,13 @@ class TVDB(kaa.db.Database):
                         log.debug('retrieving possible match %s (%s) from %s', result.name, result.id, p.NAME)
                         s = yield p.get_series(self._parse_id(result.id)[1])
                         tpseries = dict(pseries.items() + [(p, s)])
+                        if not pseries and existing and preferred.CACHEATTR in existing:
+                            # We have existing series data but pseries is empty, which means
+                            # that all existing series data was marked as dirty.  But we
+                            # need some frame of reference to compare the series data
+                            # we just fetched.  So include the series data from
+                            # the preferred provider for the conflicts check.
+                            tpseries[preferred] = existing[preferred.CACHEATTR]
                         n_real_conflicts, conflicts, matched, unmatched = self._get_conflicts(tpseries)
                         # Count the number of unmatched episodes other that aren't season 0.
                         n_real_unmatched = sum(1 for (provider, nn, ep) in unmatched if ep['season'] != 0)
