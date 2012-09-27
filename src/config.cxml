@@ -155,6 +155,11 @@
     </group>
 
     <group name='retrievers'>
+        <var name='parallel' default='1' type='int'>
+            <desc>
+                Maximum number of episodes to download simultaneously.
+            </desc>
+        </var>
         <list name='enabled'>
             <desc>List of enabled retriever plugins and their order of preference.</desc>
             <var type='str' />

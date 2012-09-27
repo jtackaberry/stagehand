@@ -21,13 +21,13 @@ log = logging.getLogger('stagehand.manager')
 
 class Manager(object):
     def __init__(self, cfgdir=None, datadir=None, cachedir=None):
+        self._retrieve_queue_processor_signal = kaa.Signal()
         # A list of episodes to be retrieved.
         # [(Episode, [SearchResult, ...]), (Episode, [SearchResult, ...])]
         self._retrieve_queue = []
-        # The element of the retrieve queue that is actively being processed.
-        # (Episode, [SearchResult, ...]).  The first SearchResult is the one
-        # being retrieved.
-        self._retrieve_queue_active = None
+        # Like _retrieve_queue, but these are the episodes actively being processed.
+        # The first SearchResult is the one being retrieved.
+        self._retrieve_queue_active = []
         # Maps Episode objects to InProgress objects for active downloads.
         self._retrieve_inprogress = {}
         self._check_new_timer = kaa.AtTimer(self.check_new_episodes)
@@ -90,10 +90,7 @@ class Manager(object):
         The first element of this queue is probably active, but you should
         call :meth:`get_episode_retrieve_inprogress` to be sure.
         """
-        if self._retrieve_queue_active:
-            return [self._retrieve_queue_active] + self._retrieve_queue
-        else:
-            return self._retrieve_queue
+        return self._retrieve_queue_active + self._retrieve_queue
 
 
     @kaa.coroutine()
@@ -102,6 +99,10 @@ class Manager(object):
             # if changed is given (even if it's an empty list), it means we've
             # been invoked from the config reloaded signal.
             log.info('config file changed; reloading')
+            if 'retrievers.parallel' in changed:
+                # Might have increased the number of parallel downloads allowed.
+                # Wake up retrieve queue manager.
+                self._retrieve_queue_processor_signal.emit_when_handled()
         yield self._load_series_from_config()
 
         try:
@@ -300,12 +301,14 @@ class Manager(object):
         yield kaa.InProgressAll(searchers.start(self), retrievers.start(self),
                                 notifiers.start(self), providers.start(self))
 
-        # Resume downloading any episodes we aborted.
+        # Resume downloading any episodes we aborted by adding to retrieve queue.
         for series in self.tvdb.series:
             for ep in series.episodes:
                 if ep.ready and ep.search_result:
                     self._retrieve_queue.append((ep, [ep.search_result]))
-                    self._process_retrieve_queue()
+
+        # Start the retrieve queue processor
+        self._retrieve_queue_processor()
 
 
     @kaa.coroutine(policy=kaa.POLICY_SINGLETON)
@@ -377,65 +380,103 @@ class Manager(object):
                         log.debug2('result %s (%dM) (%s)', r.filename, r.size / 1048576.0, r.searcher)
                 episodes_found.extend(results.keys())
                 self._retrieve_queue.extend(results.items())
-                self._process_retrieve_queue()
+                self._retrieve_queue_processor_signal.emit_when_handled()
 
         log.info('new episode check finished, found %d/%d episodes', len(episodes_found), len(need))
         yield episodes_found
 
 
     @kaa.coroutine(policy=kaa.POLICY_SINGLETON)
-    def _process_retrieve_queue(self):
+    def _retrieve_queue_processor(self):
+        """
+        This coroutine lives forever and monitors the retrieve queue.  If new episodes
+        are found on the retrieve queue, it starts as many parallel downloads are allowed
+        by config.retrievers.parallel.
+
+        The processor can be "woken up" by emitting _retrieve_queue_processor_signal.
+        This signal should be emitted when the queue is changed.
+        """
         retrieved = []
-        while self._retrieve_queue:
-            # Before popping, sort retrieve queue so that result sets with
-            # older episodes appear first.
-            # FIXME: ep.airdate could be None which Python 3 won't like sorting.
-            self._retrieve_queue.sort(key=lambda (ep, _): ep.airdate)
-            ep, ep_results = self._retrieve_queue_active = self._retrieve_queue.pop(0)
-            # Sanity check.
-            if ep.status == ep.STATUS_HAVE:
-                log.error('BUG: scheduled to retrieve %s %s but it is already STATUS_HAVE', 
-                          ep.series.name, ep.code)
-                continue
-            # Check to see if the episode exists locally.
-            elif ep.filename and os.path.exists(os.path.join(ep.season.path, ep.filename)):
-                # The episode filename exists.  Do we need to resume?
-                if ep.search_result:
-                    # Yes, there is a search result for this episode, so move it to the
-                    # front of the result list so it will be tried first.
-                    if ep.search_result in ep_results:
-                        ep_results.remove(ep.search_result)
-                    ep_results = [ep.search_result] + ep_results
-                    log.info('resuming download from last search result')
-                else:
-                    # XXX: should we move it out of the way and try again?
-                    log.error('retriever was scheduled to fetch %s but it already exists, skipping', 
-                              ep.filename)
-                    continue
-
-            # Find the highest scoring item for this episode and retrieve it.
-            # TODO: also validate series name.
-            for result in ep_results:
+        active = []
+        while True:
+            # Check the retrieve queue.  If the number of active downloads is less than
+            # the user-configured parallel limit, then pop from the queue.
+            ep = None
+            if len(active) < config.retrievers.parallel:
+                # Before popping, sort retrieve queue so that result sets with
+                # older episodes appear first.  FIXME: ep.airdate could be None
+                # which Python 3 won't like sorting.
+                self._retrieve_queue.sort(key=lambda (ep, _): ep.airdate)
                 try:
-                    success = yield self._get_episode(ep, result)
-                except RetrieverAbortedHard:
-                    # Hard abort: we're done.
-                    break
-                except RetrieverAbortedSoft:
-                    # Soft abort: try another result.
-                    continue
-                if success:
-                    retrieved.append(ep)
-                    # Break result list for this episode and move onto next episode.
-                    break
+                    ep, ep_results = self._retrieve_queue.pop(0)
+                except IndexError:
+                    # Tried to pop on an empty queue.  We might be done a batch now,
+                    # so do notifications if so.
+                    if retrieved and not active:
+                        self._notify_web_retriever_progress()
+                        notifiers.notify(retrieved)
+                        retrieved = []
 
-        self._retrieve_queue_active = None
-        self._notify_web_retriever_progress()
-        if retrieved:
-            yield notifiers.notify(retrieved)
+            # If ep is not None, then we have a free download slot and a queued episode.
+            if ep:
+                # Sanity check.
+                if ep.status == ep.STATUS_HAVE:
+                    log.error('BUG: scheduled to retrieve %s %s but it is already STATUS_HAVE',
+                              ep.series.name, ep.code)
+                    continue
+                # Check to see if the episode exists locally.
+                elif ep.filename and os.path.exists(os.path.join(ep.season.path, ep.filename)):
+                    # The episode filename exists.  Do we need to resume?
+                    if ep.search_result:
+                        # Yes, there is a search result for this episode, so move it to the
+                        # front of the result list so it will be tried first.
+                        if ep.search_result in ep_results:
+                            ep_results.remove(ep.search_result)
+                        ep_results = [ep.search_result] + ep_results
+                        log.info('resuming download from last search result')
+                    else:
+                        # XXX: should we move it out of the way and try again?
+                        log.error('retriever was scheduled to fetch %s but it already exists, skipping',
+                                  ep.filename)
+                        continue
+
+                # Add the episode to the active list, start the download by calling _get_episode(),
+                # and continue to process additional episodes from the queue (if possible).
+                self._retrieve_queue_active.append((ep, ep_results))
+                active.append((self._get_episode(ep, ep_results), ep, ep_results))
+                continue
+
+            # If we're here, then we've either filled up all the download slots or we have
+            # exhausted the queue.  Wait now for any of the active downloads to finish, or
+            # for the processor signal to force us to pick up newly enqueued episodes.
+            idx, res = yield kaa.InProgressAny([a[0] for a in active] +
+                                               [self._retrieve_queue_processor_signal])
+            # idx now refers to the positional async task passed to InProgressAny
+            # just above.  If idx is the last item, it's the processor signal waking us
+            # up, which we now are, so no further action is needed.
+            if idx < len(active):
+                # A download finished (or errored out).  Remove it from the active lists.
+                ip, ep, ep_results = active[idx]
+                self._retrieve_queue_active.remove((ep, ep_results))
+                active.pop(idx)
+                try:
+                    # Access the result attribute, which will either succeed
+                    # or induce an exception if the async task failed.
+                    ip.result
+                    # If we got this far without raising, the download finished without
+                    # error.
+                    retrieved.append(ep)
+                except RetrieverAbortedHard:
+                    # retrieve() (called by _get_episode()) will already have logged the
+                    # abort message, so nothing to do.
+                    pass
+                except Exception as e:
+                    # Some other non-abort related error occured, so log it now.
+                    log.error('download failed: %s', e)
+
 
     @kaa.coroutine()
-    def _get_episode(self, ep, search_result):
+    def _get_episode(self, ep, ep_results):
         """
         Initiate the retriever plugin for the given search result.
 
@@ -446,51 +487,54 @@ class Manager(object):
             # TODO: handle failure
             os.makedirs(ep.season.path)
 
-        # Determine name of target file based on naming preferences.
-        if config.naming.rename:
-            ext = os.path.splitext(search_result.filename)[-1]
-            target = ep.preferred_path + kaa.py3_b(ext.lower())
-        else:
-            target = os.path.join(ep.season.path, kaa.py3_b(search_result.filename))
-
-        ep.search_result = search_result
-        ep.filename = os.path.basename(target)
-
-        msg = 'Starting retrieval of %s %s (%s)' % (ep.series.name, ep.code, search_result.searcher)
+        msg = 'Starting retrieval of %s %s' % (ep.series.name, ep.code)
         log.info(msg)
         msg += '<br/><br/>Check progress of <a href="{{root}}/schedule/aired">active downloads</a>.'
         web.notify('alert', title='Episode Download', text=msg)
 
-        try:
-            # retrieve() ensures that only RetrieverError is raised
-            ip = retrievers.retrieve(search_result, target, ep)
-            #log.debug('not actually retrieving %s %s', ep.series.name, ep.code)
-            #ip = fake_download(search_result, target, ep)
-            ip.progress.connect(self._notify_web_retriever_progress)
-            self._retrieve_inprogress[ep] = ip
-            yield ip
-        except RetrieverError as e:
-            ep.filename = ep.search_result = None
-            if os.path.exists(target):
-                # TODO: handle permission problem
-                log.debug('deleting failed/aborted attempt %s', target)
-                os.unlink(target)
-            if isinstance(e, RetrieverAborted):
-                # Reraise RetrieverAborted errors so _process_retrieve_queue() can
-                # handle appropriately.
-                raise
+        for search_result in ep_results:
+            # Determine name of target file based on naming preferences.
+            if config.naming.rename:
+                ext = os.path.splitext(search_result.filename)[-1]
+                target = ep.preferred_path + kaa.py3_b(ext.lower())
             else:
-                # Otherwise log the error
-                log.error(e.args[0])
-                yield False
+                target = os.path.join(ep.season.path, kaa.py3_b(search_result.filename))
+
+            ep.search_result = search_result
+            ep.filename = os.path.basename(target)
+            try:
+                # Inner try block catches any RetrieverError so it can properly
+                # clean up any partially fetched file, and then reraises so the
+                # outer try block can handle more specific exceptions.
+                try:
+                    # retrieve() ensures that only RetrieverError is raised
+                    ip = retrievers.retrieve(search_result, target, ep)
+                    #log.debug('not actually retrieving %s %s', ep.series.name, ep.code)
+                    #ip = fake_download(search_result, target, ep)
+                    ip.progress.connect(self._notify_web_retriever_progress)
+                    self._retrieve_inprogress[ep] = ip
+                    yield ip
+                except RetrieverError as e:
+                    ep.filename = ep.search_result = None
+                    if os.path.exists(target):
+                        # TODO: handle permission problem
+                        log.debug('deleting failed/aborted attempt %s', target)
+                        os.unlink(target)
+                    # Reraise for outer try block
+                    raise
+            except RetrieverAbortedSoft:
+                # Soft abort: try another result.
+                continue
+            else:
+                # TODO: notify per episode (as well as batches)
+                log.info('successfully retrieved %s %s', ep.series.name, ep.code)
+                #log.debug('not really')
+                ep.status = ep.STATUS_HAVE
+                break
+            finally:
+                del self._retrieve_inprogress[ep]
         else:
-            # TODO: notify per episode (as well as batches)
-            log.info('successfully retrieved %s %s', ep.series.name, ep.code)
-            #log.debug('not really')
-            ep.status = ep.STATUS_HAVE
-            yield True
-        finally:
-            del self._retrieve_inprogress[ep]
+            raise RetrieverError('exhausted all search results')
 
 
 @kaa.coroutine(progress=True)
