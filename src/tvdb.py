@@ -673,28 +673,30 @@ class TVDB(kaa.db.Database):
         # A list of series ids to ignore in the database.
         self._series_ignore = []
 
+        self.register_inverted_index('keywords', min=2, max=40)
+        self.register_inverted_index('genres')
         # TODO: miniseries status
         self.register_object_type_attrs('series',
             provider = (unicode, kaa.db.ATTR_SEARCHABLE),
             conflict = (int, kaa.db.ATTR_SEARCHABLE),
             conflict_info = (dict, kaa.db.ATTR_SIMPLE),
             imdbid = (unicode, kaa.db.ATTR_SEARCHABLE),
-            name = (unicode, kaa.db.ATTR_SEARCHABLE),
+            name = (unicode, kaa.db.ATTR_SEARCHABLE | kaa.db.ATTR_INVERTED_INDEX, 'keywords'),
             status = (int, kaa.db.ATTR_SEARCHABLE),
             started = (unicode, kaa.db.ATTR_SEARCHABLE),  # YYYY-MM-DD
             runtime = (int, kaa.db.ATTR_SEARCHABLE),
             airtime = (unicode, kaa.db.ATTR_SEARCHABLE),
-            overview = (unicode, kaa.db.ATTR_SEARCHABLE),
+            overview = (unicode, kaa.db.ATTR_SEARCHABLE | kaa.db.ATTR_INVERTED_INDEX, 'keywords'),
             banner = (unicode, kaa.db.ATTR_SEARCHABLE),
             banner_data = (kaa.db.RAW_TYPE, kaa.db.ATTR_SIMPLE),
             poster = (unicode, kaa.db.ATTR_SEARCHABLE),
             poster_data = (kaa.db.RAW_TYPE, kaa.db.ATTR_SIMPLE),
-            genres = (list, kaa.db.ATTR_SIMPLE)
+            genres = (list, kaa.db.ATTR_SIMPLE | kaa.db.ATTR_INVERTED_INDEX, 'genres')
         )
 
         self.register_object_type_attrs('episode',
-            name = (unicode, kaa.db.ATTR_SEARCHABLE),
-            overview = (unicode, kaa.db.ATTR_SEARCHABLE),
+            name = (unicode, kaa.db.ATTR_SEARCHABLE | kaa.db.ATTR_INVERTED_INDEX, 'keywords'),
+            overview = (unicode, kaa.db.ATTR_SEARCHABLE | kaa.db.ATTR_INVERTED_INDEX, 'keywords'),
             season = (int, kaa.db.ATTR_SEARCHABLE),
             episode = (int, kaa.db.ATTR_SEARCHABLE),
             airdate = (unicode, kaa.db.ATTR_SEARCHABLE),
