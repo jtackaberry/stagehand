@@ -38,6 +38,7 @@ The core of Stagehand is quite robust, but many essential features are missing
 
 ![](https://helix.urandom.ca/stagehand/stagehand.jpg)
 
+![](https://helix.urandom.ca/stagehand/stagehand2.jpg)
 
 
 ## How to install it
