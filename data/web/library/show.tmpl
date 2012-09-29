@@ -17,32 +17,41 @@
 
         #advanced-toggle-bar {
             color: #888;
-            font-size: 80%;
             border-bottom: 1px solid #ddd;
-            width: 600px;
+            width: 602px;
             cursor: pointer;
-            line-height: 1em;
         }
 
         #advanced-toggle-bar > div {
+            line-height: 1em;
             position: relative;
-            top: 0.65em;
+            top: 0.5em;
             left: 20px;
             background-color: white;
             display: inline-block;
-            padding-right: 1em;
+            padding-right: 0.5em;
         }
         #advanced-toggle-bar div.ui-icon {
-            float: left;
+            position: absolute;
+            margin-top: 1px;
+        }
+        #advanced-toggle-bar span {
+            padding-left: 16px;
+            font-size: 80%;
         }
 
         #advanced-section {
             display: none;
             border-left: 1px solid #ddd;
-            padding: 0.8em 0 0.8em 0;
-            box-shadow:inset 20px 0 20px -15px #eee;
+            border-right: 1px solid #ddd;
+            padding: 1em 0 1em 0;
+            box-shadow: inset 20px 0 20px -15px #eee, inset -20px 0 20px -15px #eee;
             border-bottom: 1px solid #ddd;
             width: 600px;
+            background-color: #fdfdfd;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+
         }
 
         #button-delete-dialog {
@@ -73,7 +82,6 @@
         tr.ep td:nth-child(4) {
             white-space: nowrap;
         }
-
     </style>
 %end
 
@@ -277,7 +285,7 @@
             flat: $('#series-flat').is(':checked')
         stagehand.api("/api/shows/{{series.id}}/settings", settings, 'post')
             .fail ({message}) =>
-                alert "Server failed with: #{message}"
+                alert "Error while saving changes: #{message}"
 
     $('#series-paused').change ->
         if @checked
@@ -291,7 +299,7 @@
         .children('input').change ->
             stagehand.api("/api/shows/{{series.id}}/provider", provider: @id.replace('provider-', ''), 'post')
                 .done ->
-                    window.location = window.location
+                    window.location.reload()
 
     #
     # Delete Series button
