@@ -12,9 +12,9 @@ def rename_example(tvdir, separator, season_dir_format, code_style, episode_form
                 title=title.replace(' ', separator)
             )
         )
-    except KeyError, (key,):
+    except KeyError as (key,):
         return {'error': u'%s is not a valid identifier' % key}
-    except ValueError, (err,):
+    except ValueError as (err,):
         return {'error': err}
     else:
         return {'example': example}

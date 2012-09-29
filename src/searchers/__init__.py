@@ -47,7 +47,7 @@ def search(progress, series, episodes, skip=[]):
         searcher = plugins[name].Searcher()
         try:
             results = yield searcher.search(series, episodes, earliest, min_size, ideal_size, series.cfg.quality)
-        except SearcherError, e:
+        except SearcherError as e:
             log.error('%s failed: %s', name, e.args[0])
         except Exception:
             log.exception('%s failed with unhandled error', name)

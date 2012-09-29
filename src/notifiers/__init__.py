@@ -26,7 +26,7 @@ def notify(episodes, skip=[]):
         notifier = plugins[name].Notifier()
         try:
             yield notifier.notify(episodes)
-        except NotifierError, e:
+        except NotifierError as e:
             log.error('notifier %s failed: %s', name, e.args[0])
         except Exception:
             log.exception('notifier failed with unhandled error')

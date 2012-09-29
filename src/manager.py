@@ -190,7 +190,7 @@ class Manager(object):
         for cfg in config.series:
             try:
                 series = self.tvdb.get_series_by_id(cfg.id)
-            except ValueError, e:
+            except ValueError as e:
                 log.error('malformed config: %s', e)
                 continue
 
@@ -198,7 +198,7 @@ class Manager(object):
                 log.info('discovered new series %s in config; adding to database.', cfg.id)
                 try:
                     series = yield self._add_series_to_db(cfg.id)
-                except Exception, e:
+                except Exception as e:
                     log.exception('failed to add series %s', cfg.id)
 
                 if not series:
@@ -216,7 +216,7 @@ class Manager(object):
                     cfg.provider = kaa.config.get_default(cfg.provider)
                 try:
                     yield series.change_provider(cfg.provider)
-                except ValueError, e:
+                except ValueError as e:
                     log.error('invalid config: %s', e.args[0])
 
             # Add all ids for this series to the seen list.

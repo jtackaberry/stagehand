@@ -156,7 +156,7 @@ def download(url, target=None, resume=True, retry=0, progress=None, noraise=True
     for i in range(retry + 1):
         try:
             status = yield c.get(url, target, resume=resume)
-        except curl.CurlError, e:
+        except curl.CurlError as e:
             if i == retry:
                 # Done retrying, reraise this exception.
                 if noraise:

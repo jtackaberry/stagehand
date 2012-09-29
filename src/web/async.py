@@ -36,7 +36,7 @@ class AsyncWebJob(object):
     def finish(self, ip):
         try:
             self.result = ip.result
-        except Exception, e:
+        except Exception as e:
             self.error = {'message': '%s: %s' % (e.__class__.__name__, ', '.join(str(s) for s in e.args))}
             log.exception('webcoroutine exception')
         self.finished = True

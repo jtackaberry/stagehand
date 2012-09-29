@@ -31,7 +31,8 @@ def show_add(job, id):
         series = yield manager.add_series(id)
         #yield kaa.delay(1)
         #series = manager.tvdb.get_series_by_substring('aliforni')
-    except Exception, e:
+    except Exception as e:
+        log.exception('failed to add series')
         job.notify_after('alert', title='Failed to add series', text=str(e), timeout=2)
     else:
         job.notify_after('alert', title='Series added', text='Added series %s to database.' % series.name, timeout=2)

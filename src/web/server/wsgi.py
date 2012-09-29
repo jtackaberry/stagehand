@@ -51,7 +51,7 @@ class LoggingMiddleware(object):
 
         try:
             return self._application(environ, _start_response)
-        except Exception, r:
+        except Exception as r:
             log.exception('uncaught WSGI exception')
 
 
@@ -68,7 +68,7 @@ class AuthMiddleware(object):
         try:
             nexthop = self._application if self._check_auth(environ) else self._auth_failed
             return nexthop(environ, start_response)
-        except Exception, e:
+        except Exception as e:
             log.exception('error handling authentication')
             return []
 
@@ -345,7 +345,7 @@ class NonBlockingClient(object):
 
             try:
                 sent = self._sock.send(data)
-            except Exception, e:
+            except Exception as e:
                 if isinstance(e, (OSError, IOError, socket.error)) and e.args[0] == 11:
                     sent = 0
                 else:

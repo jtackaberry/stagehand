@@ -118,7 +118,7 @@ def cscompile_with_cache(src, cachedir, is_html=None):
     else:
         try:
             data = cscompile(src, cached, is_html)
-        except CSCompileError, (err, line):
+        except CSCompileError as (err, line):
             raise bottle.HTTPError(500, err, traceback=line)
         else:
             log.debug('Compiling %s -> %s', src, cached)
