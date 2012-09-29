@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 # kaa imports
 import kaa
 import kaa.db
+from kaa.strutils import UNICODE_TYPE
 
 from .utils import fixsep, fixquotes, name_to_url_segment
 from .config import config
@@ -677,29 +678,29 @@ class TVDB(kaa.db.Database):
         self.register_inverted_index('genres')
         # TODO: miniseries status
         self.register_object_type_attrs('series',
-            provider = (unicode, kaa.db.ATTR_SEARCHABLE),
+            provider = (UNICODE_TYPE, kaa.db.ATTR_SEARCHABLE),
             conflict = (int, kaa.db.ATTR_SEARCHABLE),
             conflict_info = (dict, kaa.db.ATTR_SIMPLE),
-            imdbid = (unicode, kaa.db.ATTR_SEARCHABLE),
-            name = (unicode, kaa.db.ATTR_SEARCHABLE | kaa.db.ATTR_INVERTED_INDEX, 'keywords'),
+            imdbid = (UNICODE_TYPE, kaa.db.ATTR_SEARCHABLE),
+            name = (UNICODE_TYPE, kaa.db.ATTR_SEARCHABLE | kaa.db.ATTR_INVERTED_INDEX, 'keywords'),
             status = (int, kaa.db.ATTR_SEARCHABLE),
-            started = (unicode, kaa.db.ATTR_SEARCHABLE),  # YYYY-MM-DD
+            started = (UNICODE_TYPE, kaa.db.ATTR_SEARCHABLE),  # YYYY-MM-DD
             runtime = (int, kaa.db.ATTR_SEARCHABLE),
-            airtime = (unicode, kaa.db.ATTR_SEARCHABLE),
-            overview = (unicode, kaa.db.ATTR_SEARCHABLE | kaa.db.ATTR_INVERTED_INDEX, 'keywords'),
-            banner = (unicode, kaa.db.ATTR_SEARCHABLE),
+            airtime = (UNICODE_TYPE, kaa.db.ATTR_SEARCHABLE),
+            overview = (UNICODE_TYPE, kaa.db.ATTR_SEARCHABLE | kaa.db.ATTR_INVERTED_INDEX, 'keywords'),
+            banner = (UNICODE_TYPE, kaa.db.ATTR_SEARCHABLE),
             banner_data = (kaa.db.RAW_TYPE, kaa.db.ATTR_SIMPLE),
-            poster = (unicode, kaa.db.ATTR_SEARCHABLE),
+            poster = (UNICODE_TYPE, kaa.db.ATTR_SEARCHABLE),
             poster_data = (kaa.db.RAW_TYPE, kaa.db.ATTR_SIMPLE),
             genres = (list, kaa.db.ATTR_SIMPLE | kaa.db.ATTR_INVERTED_INDEX, 'genres')
         )
 
         self.register_object_type_attrs('episode',
-            name = (unicode, kaa.db.ATTR_SEARCHABLE | kaa.db.ATTR_INVERTED_INDEX, 'keywords'),
-            overview = (unicode, kaa.db.ATTR_SEARCHABLE | kaa.db.ATTR_INVERTED_INDEX, 'keywords'),
+            name = (UNICODE_TYPE, kaa.db.ATTR_SEARCHABLE | kaa.db.ATTR_INVERTED_INDEX, 'keywords'),
+            overview = (UNICODE_TYPE, kaa.db.ATTR_SEARCHABLE | kaa.db.ATTR_INVERTED_INDEX, 'keywords'),
             season = (int, kaa.db.ATTR_SEARCHABLE),
             episode = (int, kaa.db.ATTR_SEARCHABLE),
-            airdate = (unicode, kaa.db.ATTR_SEARCHABLE),
+            airdate = (UNICODE_TYPE, kaa.db.ATTR_SEARCHABLE),
             status = (int, kaa.db.ATTR_SEARCHABLE),
             filename = (str, kaa.db.ATTR_SEARCHABLE),
             search_result = (SearchResult, kaa.db.ATTR_SIMPLE),
@@ -725,7 +726,7 @@ class TVDB(kaa.db.Database):
             raise ValueError('id %s is not in the form provider:pid' % id)
         if name not in self.providers:
             raise ValueError('no such provider "%s"' % name)
-        return self.providers[name], unicode(pid)
+        return self.providers[name], kaa.py3_str(pid)
 
 
     def _build_series_cache(self):
@@ -1083,7 +1084,7 @@ class TVDB(kaa.db.Database):
         # set as we add to the pids dict later.
         missing = set(p for p in self.providers.values() if p != provider)
         # Does this series already exist?
-        existing = self.query_one(type='series', **{provider.IDATTR: unicode(id)})
+        existing = self.query_one(type='series', **{provider.IDATTR: kaa.py3_str(id)})
         if existing:
             # FIXME: no, get this from config now.
             preferred = preferred or self.providers.get(existing['provider'], provider)
@@ -1103,7 +1104,7 @@ class TVDB(kaa.db.Database):
         else:
             # No existing object, so even if this provider isn't in the dirty
             # list, it's the only id we have, and so we must fetch it.
-            pids[provider] = unicode(id)
+            pids[provider] = kaa.py3_str(id)
             # Assume the given provider is the preferred one
             # FIXME: no, get this from config now.
             preferred = preferred or provider
