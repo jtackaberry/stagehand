@@ -190,8 +190,8 @@ class Provider(ProviderBase):
                 series.update({
                     'id': data['id'],
                     'name': data.get('SeriesName'),
-                    'poster': self.hostname + '/banners/' + data.get('poster'),
-                    'banner': self.hostname + '/banners/' + kaa.py3_str(banner[1]),
+                    'poster': self.hostname + '/banners/' + data['poster'] if data.get('poster') else None,
+                    'banner': self.hostname + '/banners/' + kaa.py3_str(banner[1]) if banner[1] else None,
                     'overview': data.get('Overview'),
                     'genres': [g.strip().lower() for g in data.get('Genre', '').split('|') if g],
                     # TODO: do a sanity check on FirstAired format.
