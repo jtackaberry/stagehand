@@ -141,7 +141,9 @@ class Provider(ProviderBase):
                 except Valueerror:
                     pass
             elif tag in ('classification', 'genre'):
-                series.setdefault('genres', []).append(data.strip().lower())
+                # Empty genres are parsed as empty dicts.
+                if data:
+                    series.setdefault('genres', []).append(data.strip().lower())
             elif tag == 'Season':
                 season = int(attrs['no'])
                 for ep in eps:
