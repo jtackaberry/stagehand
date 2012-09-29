@@ -80,6 +80,7 @@ a:hover {
     margin: 0;
     cursor: pointer;
     float: left;
+    padding: 5px 1em;
 }
 
 .menu#main li {
@@ -100,7 +101,6 @@ a:hover {
 .menu li a {
     display: inline-block;
     color: white;
-    padding: 5px 1em;
     text-shadow: rgba(0, 0, 0, 0.5) 2px 2px 3px;
 }
 
