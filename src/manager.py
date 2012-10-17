@@ -407,7 +407,7 @@ class Manager(object):
                 # Before popping, sort retrieve queue so that result sets with
                 # older episodes appear first.  FIXME: ep.airdate could be None
                 # which Python 3 won't like sorting.
-                self._retrieve_queue.sort(key=lambda (ep, _): ep.airdate)
+                self._retrieve_queue.sort(key=lambda (ep, _): (ep.airdate, ep.code))
                 try:
                     ep, ep_results = self._retrieve_queue.pop(0)
                 except IndexError:

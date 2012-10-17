@@ -610,7 +610,7 @@ class Series(object):
         matches = []
         for requested in genres:
             requested = requested.lower()
-            for genre in genres:
+            for genre in self.genres:
                 if startswith and genre.startswith(requested) or genre == requested:
                     matches.append(requested)
         return bool((all and len(matches) == len(genres)) or matches)

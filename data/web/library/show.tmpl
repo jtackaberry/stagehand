@@ -90,13 +90,13 @@
         %if series.status == series.STATUS_RUNNING:
             src='{{root}}/static/img/icon-16-play.png' alt='Running' title='Running'
         %elif series.status == series.STATUS_SUSPENDED:
-            src='{{root}}/static/img/icon-16-pause.png' alt='Paused' title='Paused' 
+            src='{{root}}/static/img/icon-16-pause.png' alt='Paused' title='Paused'
         %elif series.status == series.STATUS_ENDED:
             src='{{root}}/static/img/icon-16-stop.png' alt='Stopped' title='Stopped'
         %end
          style='display: {{"none" if series.cfg.paused else "auto"}}'
     />
-    <img src='{{root}}/static/img/icon-16-pause.png' alt='Paused' title='Paused' id='status-icon-paused' 
+    <img src='{{root}}/static/img/icon-16-pause.png' alt='Paused' title='Paused' id='status-icon-paused'
          style='display: {{"auto" if series.cfg.paused else "none"}}' />
     {{series.name}}
 </h1>
@@ -229,7 +229,7 @@
 
 <table id='episode-list' class='grid align-center interactive' width='100%'>
 <thead id='episode-list-header'>
-<tr> 
+<tr>
     <th style='padding: 0 0.7em'><input type='checkbox' /></th>
     <th style='padding: 0 0.7em'>#</th>
     <th style='text-align: left'>Name</th>
@@ -273,6 +273,7 @@
 </tbody>
 </table>
 </div>
+
 <script type='text/coffeescript'>
     # TODO: need a way to reset status to needed, but blacklist one of the search results
     $('form input').change ->
@@ -283,6 +284,8 @@
             upgrade: $('#series-upgrade').is(':checked')
             paused: $('#series-paused').is(':checked')
             flat: $('#series-flat').is(':checked')
+            identifier: $('input:radio[name=identifier]:checked').val()
+
         stagehand.api("/api/shows/{{series.id}}/settings", settings, 'post')
             .fail ({message}) =>
                 alert "Error while saving changes: #{message}"

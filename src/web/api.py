@@ -92,6 +92,7 @@ def show_settings(id):
     series.cfg.upgrade = True if settings['upgrade'] == 'true' else False
     series.cfg.paused = True if settings['paused'] == 'true' else False
     series.cfg.flat = True if settings['flat'] == 'true' else False
+    series.cfg.identifier = settings.identifier
 
     # TODO: if pausing a series that has queued episodes, remove them and
     # notify user.
