@@ -52,7 +52,7 @@ This is what's needed for Ubuntu or Debian.  Adapt as needed to your distro.
 
 ```bash
 # Install base dependencies
-$ sudo apt-get install python-dev python-beautifulsoup python-pycurl python-pip libglib2.0-dev git-core
+$ sudo apt-get install python-dev python-beautifulsoup python-pycurl python-pip libglib2.0-dev libdvdread-dev git-core
 
 # Install kaa-base and kaa-metadata from git
 $ sudo pip install -U git+git://github.com/freevo/kaa-base.git git+git://github.com/freevo/kaa-metadata.git
