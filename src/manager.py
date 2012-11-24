@@ -13,7 +13,7 @@ from .tvdb import TVDB
 from .config import config
 from .utils import fixsep
 from .searchers import SearcherError
-from .retrievers import RetrieverError, RetrieverAborted, RetrieverAbortedHard, RetrieverAbortedSoft
+from .retrievers import RetrieverError, RetrieverSoftError, RetrieverHardError, RetrieverAborted, RetrieverAbortedHard, RetrieverAbortedSoft
 from .notifiers import NotifierError
 
 log = logging.getLogger('stagehand.manager')
@@ -374,7 +374,7 @@ class Manager(object):
                     # where episodes existed multiple times in the retrieve queue, and it's
                     # not clear how.
                     if self.is_episode_queued_for_retrieval(ep):
-                        log.error('BUG: searched for episode %s which is already in retrieve queue %s', ep, 
+                        log.error('BUG: searched for episode %s which is already in retrieve queue %s', ep,
                                    self.retrieve_queue)
                         continue
                     for r in ep_results:
@@ -467,7 +467,7 @@ class Manager(object):
                     # If we got this far without raising, the download finished without
                     # error.
                     retrieved.append(ep)
-                except RetrieverAbortedHard:
+                except RetrieverHardError:
                     # retrieve() (called by _get_episode()) will already have logged the
                     # abort message, so nothing to do.
                     pass
@@ -523,8 +523,8 @@ class Manager(object):
                         os.unlink(target)
                     # Reraise for outer try block
                     raise
-            except RetrieverAbortedSoft:
-                # Soft abort: try another result.
+            except RetrieverSoftError:
+                # Soft error (including soft abort): try another result.
                 continue
             else:
                 # TODO: notify per episode (as well as batches)

@@ -4,7 +4,7 @@ import kaa
 
 from ..utils import load_plugins, invoke_plugins
 from ..config import config
-from .base import RetrieverError, RetrieverAborted, RetrieverAbortedSoft, RetrieverAbortedHard
+from .base import RetrieverError, RetrieverSoftError, RetrieverHardError, RetrieverAborted, RetrieverAbortedSoft, RetrieverAbortedHard
 
 log = logging.getLogger('stagehand.retrievers')
 plugins, plugins_broken = load_plugins('retrievers', globals())
@@ -20,6 +20,10 @@ def start(manager):
 
 @kaa.coroutine(progress=True)
 def retrieve(progress, result, outfile, episode, skip=[]):
+    """
+    Given a SearchResult object, retrieve the file using retriever plugins that
+    support the result type.
+    """
     tried = set()
     always = [name for name in plugins if plugins[name].Retriever.ALWAYS_ENABLED]
     for name in config.retrievers.enabled + always:
@@ -47,7 +51,9 @@ def retrieve(progress, result, outfile, episode, skip=[]):
         else:
             return
 
+    # TODO: reraise RetrieverHardError if all searchers for this result raised
+    # it.
     if not tried:
-        raise RetrieverError('No enabled retriever found for the given result (%s)' % result.type)
+        raise RetrieverSoftError('No enabled retriever found for the given result (%s)' % result.type)
     else:
-        raise RetrieverError('No retriever plugins were able to fetch the file')
+        raise RetrieverSoftError('No retriever plugins were able to fetch the file')

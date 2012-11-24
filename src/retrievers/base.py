@@ -19,11 +19,28 @@ class RetrieverError(Exception):
     pass
 
 
+class RetrieverSoftError(RetrieverError):
+    """
+    Generic retriever error indicating failure fetching a specific result
+    (e.g. file not found).  Other search results for this retriever could
+    be tried.
+    """
+
+
+class RetrieverHardError(RetrieverError):
+    """
+    Generic retriever error indicating a error not with the specific search
+    result but with the retriever itself or its configuration (e.g. invalid
+    credentials). No other search results for this retriever should be tried.
+    """
+    pass
+
+
 class RetrieverAborted(kaa.InProgressAborted, RetrieverError):
     pass
 
 
-class RetrieverAbortedSoft(RetrieverAborted):
+class RetrieverAbortedSoft(RetrieverAborted, RetrieverSoftError):
     """
     A retrieve() InProgress may be aborted with this exception to abort the
     retrieval of the active search result.  If there are other search results
@@ -32,7 +49,7 @@ class RetrieverAbortedSoft(RetrieverAborted):
     pass
 
 
-class RetrieverAbortedHard(RetrieverAborted):
+class RetrieverAbortedHard(RetrieverAborted, RetrieverHardError):
     """
     Like RetrieverAbortedSoft, except no further results will be tried for the
     episode.
