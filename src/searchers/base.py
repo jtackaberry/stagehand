@@ -169,9 +169,18 @@ class SearcherBase(object):
 
     def _is_name_for_episode(self, name, ep):
         recode = re.compile(r'\b{0}\b'.format(self._get_episode_codes_regexp([ep])), re.I)
-        # TODO: verify title
-        return True if recode.search(name) else False
-
+        if recode.search(name):
+            # Epcode matches, check for title.
+            title = ep.series.cfg.search_string or ep.series.name
+            title = self.clean_title(title, apostrophe=self.CLEAN_APOSTROPHE_REGEXP)
+            # Ensure each word in the title matches, but don't require them to be in
+            # the right order.
+            for word in title.split():
+                if not re.search(r'\b%s\b' % word, name, re.I):
+                    break
+            else:
+                return True
+        return False
 
 
     def clean_title(self, title, apostrophe=CLEAN_APOSTROPHE_LEAVE, parens=True):
