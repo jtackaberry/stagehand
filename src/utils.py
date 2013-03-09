@@ -77,6 +77,15 @@ def fixquotes(u):
     return u
 
 
+def remove_stop_words(s):
+    """
+    Removes (English) stop words from the given string.
+    """
+    stopwords = 'a', 'the'
+    words = [word for word in s.split() if word not in stopwords]
+    # Join remaining words and remove whitespace.
+    return ' '.join(words)
+
 def cfgdesc2html(item):
     """
     Given a kaa.config item, returns the description with paragraph breaks

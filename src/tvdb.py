@@ -13,7 +13,7 @@ import kaa
 import kaa.db
 from kaa.strutils import UNICODE_TYPE
 
-from .utils import fixsep, fixquotes, name_to_url_segment
+from .utils import fixsep, fixquotes, name_to_url_segment, remove_stop_words
 from .config import config
 from .providers import plugins, ProviderError
 
@@ -815,10 +815,8 @@ class TVDB(kaa.db.Database):
 
         # Replace & with 'and' and remove other non-word characters
         name = re.sub(r'\W', ' ', name.replace('&', 'and').replace('.', '').lower())
-        # Remove stop words
-        words = [word for word in name.split() if word not in stopwords]
-        # Join remaining words and remove whitespace.
-        return ''.join(words).replace(' ', '')
+        # Remove stop words and remove whitespace.
+        return remove_stop_words(name).replace(' ', '')
 
 
     def _get_conflicts(self, pseries):

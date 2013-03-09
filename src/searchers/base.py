@@ -4,6 +4,9 @@ import re
 import urllib
 import kaa
 
+from ..config import config
+from ..utils import remove_stop_words
+
 class SearcherError(Exception):
     pass
 
@@ -201,9 +204,10 @@ class SearcherBase(object):
             def replace_apostrophe(match):
                 return '(%s|%s)' % (match.group(1).replace("'", ''), match.group(1))
             title = re.sub(r"(\S+'\S*)", replace_apostrophe, title)
+
+        title = remove_stop_words(title)
         # Clean up multiple and trailing spaces.
         return re.sub(r'\s+', ' ', title).strip()
-        # TODO: also remove stop words like 'a' and 'the'
 
 
     @kaa.coroutine()
