@@ -5,7 +5,10 @@ import logging
 import re
 import kaa
 import kaa.dateutils
-from BeautifulSoup import BeautifulStoneSoup
+try:
+    from bs4 import BeautifulSoup
+except ImportError:
+    raise ImportError('easynews searcher now requires BeautifulSoup4 (python-bs4 package on Ubuntu)')
 
 from ..utils import download
 from ..curl import CurlError
@@ -68,16 +71,15 @@ class Searcher(SearcherBase):
             results.append(SearchResult(self, filename='Acme.Show.%s.720p.HDTV.X264-DIMENSION.mkv' % ep.code, size=1198*1024*1024, date=kaa.dateutils.from_rfc822('Thu, 12 Apr 2012 17:06:02 -0700'), url='https://boost4-downloads.secure.members.easynews.com/news/8/4/7/847b553db83e1b0ff14796adfa38694d014e73e3c.mkv/Awake.S01E07.720p.HDTV.X264-DIMENSION.mkv'))
         yield {None: results}
         """
-        
-        rss = yield self._search_global5(query, size, date or '')
 
-        soup = BeautifulStoneSoup(rss)
+        rss = yield self._search_global5(query, size, date or '', res)
+        soup = BeautifulSoup(rss, features='xml')
         results = []
-        for item in soup.findAll('item'):
+        for item in soup.find_all('item'):
             result = SearchResult(self)
             result.filename = urllib.unquote(os.path.split(item.enclosure['url'])[-1])
             result.size = self._parse_hsize(item.enclosure['length'])
-            result.date = kaa.dateutils.from_rfc822(item.pubdate.contents[0])
+            result.date = kaa.dateutils.from_rfc822(item.pubDate.contents[0])
             result.subject = ''.join(item.title.contents)
             result.url = item.enclosure['url']
             # TODO: parse out newsgroup
