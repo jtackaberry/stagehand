@@ -109,7 +109,7 @@ def name_to_url_segment(name):
 def episode_status_icon_info(ep):
     """
     Given an Episode object, returns the icon details for the episode's status.
-    
+
     :params ep: Episode object
     :returns: (status, title)
 

@@ -88,6 +88,8 @@ class Episode(object):
         if isinstance(other, Episode) and self._dbattr('id') == other._dbattr('id'):
             if self is not other:
                 # XXX: temporary (debugging)
+                # This can happen normally when the db gets updated from
+                # providers and caches are invalidated.  It's not a bug.
                 log.warning('episode %s has multiple instances', self)
             return True
         else:
@@ -281,7 +283,7 @@ class Episode(object):
         airdatetime = self.airdatetime
         cutoff = datetime.now() - timedelta(days=days)
         return airdatetime and datetime.now() >= airdatetime and self.airdatetime <= cutoff
-        
+
 
     def get_id_for_provider(self, name):
         for p in self.providers:
@@ -360,7 +362,7 @@ class Season(object):
 class Series(object):
     """
     Represents a series in the database.
-    
+
     Multiple instances of a Series object may exist for the same database
     record, but in practice as long as you get Series instances via the TVDB
     API, you should always get back the same Series object for a given series.
@@ -632,7 +634,7 @@ class SearchResult(object):
     @property
     def overview(self):
         return self._attrs.get('Overview')
-    
+
     @property
     def imdb(self):
         return self._attrs.get('IMDB_ID')
@@ -961,7 +963,7 @@ class TVDB(kaa.db.Database):
                     # Allow unnamed episodes ("TBA" or "Season 1, Episode 1") to match other unnamed
                     # episodes or the real named episode in this group.  XXX: this is really kludgy,
                     # even by my standards. :(
-                    # 
+                    #
                     # Get a list of non-unnamed episodes, or just use 'tba' if there are none.
                     real = [x for x in nnames if x != 'tba' and not re.match(r'season\d+episode\d+', x)] or ['tba']
                     # Replace unnamed episode names with the first real named episode.
@@ -1163,7 +1165,7 @@ class TVDB(kaa.db.Database):
                 normname = self._normalize_name(name)
                 normnameaggr = self._normalize_name(name, aggressive=True)
                 # List of series dicts that we consider a match
-                matches = []   # [(priority, dict), ...]  
+                matches = []   # [(priority, dict), ...]
                 # List of series dicts that could be a match, but we need to fetch them
                 # up front to be sure.
                 maybe = []     # [dict, ...]
@@ -1301,9 +1303,9 @@ class TVDB(kaa.db.Database):
         parent = self._add_or_update(
             'series', idmap, addattrs={},
             provider=kaa.py3_str(preferred.NAME), name=fixquotes(series['name']),
-            poster=series.get('poster'), banner=series.get('banner'), 
+            poster=series.get('poster'), banner=series.get('banner'),
             overview=fixquotes(series.get('overview')), started=series.get('started'),
-            runtime=series.get('runtime'), airtime=series.get('airtime'), 
+            runtime=series.get('runtime'), airtime=series.get('airtime'),
             imdbid=series.get('imdbid'), status=series.get('status', Series.STATUS_UNKNOWN),
             genres=series.get('genres'), conflict=Series.CONFLICT_UNACKED, **kwargs
         )
@@ -1314,7 +1316,7 @@ class TVDB(kaa.db.Database):
         dbids = []
         for idmap, ep in episodes:
             obj = self._add_or_update(
-                'episode', idmap, addattrs={'status': Episode.STATUS_NONE}, parent=parent, 
+                'episode', idmap, addattrs={'status': Episode.STATUS_NONE}, parent=parent,
                 name=fixquotes(ep['name']), season=ep['season'], episode=ep['episode'],
                 airdate=ep.get('airdate'), overview=fixquotes(ep.get('overview'))
             )

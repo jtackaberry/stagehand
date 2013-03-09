@@ -113,7 +113,7 @@ class SearcherBase(object):
             aratio = a.size / float(ideal_size)
             bratio = b.size / float(ideal_size)
             # If both sizes are within 20% of each other, treat them the same.
-            if 0.8 < a.size / float(b.size) < 1.2: 
+            if 0.8 < a.size / float(b.size) < 1.2:
                 pass
             # If both sizes are within 40% of ideal, prefer the larger one
             elif 0.6 < aratio < 1.4 and 0.6 < bratio < 1.4:
