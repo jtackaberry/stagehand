@@ -58,9 +58,9 @@
       }
     },
     _create: function() {
-      var _base,
+      var _base, _ref,
         _this = this;
-      if ((_base = this.options).disabled == null) {
+      if ((_ref = (_base = this.options).disabled) == null) {
         _base.disabled = this.element.propAttr('disabled');
       }
       if (this.element.is(':disabled')) {

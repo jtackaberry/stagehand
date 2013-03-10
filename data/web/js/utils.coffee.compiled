@@ -35,8 +35,6 @@
 
   this.Stagehand = (function() {
 
-    Stagehand.name = 'Stagehand';
-
     function Stagehand(root) {
       this.root = root;
       this.jobs = {};
@@ -48,8 +46,8 @@
     }
 
     Stagehand.prototype.bind = function(ntype, f) {
-      var _base;
-      if ((_base = this.handlers)[ntype] == null) {
+      var _base, _ref;
+      if ((_ref = (_base = this.handlers)[ntype]) == null) {
         _base[ntype] = [];
       }
       return this.handlers[ntype].push(f);
@@ -70,7 +68,7 @@
         data: data,
         type: type.toUpperCase()
       }).done(function(response) {
-        if (!(response.jobid != null)) {
+        if (response.jobid == null) {
           response.xhr = xhr;
           return dfd.resolve(response);
         }
@@ -94,7 +92,7 @@
     };
 
     Stagehand.prototype.handle_response = function(_arg) {
-      var dfd, f, job, jobs, key, n, notifications, value, xhr, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _results;
+      var dfd, f, job, jobs, key, n, notifications, value, xhr, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _results;
       jobs = _arg.jobs, notifications = _arg.notifications;
       for (_i = 0, _len = jobs.length; _i < _len; _i++) {
         job = jobs[_i];
@@ -120,19 +118,19 @@
           }
         }
         if (n._ntype === 'alert') {
-          if (n.type == null) {
+          if ((_ref2 = n.type) == null) {
             n.type = 'notice';
           }
-          if (n.nonblock == null) {
+          if ((_ref3 = n.nonblock) == null) {
             n.nonblock = false;
           }
-          if (n.animation == null) {
+          if ((_ref4 = n.animation) == null) {
             n.animation = 'fade';
           }
-          if (n.closer == null) {
+          if ((_ref5 = n.closer) == null) {
             n.closer = true;
           }
-          if (n.delay == null) {
+          if ((_ref6 = n.delay) == null) {
             n.delay = 8000;
           }
           for (key in n) {
