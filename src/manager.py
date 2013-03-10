@@ -460,6 +460,10 @@ class Manager(object):
                 ip, ep, ep_results = active[idx]
                 self._retrieve_queue_active.remove((ep, ep_results))
                 active.pop(idx)
+                # Now that the episode has been removed from the retrieve
+                # queue, send an updated notification so the web client sees
+                # the epsiode has been removed from the dlprogress list.
+                self._notify_web_retriever_progress()
                 try:
                     # Access the result attribute, which will either succeed
                     # or induce an exception if the async task failed.
