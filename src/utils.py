@@ -51,11 +51,21 @@ def fixsep(s, path=True):
     """
     Applies the configured separator policy to the given string.
 
-    :param path: if True, also replace path separators with _
+    :param path: if True, return a result that can be used as a path name on the
+                 filesystem (replace path separators and colons)
     """
-    s = s.replace(' ', config.naming.separator)
     if path:
-        s = s.replace(os.path.sep, '_')
+        s = s.replace(os.path.sep, ' ')
+        # Colons are problematic on CIFS mounts.  Even on filesystems where
+        # they're allowed, they'll cause problems if the user wants to copy a
+        # file to a filesystem where they're not.  e.g. Linux with an ntfs-3g
+        # mount will happily let you copy a file with a colin in its name, and
+        # then the directory won't be readable by an actual Windows machine.
+        # So, just replace them with
+        s = s.replace(':', ' ')
+        # Now condense multiple spaces.
+        s = re.sub(r'\s+', ' ', s)
+    s = s.replace(' ', config.naming.separator)
     return s
 
 
