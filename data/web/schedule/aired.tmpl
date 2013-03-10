@@ -156,6 +156,8 @@
                 bar.parent().attr('title', "#{speed} KB/s")
                 bar.children('.overlay').text "#{current} / #{total} MB"
         if queue_changed
+            # FIXME: if all searching is done, reenable search button.  One solution:
+            # don't reload, update list dynamically.
             window.location.reload()
 </script>
 
