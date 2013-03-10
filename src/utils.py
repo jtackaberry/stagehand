@@ -140,8 +140,8 @@ if curl:
             if config.misc.bind_address:
                 defaults['bind_address'] = config.misc.bind_address
             defaults.update(props)
-            if 'bind_address' in props and not props['bind_address']:
-                del props['bind_address']
+            if 'bind_address' in defaults and not defaults['bind_address']:
+                del defaults['bind_address']
 
             super(Curl, self).__init__(**defaults)
 
