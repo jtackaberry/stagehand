@@ -48,17 +48,18 @@ Stagehand is Linux software.
 Assuming your distro has a relatively recent version of pip (0.5 or later),
 installation should be fairly straightforward:
 
-This is what's needed for Ubuntu or Debian.  Adapt as needed to your distro.
+If you're using Ubuntu or Debian, you can just copy and paste this into a
+shell.  Otherwise you will need to adapt to your distro:
 
 ```bash
 # Install base dependencies
-$ sudo apt-get install python-dev python-beautifulsoup python-pycurl python-pip libglib2.0-dev libdvdread-dev git-core
+sudo apt-get install python-dev python-bs4 python-pycurl python-pip libglib2.0-dev libdvdread-dev git-core &&
 
 # Install kaa-base and kaa-metadata from git
-$ sudo pip install -U git+git://github.com/freevo/kaa-base.git git+git://github.com/freevo/kaa-metadata.git
+sudo pip install -U git+git://github.com/freevo/kaa-base.git git+git://github.com/freevo/kaa-metadata.git &&
 
 # Install Stagehand from git
-$ sudo pip install -U --no-deps git+git://github.com/jtackaberry/stagehand.git
+sudo pip install -U --no-deps git+git://github.com/jtackaberry/stagehand.git
 ```
 
 Once installed, run it:
