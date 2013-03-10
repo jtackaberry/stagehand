@@ -26,6 +26,7 @@ def retrieve(progress, result, outfile, episode, skip=[]):
     """
     tried = set()
     always = [name for name in plugins if plugins[name].Retriever.ALWAYS_ENABLED]
+    suppressed_exceptions = []
     for name in config.retrievers.enabled + always:
         if name not in plugins or name in skip or result.type not in plugins[name].Retriever.SUPPORTED_TYPES or name in tried:
             continue
@@ -46,14 +47,23 @@ def retrieve(progress, result, outfile, episode, skip=[]):
             raise
         except RetrieverError as e:
             log.error('retriever %s failed to retrieve %s: %s', name, result.filename, e.args[0])
-        except Exception:
+            suppressed_exceptions.append(e)
+        except Exception as e:
             log.exception('retriever failed with unhandled error')
+            suppressed_exceptions.append(e)
         else:
+            # Retrieved without error
             return
 
-    # TODO: reraise RetrieverHardError if all searchers for this result raised
-    # it.
     if not tried:
         raise RetrieverSoftError('No enabled retriever found for the given result (%s)' % result.type)
+
+    # If there are any RetrieverHardErrors or non-RetrieverErrors, reraise the
+    # first such exception so at least we have something meaningful to pass up
+    # to the manager.
+    important = [e for e in suppressed_exceptions if isinstance(e, RetrieverHardError) or \
+                                                     not isinstance(e, RetrieverError)]
+    if important:
+        raise important[0]
     else:
         raise RetrieverSoftError('No retriever plugins were able to fetch the file')

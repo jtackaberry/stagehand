@@ -467,17 +467,22 @@ class Manager(object):
                 try:
                     # Access the result attribute, which will either succeed
                     # or induce an exception if the async task failed.
-                    ip.result
-                    # If we got this far without raising, the download finished without
-                    # error.
-                    retrieved.append(ep)
-                except RetrieverHardError:
-                    # retrieve() (called by _get_episode()) will already have logged the
-                    # abort message, so nothing to do.
+                    success = ip.result
+                    # If we got this far without raising, either the download finished,
+                    # or none of the retrievers could get the episode.
+                    if success:
+                        retrieved.append(ep)
+                except RetrieverAbortedHard:
+                    # Result was aborted by user, so do nothing.
                     pass
                 except Exception as e:
                     # Some other non-abort related error occured, so log it now.
-                    log.error('download failed: %s', e)
+                    strerror = str(e).split('\n')[-1]
+                    log.error('download failed: %s', strerror)
+                    msg = 'Download failed with an unrecoverable error: %s.' + \
+                          ' Intervention is needed.  Check the logs for more details.'
+                    web.notify('alert', title='Download Failed', text=msg % strerror, type='error')
+
 
 
     @kaa.coroutine()
@@ -485,9 +490,16 @@ class Manager(object):
         """
         Initiate the retriever plugin for the given search result.
 
-        On failure, False is returned, and it's up to the caller to retry with
-        a different search result.
+        :returns: True if the episode was successfully retrieved, or False if no
+                  retrievers were capable of fetching any of the search results.
+        :raises: RetrieverHardError if a more serious error occurred with one
+                 of the retrievers.
         """
+        # _retrieve_queue_process(), which calls us, isn't equipped for us to raise
+        # immediatel (before we hit the coroutine scheduler).  So just yield now
+        # so that _all_ exceptions will be asynchronous.
+        yield kaa.NotFinished
+
         if not os.path.isdir(ep.season.path):
             # TODO: handle failure
             os.makedirs(ep.season.path)
@@ -535,11 +547,14 @@ class Manager(object):
                 log.info('successfully retrieved %s %s', ep.series.name, ep.code)
                 #log.debug('not really')
                 ep.status = ep.STATUS_HAVE
-                break
+                yield True
             finally:
-                del self._retrieve_inprogress[ep]
-        else:
-            raise RetrieverError('exhausted all search results')
+                # ep may not be in _retrieve_inprogress if e.g. retrieve() raises
+                # an exception.
+                if ep in self._retrieve_inprogress:
+                    del self._retrieve_inprogress[ep]
+
+        yield False
 
 
 @kaa.coroutine(progress=True)
