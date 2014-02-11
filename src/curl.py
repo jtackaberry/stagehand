@@ -2,10 +2,13 @@ import os
 import urllib
 import time
 import threading
+import logging
 import kaa
 from kaa.core import notifier, CoreThreading
 
 import pycurl
+
+log = logging.getLogger('stagehand.curl')
 
 class CurlError(Exception):
     pass
@@ -51,7 +54,7 @@ class Curl(kaa.Object):
     It doesn't buy us anything to run the handler (_perform()) from a loop
     inside a separate thread, because we return back into Python space too much
     to benefit from parallelism.
-    
+
     From that perspective, it might actually be much better to use libcurl's
     easy interface, which is entirely blocking but it's all in C space where it
     would release the GIL.  This should scale across multiple cores and also
@@ -180,7 +183,7 @@ class Curl(kaa.Object):
 
 
     def _emit_progress(self):
-        self.signals['progress'].emit(self, self._state, self.position, 
+        self.signals['progress'].emit(self, self._state, self.position,
                                       self.content_length_download_total, self.speed_download)
 
 
@@ -342,7 +345,11 @@ class Curl(kaa.Object):
             self._progress_check()
 
         # TODO: now that multi:easy is 1:1 this can be made more efficient.
-        self._update_all_fds()
+        if not self._update_all_fds() and n:
+            # XXX: this kludge is needed because multi.fdset() doesn't return a
+            # selectable file descriptor straightaway.  Maybe it's doing some
+            # threaded connect?
+            kaa.OneShotTimer(self._perform).start(0.1)
         return True
 
 
@@ -353,6 +360,7 @@ class Curl(kaa.Object):
             rfd, wfd, efd = self._multi.fdset()
         self._update_fdset(self._rfds, set(rfd), 0)
         self._update_fdset(self._wfds, set(wfd), 1)
+        return len(rfd) or len(wfd)
 
 
     def _update_fdset(self, cur, new, action):
