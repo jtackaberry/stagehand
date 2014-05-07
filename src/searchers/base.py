@@ -148,7 +148,7 @@ class SearcherBase(object):
         return 0
 
 
-    def _get_episode_codes_regexp(self, episodes, codes=True, dates=True):
+    def _get_episode_codes_regexp_list(self, episodes, codes=True, dates=True):
         parts = []
         for ep in episodes or ():
             if codes:
@@ -159,6 +159,10 @@ class SearcherBase(object):
                 if dt:
                     parts.append(r'{0}[-.]?{1:02}[-.]?{2:02}'.format(dt.year, dt.month, dt.day))
 
+        return parts
+
+    def _get_episode_codes_regexp(self, episodes, codes=True, dates=True):
+        parts = self._get_episode_codes_regexp_list(episodes, codes, dates)
         if not parts:
             return ''
         elif len(parts) == 1:

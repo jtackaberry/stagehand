@@ -39,7 +39,7 @@ class Searcher(SearcherBase):
             print('Using cached result.rss')
             yield file('result.rss').read()
 
-        url = modconfig.url or Searcher.DEFAULT_URL_GLOBAL4
+        url = modconfig.url or Searcher.DEFAULT_URL_GLOBAL5
         url = url.format(subject=urllib.quote_plus(title), date=urllib.quote_plus(date), size=size, res=res)
         status, rss = yield download(url, retry=modconfig.retries,
                                      userpwd='%s:%s' % (modconfig.username, modconfig.password))
@@ -56,30 +56,31 @@ class Searcher(SearcherBase):
         # Strip problem characters from the title, and substitute alternative apostrophe
         title = self.clean_title(title, apostrophe=Searcher.CLEAN_APOSTROPHE_REGEXP)
         size = '%dM' % (min_size / 1048576) if min_size else '100M'
-        query = '%s %s' % (title, self._get_episode_codes_regexp(episodes))
-        res = '1x540' if quality == 'HD' else ''
-        log.debug('searching for "%s" with minimum size %s and res %s', query, size, res or 'any')
 
-        """
-        log.debug('generating bogus results')
         results = []
-        for ep in episodes:
-            results.append(SearchResult(self, filename='Acme.Show.%s.720p.HDTV.X264-DIMENSION.mkv' % ep.code, size=1198*1024*1024, date=kaa.dateutils.from_rfc822('Thu, 12 Apr 2012 17:06:02 -0700'), url='https://boost4-downloads.secure.members.easynews.com/news/8/4/7/847b553db83e1b0ff14796adfa38694d014e73e3c.mkv/Awake.S01E07.720p.HDTV.X264-DIMENSION.mkv'))
-        yield {None: results}
-        """
 
-        rss = yield self._search_global5(query, size, date or '', res)
-        soup = BeautifulSoup(rss, features='xml')
-        results = []
-        for item in soup.find_all('item'):
-            result = SearchResult(self)
-            result.filename = urllib.unquote(os.path.split(item.enclosure['url'])[-1])
-            result.size = self._parse_hsize(item.enclosure['length'])
-            result.date = kaa.dateutils.from_rfc822(item.pubDate.contents[0])
-            result.subject = ''.join(item.title.contents)
-            result.url = item.enclosure['url']
-            # TODO: parse out newsgroup
-            results.append(result)
+        for i in range(0, len(episodes), 10):
+            batch = episodes[i:i+10]
+            epterms = []
+            for episode in batch:
+                for code in self._get_episode_codes_regexp_list([episode]):
+                    epterms.append('(%s+%s)' % (title.replace(' ', '+'), code))
+            query = '|'.join(epterms)
+            res = '1x540' if quality == 'HD' else ''
+            log.debug('searching for %d episodes, minimum size %s and res %s, query=%s',
+                      len(batch), size, res or 'any', query)
+            rss = yield self._search_global5(query, size, date or '', res)
+            soup = BeautifulSoup(rss, features='xml')
+            for item in soup.find_all('item'):
+                result = SearchResult(self)
+                result.filename = urllib.unquote(os.path.split(item.enclosure['url'])[-1])
+                result.size = self._parse_hsize(item.enclosure['length'])
+                result.date = kaa.dateutils.from_rfc822(item.pubDate.contents[0])
+                result.subject = ''.join(item.title.contents)
+                result.url = item.enclosure['url']
+                # TODO: parse out newsgroup
+                results.append(result)
+
         yield {None: results}
 
 
