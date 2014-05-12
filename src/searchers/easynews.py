@@ -26,12 +26,9 @@ class Searcher(SearcherBase):
     PRINTABLE_NAME = 'Easynews Global Search'
     TYPE = 'http'
 
-    # TODO: basically the same URLs here: g4 has hInfo and hthm extra, otherwise they are the same.
-    DEFAULT_URL_GLOBAL5 = 'https://secure.members.easynews.com/global5/index.html?gps=&sbj={subject}&from=&ns=&fil=&fex=&vc=&ac=&s1=nsubject&s1d=%2B&s2=nrfile&s2d=%2B&s3=dsize&s3d=%2B&pby=500&u=1&svL=&d1={date}&d1t=&d2=&d2t=&b1={size}&b1t=&b2=&b2t=&px1={res}&px1t=&px2=&px2t=&fps1=&fps1t=&fps2=&fps2t=&bps1=&bps1t=&bps2=&bps2t=&hz1=&hz1t=&hz2=&hz2t=&rn1=&rn1t=&rn2=&rn2t=&fly=2&pno=1&sS=5'
-    DEFAULT_URL_GLOBAL4 = 'https://secure.members.easynews.com/global4/search.html?gps=&sbj={subject}&from=&ns=&fil=&fex=&vc=&ac=&s1=nsubject&s1d=%2B&s2=nrfile&s2d=%2B&s3=dsize&s3d=%2B&pby=500&pno=1&sS=5&u=1&hthm=1&hInfo=1&svL=&d1={date}&d1t=&d2=&d2t=&b1={size}&b1t=&b2=&b2t=&px1={res}&px1t=&px2=&px2t=&fps1=&fps1t=&fps2=&fps2t=&bps1=&bps1t=&bps2=&bps2t=&hz1=&hz1t=&hz2=&hz2t=&rn1=&rn1t=&rn2=&rn2t=&fly=2'
-
+    DEFAULT_URL_GLOBAL5 = 'https://secure.members.easynews.com/global5/index.html?gps={keywords}&sbj={subject}&from=&ns=&fil=&fex=&vc=&ac=&s1=nsubject&s1d=%2B&s2=nrfile&s2d=%2B&s3=dsize&s3d=%2B&pby=500&u=1&svL=&d1={date}&d1t=&d2=&d2t=&b1={size}&b1t=&b2=&b2t=&px1={res}&px1t=&px2=&px2t=&fps1=&fps1t=&fps2=&fps2t=&bps1=&bps1t=&bps2=&bps2t=&hz1=&hz1t=&hz2=&hz2t=&rn1=&rn1t=&rn2=&rn2t=&fly=2&pno=1&sS=5'
     @kaa.coroutine()
-    def _search_global5(self, title, size, date, res):
+    def _search_global5(self, title, codes, size, date, res):
         if not modconfig.username or not modconfig.password:
             raise ValueError('Configuration lacks username and/or password')
 
@@ -40,7 +37,7 @@ class Searcher(SearcherBase):
             yield file('result.rss').read()
 
         url = modconfig.url or Searcher.DEFAULT_URL_GLOBAL5
-        url = url.format(subject=urllib.quote_plus(title), date=urllib.quote_plus(date), size=size, res=res)
+        url = url.format(keywords=urllib.quote_plus(title), subject=codes, date=urllib.quote_plus(date), size=size, res=res)
         status, rss = yield download(url, retry=modconfig.retries,
                                      userpwd='%s:%s' % (modconfig.username, modconfig.password))
         if status != 200:
@@ -56,20 +53,17 @@ class Searcher(SearcherBase):
         # Strip problem characters from the title, and substitute alternative apostrophe
         title = self.clean_title(title, apostrophe=Searcher.CLEAN_APOSTROPHE_REGEXP)
         size = '%dM' % (min_size / 1048576) if min_size else '100M'
+        res = '1x540' if quality == 'HD' else ''
 
         results = []
-
         for i in range(0, len(episodes), 10):
             batch = episodes[i:i+10]
-            epterms = []
-            for episode in batch:
-                for code in self._get_episode_codes_regexp_list([episode]):
-                    epterms.append('(%s+%s)' % (title.replace(' ', '+'), code))
-            query = '|'.join(epterms)
-            res = '1x540' if quality == 'HD' else ''
-            log.debug('searching for %d episodes, minimum size %s and res %s, query=%s',
-                      len(batch), size, res or 'any', query)
-            rss = yield self._search_global5(query, size, date or '', res)
+            codelist = [code for episode in batch \
+                             for code in self._get_episode_codes_regexp_list([episode])]
+            codes = '|'.join(codelist)
+            log.debug('searching for %d episodes, minimum size %s and res %s, keywords=%s subject=%s',
+                      len(batch), size, res or 'any', title, codes)
+            rss = yield self._search_global5(title, codes, size, date or '', res)
             soup = BeautifulSoup(rss, features='xml')
             for item in soup.find_all('item'):
                 result = SearchResult(self)
