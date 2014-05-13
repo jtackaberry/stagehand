@@ -709,6 +709,7 @@ class TVDB(kaa.db.Database):
             # A list of SearchResults that have been blacklisted (user decided
             # the result was not appropriate for this episode).
             blacklist = (list, kaa.db.ATTR_SIMPLE),
+            keywords = (list, kaa.db.ATTR_SIMPLE | kaa.db.ATTR_INVERTED_INDEX, 'keywords')
         )
 
         self.lazy_commit = 5
@@ -1318,7 +1319,8 @@ class TVDB(kaa.db.Database):
             obj = self._add_or_update(
                 'episode', idmap, addattrs={'status': Episode.STATUS_NONE}, parent=parent,
                 name=fixquotes(ep['name']), season=ep['season'], episode=ep['episode'],
-                airdate=ep.get('airdate'), overview=fixquotes(ep.get('overview'))
+                airdate=ep.get('airdate'), overview=fixquotes(ep.get('overview')),
+                keywords=series['name']
             )
             dbids.append(obj['id'])
 
