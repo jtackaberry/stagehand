@@ -106,7 +106,7 @@ $ stagehand -vvb
 Stagehand installs from source like any other Python module:
 
 ```bash
-$ git clone git+git://github.com/jtackaberry/stagehand.git
+$ git clone git://github.com/jtackaberry/stagehand.git
 $ cd stagehand
 $ sudo python3 setup.py install
 $ stagehand
