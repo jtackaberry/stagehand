@@ -46,6 +46,20 @@ The core of Stagehand is quite robust, but many essential features are missing
 
 Stagehand is powered by Python and requires Python 3.3 or later.
 
+
+### Windows
+
+First [download Python](https://www.python.org/downloads/) and install it.
+
+Then [download Stagehand](http://stagehand.ca/downloads/stagehand.pyw), which
+you can run directly.
+
+Once running, you should see a TV icon in your system tray.  Double clicking
+it will open Stagehand in your browser.  You can also right-click the icon to
+see additional options.
+
+
+
 ### Linux
 
 If you have a relatively recent Linux distribution, you probably already have
@@ -72,7 +86,7 @@ $ ./stagehand
 It will output a line that looks like:
 
 ```
-2012-05-10 00:02:13,011 [INFO] web: starting webserver at http://orion:8088/
+2014-06-18 22:58:02,571 [INFO] stagehand.web: started webserver at http://buffy:8088/
 ```
 
 You should be able to browse to this URL (from inside your network,
@@ -98,17 +112,6 @@ $ sudo python3 setup.py install
 $ stagehand
 ```
 
-### Windows
-
-First [download Python](https://www.python.org/downloads/) and install it.
-
-Then [download Stagehand](http://stagehand.ca/downloads/stagehand.pyw), which
-you can run directly.
-
-Once running, you should see a TV icon in your system tray.  Double clicking
-it will open Stagehand in your browser.  You can also right-click the icon to
-see additional options.
-
 
 ## How to configure it
 
@@ -133,6 +136,7 @@ Once you save the config file, you're ready to start using Stagehand.  No reload
 is needed, it will pick up the changes dynamically.
 
 
+
 ## Haven't you heard of $APP?
 
 I realize there are several programs that do what Stagehand does, including and
@@ -141,8 +145,8 @@ especially the very popular Sick Beard.
 There are a few reasons Stagehand exists:
 
 * I needed an excuse to learn [CoffeeScript](http://coffeescript.org/)
-* ~~~I wanted a real-world application to exercise the [Kaa application
-  framework](https://github.com/freevo/kaa-base), which is another project of mine.~~~
+* ~~I wanted a real-world application to exercise the [Kaa application
+  framework](https://github.com/freevo/kaa-base), which is another project of mine.~~
 * I wanted a project with which to learn Python 3.4's
   [asyncio](https://docs.python.org/3/library/asyncio.html) module
 * I was a bit annoyed at Sick Beard's need for SABnzbd
