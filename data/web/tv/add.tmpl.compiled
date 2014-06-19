@@ -1,0 +1,164 @@
+<h1>Add Series</h1>
+<table border='0' cellpadding='5' cellspacing='0' style='margin: 1em; font-family: Sans-serif'>
+<tbody id='step1'>
+<tr>
+    <td><span class='step'><span>1</span></span></td>
+    <td>Search for a TV series by name</td>
+</tr>
+<tr>
+    <td></td>
+    <td style='padding-bottom: 2em'>
+        <input type='text' id='series-name' size='25' />
+        &nbsp;
+        <button id='button-search'>Search</button>
+        <!--img src='{{root}}/static/img/throbber.gif' width='16'/-->
+    </td>
+</tr>
+</tbody>
+
+<tbody id='step2'>
+<tr>
+    <td><span class='step'><span>2</span></span></td>
+    <td><span>Choose the series from the search results</span></td>
+</tr>
+<tr>
+    <td></td>
+    <td style='padding-bottom: 2em'>
+        <select id='select-series' style='width: 20em'></select>
+        <a href='/' id='select-series-link' style='display: none'>
+            <img src='{{root}}/static/img/icon-16-thetvdb.png' alt='' style='margin: 0 0.4em 0 1em' />
+            View on TheTVDB.com
+        </a>
+        <div style='margin-top: 1em'>
+            <label></label>
+            <button id='button-add'>Add Series</button>
+        </div>
+    </td>
+</tr>
+</tbody>
+
+<!--
+<tbody id='step3'>
+<tr>
+    <td><span class='step'><span>3</span></span></td>
+    <td><span>Configure settings for the series</span>
+</tr>
+<tr>
+    <td></td>
+    <td>
+        <div class='section'>
+        </div>
+    </td>
+</tr>
+</tbody>
+-->
+</table>
+<script type='text/javascript'>
+(function() {
+  window.series_id = null;
+
+  $(function() {
+    $('#series-name').focus();
+    return $('#button-search').button('enable');
+  });
+
+  $('#series-name').keydown(function(event) {
+    if (event.keyCode === 13) {
+      return $('#button-search').click();
+    }
+  });
+
+  $('#button-search').button({
+    icons: {
+      primary: 'ui-icon-search'
+    }
+  }).click(function() {
+    var name, pn;
+    name = $('#series-name').val();
+    $(this).button('disable');
+    pn = $.pnotify({
+      pnotify_title: 'Add TV Series',
+      pnotify_text: 'Searching for TV series ...',
+      pnotify_hide: false,
+      pnotify_closer: false,
+      pnotify_notice_icon: 'picon picon-throbber'
+    });
+    return stagehand.api('/api/shows/search', {
+      name: name
+    }).always((function(_this) {
+      return function() {
+        $(_this).button('enable');
+        return pn.pnotify({
+          pnotify_hide: true,
+          pnotify_closer: true,
+          pnotify_type: 'error'
+        });
+      };
+    })(this)).done(function(_arg) {
+      var dummy, menu, result, results, size, _i, _len;
+      results = _arg.results;
+      if (results.length === 0) {
+        pn.pnotify({
+          pnotify_text: "No TV series were found matching \"" + name + "\""
+        });
+        return;
+      }
+      pn.hide();
+      section_set_disabled('step2', false);
+      $('#button-add').button('disable');
+      menu = $('#select-series').empty();
+      dummy = menu.append('<option>Dummy</option>');
+      size = 10;
+      for (_i = 0, _len = results.length; _i < _len; _i++) {
+        result = results[_i];
+        menu.append("<option value='" + result.id + "'>" + result.name + " (" + (result.started || '?') + ")</option>");
+        size = Math.max(size, result.name.length);
+      }
+      menu.selectmenu('destroy').selectmenu({
+        width: "" + (size * .8 + 8) + "em"
+      });
+      menu.next().children('.ui-selectmenu-status').text('Choose a series ...');
+      $('#select-series-menu').find('.ui-selectmenu-item-selected').css({
+        display: 'none'
+      });
+      return menu.focus();
+    }).fail(function(_arg) {
+      var message;
+      message = _arg.message;
+      return pn.pnotify({
+        pnotify_text: "Unrecoverable error while searching (" + message + ").  Try again?"
+      });
+    });
+  });
+
+  $('#select-series').selectmenu().change(function() {
+    var link, link_visible, tvdbid;
+    link = $('#select-series-link');
+    link_visible = link.is(':visible');
+    $('#button-add').button('enable');
+    window.series_id = $(this).val();
+    tvdbid = window.series_id.replace('thetvdb:', '');
+    return link.show().attr('href', "http://thetvdb.com/?tab=series&id=" + tvdbid + "&lid=7");
+  });
+
+  $('#button-add').button({
+    icons: {
+      primary: 'ui-icon-plus'
+    }
+  }).click(function() {
+    $(this).button('disable');
+    return stagehand.api("/api/shows/" + window.series_id, null, 'put').always((function(_this) {
+      return function() {
+        return $(_this).button('enable');
+      };
+    })(this)).done(function() {
+      return window.location = "{{root}}/tv/" + window.series_id;
+    });
+  });
+
+  section_set_disabled('step2', true);
+
+}).call(this);
+</script>
+
+%rebase('layout.tmpl', title='Add Series', section="tv", subsection="series")

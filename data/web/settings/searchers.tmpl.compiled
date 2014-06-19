@@ -1,1 +1,1 @@
-%rebase layout.tmpl title='Searcher Settings', section="settings", subsection="searchers"
+%rebase('layout.tmpl', title='Searcher Settings', section="settings", subsection="searchers")

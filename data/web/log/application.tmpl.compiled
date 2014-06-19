@@ -1,1 +1,1 @@
-%rebase layout.tmpl title='Application Log', section="log", subsection="application"
+%rebase('layout.tmpl', title='Application Log', section="log", subsection="application")

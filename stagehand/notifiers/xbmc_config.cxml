@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<config>
+    <desc lang="en">XBMC notifier</desc>
+    <var name='hostname' type='str' default='localhost' />
+    <var name='http_port' type='int' default='8080' />
+    <var name='tcp_port' type='int' default='9090' />
+    <var name='notify' type='bool' default='True' />
+    <var name='individual' type='bool' default='True'>
+        <desc>
+            If True, update the media library for individual series
+            directories.  If False, do a full library update.
+        </desc>
+    </var>
+    <var name='tvdir' type='str'>
+        <desc>
+            The XBMC host's local path to the TV directory.  If defined,
+            Stagehand will remap the path to the series directory when poking
+            XBMC to update.  If not defined, no translation is done.
+
+            This is useful if Stagehand's view of the filesystem is different
+            than XBMC's.  Only relevant if individual is True.
+        </desc>
+    </var>
+</config>

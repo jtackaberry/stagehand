@@ -1,6 +1,5 @@
 // This is a generated file. Edits will be lost.
 (function() {
-
   this.defer = function(timeout, callback) {
     return setTimeout(callback, timeout);
   };
@@ -34,7 +33,6 @@
   };
 
   this.Stagehand = (function() {
-
     function Stagehand(root) {
       this.root = root;
       this.jobs = {};
@@ -46,16 +44,15 @@
     }
 
     Stagehand.prototype.bind = function(ntype, f) {
-      var _base, _ref;
-      if ((_ref = (_base = this.handlers)[ntype]) == null) {
+      var _base;
+      if ((_base = this.handlers)[ntype] == null) {
         _base[ntype] = [];
       }
       return this.handlers[ntype].push(f);
     };
 
     Stagehand.prototype.api = function(url, data, type) {
-      var dfd, xhr,
-        _this = this;
+      var dfd, xhr;
       if (data == null) {
         data = {};
       }
@@ -67,32 +64,36 @@
         url: this.root + url,
         data: data,
         type: type.toUpperCase()
-      }).done(function(response) {
-        if (response.jobid == null) {
-          response.xhr = xhr;
-          return dfd.resolve(response);
-        }
-        _this.jobs[response.jobid] = [dfd, xhr];
-        if (response.pending) {
-          dfd.notify(response.jobid);
-        }
-        if (response.pending && _this.interval > response.interval) {
-          _this.poll(response.interval);
-        } else if (_this.interval > 1000) {
-          _this.poll(1000);
-        }
-        return _this.handle_response(response);
-      }).fail(function(xhr, status) {
-        return dfd.reject({
-          message: "HTTP " + xhr.status + ": " + xhr.statusText,
-          xhr: xhr
-        });
-      });
+      }).done((function(_this) {
+        return function(response) {
+          if (response.jobid == null) {
+            response.xhr = xhr;
+            return dfd.resolve(response);
+          }
+          _this.jobs[response.jobid] = [dfd, xhr];
+          if (response.pending) {
+            dfd.notify(response.jobid);
+          }
+          if (response.pending && _this.interval > response.interval) {
+            _this.poll(response.interval);
+          } else if (_this.interval > 1000) {
+            _this.poll(1000);
+          }
+          return _this.handle_response(response);
+        };
+      })(this)).fail((function(_this) {
+        return function(xhr, status) {
+          return dfd.reject({
+            message: "HTTP " + xhr.status + ": " + xhr.statusText,
+            xhr: xhr
+          });
+        };
+      })(this));
       return dfd.promise();
     };
 
     Stagehand.prototype.handle_response = function(_arg) {
-      var dfd, f, job, jobs, key, n, notifications, value, xhr, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _results;
+      var dfd, f, job, jobs, key, n, notifications, value, xhr, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _results;
       jobs = _arg.jobs, notifications = _arg.notifications;
       for (_i = 0, _len = jobs.length; _i < _len; _i++) {
         job = jobs[_i];
@@ -118,19 +119,19 @@
           }
         }
         if (n._ntype === 'alert') {
-          if ((_ref2 = n.type) == null) {
+          if (n.type == null) {
             n.type = 'notice';
           }
-          if ((_ref3 = n.nonblock) == null) {
+          if (n.nonblock == null) {
             n.nonblock = false;
           }
-          if ((_ref4 = n.animation) == null) {
+          if (n.animation == null) {
             n.animation = 'fade';
           }
-          if ((_ref5 = n.closer) == null) {
+          if (n.closer == null) {
             n.closer = true;
           }
-          if ((_ref6 = n.delay) == null) {
+          if (n.delay == null) {
             n.delay = 8000;
           }
           for (key in n) {
@@ -149,7 +150,6 @@
     };
 
     Stagehand.prototype.poll = function(interval) {
-      var _this = this;
       if (interval == null) {
         interval = this.interval;
       }
@@ -160,42 +160,44 @@
         clearInterval(this.timer);
       }
       this.interval = interval <= this.max_interval ? interval : this.max_interval;
-      return this.timer = repeat(this.interval, function() {
-        var data, dfd, jobid;
-        data = !$.isEmptyObject(_this.jobs) ? {
-          jobs: ((function() {
-            var _ref, _results;
-            _ref = this.jobs;
-            _results = [];
-            for (jobid in _ref) {
-              dfd = _ref[jobid];
-              _results.push(jobid);
+      return this.timer = repeat(this.interval, (function(_this) {
+        return function() {
+          var data, dfd, jobid;
+          data = !$.isEmptyObject(_this.jobs) ? {
+            jobs: ((function() {
+              var _ref, _results;
+              _ref = this.jobs;
+              _results = [];
+              for (jobid in _ref) {
+                dfd = _ref[jobid];
+                _results.push(jobid);
+              }
+              return _results;
+            }).call(_this)).join(',')
+          } : null;
+          return $.ajax({
+            url: _this.root + '/api/jobs',
+            data: data,
+            timeout: _this.interval
+          }).done(function(_arg) {
+            var jobs, notifications;
+            jobs = _arg.jobs, notifications = _arg.notifications;
+            _this.handle_response({
+              jobs: jobs,
+              notifications: notifications
+            });
+            if ($.isEmptyObject(_this.jobs) && notifications.length === 0) {
+              if (_this.interval < _this.max_interval) {
+                return _this.poll(_this.interval * 2);
+              }
+            } else if (_this.interval > _this.min_interval) {
+              return _this.poll(_this.min_interval);
             }
-            return _results;
-          }).call(_this)).join(',')
-        } : null;
-        return $.ajax({
-          url: _this.root + '/api/jobs',
-          data: data,
-          timeout: _this.interval
-        }).done(function(_arg) {
-          var jobs, notifications;
-          jobs = _arg.jobs, notifications = _arg.notifications;
-          _this.handle_response({
-            jobs: jobs,
-            notifications: notifications
+          }).fail(function(xhr, status, error) {
+            return _this.poll(_this.max_interval);
           });
-          if ($.isEmptyObject(_this.jobs) && notifications.length === 0) {
-            if (_this.interval < _this.max_interval) {
-              return _this.poll(_this.interval * 2);
-            }
-          } else if (_this.interval > _this.min_interval) {
-            return _this.poll(_this.min_interval);
-          }
-        }).fail(function(xhr, status, error) {
-          return _this.poll(_this.max_interval);
-        });
-      });
+        };
+      })(this));
     };
 
     return Stagehand;

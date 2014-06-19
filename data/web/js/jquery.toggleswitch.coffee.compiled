@@ -36,21 +36,22 @@
       }
     },
     _getOffShift: function($span) {
-      var offShift,
-        _this = this;
+      var offShift;
       if ($span == null) {
         $span = this._span;
       }
       offShift = $span.css('backgroundPositionX');
       if (offShift === '0%') {
-        return $(function() {
-          var $tmp;
-          $tmp = $('<span class="ui-toggleswitch-container">').css({
-            display: 'none'
-          }).appendTo('body');
-          _this._getOffShift($tmp);
-          return $tmp.detach();
-        });
+        return $((function(_this) {
+          return function() {
+            var $tmp;
+            $tmp = $('<span class="ui-toggleswitch-container">').css({
+              display: 'none'
+            }).appendTo('body');
+            _this._getOffShift($tmp);
+            return $tmp.detach();
+          };
+        })(this));
       } else {
         this._peek = [parseInt(offShift) + this.options.peek, -this.options.peek];
         this._shift = [parseInt(offShift), 0];
@@ -58,38 +59,45 @@
       }
     },
     _create: function() {
-      var _base, _ref,
-        _this = this;
-      if ((_ref = (_base = this.options).disabled) == null) {
+      var _base;
+      if ((_base = this.options).disabled == null) {
         _base.disabled = this.element.propAttr('disabled');
       }
       if (this.element.is(':disabled')) {
         this.options.disabled = true;
       }
-      this._span = this.element.hide().addClass('ui-toggleswitch').change(function() {
-        return _this._update();
-      }).wrap("<span class='ui-toggleswitch-container' tabindex='0'></span>").after('<span></span>').parent().hover(function() {
-        if (!_this.options.disabled) {
-          return _this._span.stop().animate({
-            backgroundPositionX: _this._peek[_this._is_checked()]
-          }, 100);
-        }
-      }, function() {
-        if (!_this.options.disabled) {
-          return _this._span.stop().animate({
-            backgroundPositionX: _this._shift[_this._is_checked()]
-          }, 100);
-        }
-      }).click(function() {
-        if (!_this.options.disabled) {
-          if (_this._is_checked()) {
-            _this.element.removeAttr('checked');
-          } else {
-            _this.element.attr('checked', 'checked');
+      this._span = this.element.hide().addClass('ui-toggleswitch').change((function(_this) {
+        return function() {
+          return _this._update();
+        };
+      })(this)).wrap("<span class='ui-toggleswitch-container' tabindex='0'></span>").after('<span></span>').parent().hover((function(_this) {
+        return function() {
+          if (!_this.options.disabled) {
+            return _this._span.stop().animate({
+              backgroundPositionX: _this._peek[_this._is_checked()]
+            }, 100);
           }
-          return _this.element.change();
-        }
-      }).on('selectstart', function() {
+        };
+      })(this), (function(_this) {
+        return function() {
+          if (!_this.options.disabled) {
+            return _this._span.stop().animate({
+              backgroundPositionX: _this._shift[_this._is_checked()]
+            }, 100);
+          }
+        };
+      })(this)).click((function(_this) {
+        return function() {
+          if (!_this.options.disabled) {
+            if (_this._is_checked()) {
+              _this.element.removeAttr('checked');
+            } else {
+              _this.element.attr('checked', 'checked');
+            }
+            return _this.element.change();
+          }
+        };
+      })(this)).on('selectstart', function() {
         return false;
       });
       if (this.options.yesno) {

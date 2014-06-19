@@ -45,7 +45,7 @@
         <label>Word Separator:</label>
         <input type='text' name='naming-separator' size='1' value='{{config.naming.separator}}' />
     </div>
-    <span style='position: absolute; margin-left: 28em' class='warning' id='naming-example'>
+    <span style='position: absolute; margin-left: 33em; margin-top: 1em' class='warning' id='naming-example'>
         <b>Example:</b> {{rename_example.get('example', rename_example.get('error'))}}
     </span>
     <div>
@@ -125,7 +125,6 @@
 
 <script type='text/javascript'>
 (function() {
-
   section_toggleswitch('naming-section', $('#naming-rename').toggleswitch());
 
   $('#web-logging').toggleswitch();
@@ -171,4 +170,4 @@
 }).call(this);
 </script>
 
-%rebase layout.tmpl title='General Settings', section="settings", subsection="general"
+%rebase('layout.tmpl', title='General Settings', section="settings", subsection="general")

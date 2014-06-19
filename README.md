@@ -17,6 +17,7 @@ Here are some of the main features:
 * Support for multiple TV metadata providers (currently TheTVDB and TVRage): easily choose the authoritative provider per-series
 * A Just Works design principle: no cumbersome setup or external tools
 * Support for Easynews HTTP-based global search
+* Multi-platform: tested on Linux and Windows (and theoretically works on OS X)
 
 
 
@@ -29,7 +30,6 @@ The core of Stagehand is quite robust, but many essential features are missing
 * Bittorrent
 * Web-based configuration UI
 * Ability to import an existing TV library
-* Multi-platform: it is Linux-only right now
 * ... and a bazillion FIXMEs and TODOs in the source
 
 
@@ -41,31 +41,32 @@ The core of Stagehand is quite robust, but many essential features are missing
 ![](https://helix.urandom.ca/stagehand/stagehand2.jpg)
 
 
+
 ## How to install it
 
-Stagehand is Linux software.
+Stagehand is powered by Python and requires Python 3.3 or later.
 
-Assuming your distro has a relatively recent version of pip (0.5 or later),
-installation should be fairly straightforward:
+### Linux
 
-If you're using Ubuntu or Debian, you can just copy and paste this into a
-shell.  Otherwise you will need to adapt to your distro:
+If you have a relatively recent Linux distribution, you probably already have
+Python 3.3+.  You can check at the command line:
 
 ```bash
-# Install base dependencies
-sudo apt-get install python-dev python-bs4 python-pycurl python-pip libglib2.0-dev libdvdread-dev git-core &&
-
-# Install kaa-base and kaa-metadata from git
-sudo pip install -U git+git://github.com/freevo/kaa-base.git git+git://github.com/freevo/kaa-metadata.git &&
-
-# Install Stagehand from git
-sudo pip install -U --no-deps git+git://github.com/jtackaberry/stagehand.git
+$ python3 --version
+Python 3.4.0
 ```
 
-Once installed, run it:
+If you're running an older Ubuntu version, you might try the
+[Old and New Python Versions PPA](https://launchpad.net/~fkrull/+archive/deadsnakes)
+to install a newer version of Python alongside your system version.
+
+#### The Easy Way
+
+Just fetch the latest build as a single executable:
 
 ```bash
-$ stagehand -vv
+$ wget http://stagehand.ca/downloads/stagehand && chmod a+x stagehand
+$ ./stagehand
 ```
 
 It will output a line that looks like:
@@ -77,10 +78,50 @@ It will output a line that looks like:
 You should be able to browse to this URL (from inside your network,
 presumably).
 
+
+You can daemonize Stagehand if you want to run it in the background.  Logs go
+to `~/.cache/stagehand/logs/`.  For debugging purposes, it's recommended you
+run Stagehand with extra verbosity (`-vv`).
+
+```bash
+$ stagehand -vvb
+```
+
+#### The Hard Way
+
+Stagehand installs from source like any other Python module:
+
+```bash
+$ git clone git+git://github.com/jtackaberry/stagehand.git
+$ cd stagehand
+$ sudo python3 setup.py install
+$ stagehand
+```
+
+### Windows
+
+First [download Python](https://www.python.org/downloads/) and install it.
+
+Then [download Stagehand](http://stagehand.ca/downloads/stagehand.pyw), which
+you can run directly.
+
+Once running, you should see a TV icon in your system tray.  Double clicking
+it will open Stagehand in your browser.  You can also right-click the icon to
+see additional options.
+
+
+## How to configure it
+
 Ideally you'd be able to configure Stagehand from the web interface, but this
-isn't implemented yet (in spite of the fact that there is content in the Settings
-section).  You will need to edit `~/.config/stagehand/config` which should be
-fairly self-explanatory.  Minimally, you will need these lines:
+isn't implemented yet (in spite of the fact that there is content in the
+Settings section).
+
+Until then, you will need to edit the config file
+(`~/.config/stagehand/config` on Linux, or `%AppData%\Stagehand\config.txt` on
+Windows).
+
+Minimally, you will need these lines, which you can just append to the bottom
+of the file:
 
 ```
 searchers.enabled[+] = easynews
@@ -89,19 +130,7 @@ searchers.easynews.password = your_easynews_password
 ```
 
 Once you save the config file, you're ready to start using Stagehand.  No reload
-is needed; you should see on the console:
-
-```
-2012-05-10 00:07:11,433 [INFO] manager: config file changed; reloading
-```
-
-You can daemonize Stagehand if you want to run it in the background.  Logs go
-to `~/.cache/stagehand/logs/`.  For debugging purposes, it's recommended you run
-Stagehand with extra verbosity (`-vv`).
-
-```bash
-$ stagehand -vvb
-```
+is needed, it will pick up the changes dynamically.
 
 
 ## Haven't you heard of $APP?
@@ -112,8 +141,10 @@ especially the very popular Sick Beard.
 There are a few reasons Stagehand exists:
 
 * I needed an excuse to learn [CoffeeScript](http://coffeescript.org/)
-* I wanted a real-world application to exercise the [Kaa application
-  framework](https://github.com/freevo/kaa-base), which is another project of mine.
+* ~~~I wanted a real-world application to exercise the [Kaa application
+  framework](https://github.com/freevo/kaa-base), which is another project of mine.~~~
+* I wanted a project with which to learn Python 3.4's
+  [asyncio](https://docs.python.org/3/library/asyncio.html) module
 * I was a bit annoyed at Sick Beard's need for SABnzbd
 * I suffer horribly from [NIH](http://en.wikipedia.org/wiki/Not_invented_here)
 

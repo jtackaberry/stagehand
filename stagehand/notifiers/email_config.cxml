@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<config>
+    <desc lang='en'>Email notifier</desc>
+    <var name='hostname' type='str' default='localhost'>
+        <desc>
+            Hostname of the SMTP relay to use.
+        </desc>
+    </var>
+    <var name='ssl' type='bool' default='False'>
+        <desc>
+            Normally STARTTLS is used if available.  If this option is
+            true, then assume the remote is an SSL port and negotiate
+            SSL immediately.
+        </desc>
+    </var>
+    <var name='port' type='int' default='587' />
+    <var name='username' type='str'>
+        <desc>
+            If specified, authenticate to the SMTP server with this username.
+        </desc>
+    </var>
+    <var name='password' type='str' scramblekey="stagehand">
+        <desc>
+            If specified, authenticate to the SMTP server with this password.
+        </desc>
+    </var>
+    <var name='sender' type='str' default='stagehand@localhost'>
+        <desc>
+            Email address the notification email will be sent from.
+        </desc>
+    </var>
+    <var name='recipients' type='str'>
+        <desc>
+            Comma-separated list of email addresses that will receive the
+            notification.
+        </desc>
+    </var>
+</config>

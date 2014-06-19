@@ -24,7 +24,6 @@
 <body>
     <script type='text/javascript'>
 (function() {
-
   this.stagehand = new Stagehand('{{root}}');
 
 }).call(this);
@@ -39,8 +38,8 @@
         <div id='menubar'>
             <ul class='menu' id='main'>
                 <li id='m-home'><a href='{{root}}/'><img src='{{root}}/static/img/home.png' alt='Home' /></a></li>
-                <li id='m-library'><a href='{{root}}/library/'>Library</a></li>
-                <li id='m-schedule'><a href='{{root}}/schedule/'>Schedule</a></li>
+                <li id='m-tv'><a href='{{root}}/tv/'>TV Shows</a></li>
+                <li id='m-downloads'><a href='{{root}}/downloads/'>Downloads</a></li>
                 <li id='m-settings'><a href='{{root}}/settings/'>Settings</a></li>
                 <li id='m-log'><a href='{{root}}/log/'>Log</a></li>
                 <li>
@@ -49,16 +48,15 @@
                 </li>
             </ul>
             <ul class='menu submenu' id='submenu-home' style='background-color: white; {{!'display:inherit' if section == 'home' else ''}}'>
-                <li style='visibility: hidden'><a href='{{root}}/'>Dummy</a></li>
+                <li style='visibility: hidden'><a href='{{root}}/'>Padding Placeholder</a></li>
             </ul>
-            <ul class='menu submenu' id='submenu-library' {{!'style="display:inherit"' if section == 'library' else ''}}>
-                <li id='m-library-series'><a href='{{root}}/library/'>TV Series</a></li>
-                <li id='m-library-import'><a href='{{root}}/library/import'>Import</a></li>
+            <ul class='menu submenu' id='submenu-tv' {{!'style="display:inherit"' if section == 'tv' else ''}}>
+                <li id='m-tv-library'><a href='{{root}}/tv/'>Library</a></li>
+                <li id='m-tv-upcoming'><a href='{{root}}/tv/upcoming'>Upcoming Episodes</a></li>
             </ul>
 
-            <ul class='menu submenu' id='submenu-schedule' {{!'style="display:inherit"' if section == 'schedule' else ''}}>
-                <li id='m-schedule-upcoming'><a href='{{root}}/schedule/'>Upcoming Episodes</a></li>
-                <li id='m-schedule-aired'><a href='{{root}}/schedule/aired'>Aired Episodes</a></li>
+            <ul class='menu submenu' id='submenu-downloads' style='background-color: white; {{!'display:inherit' if section == 'downloads' else ''}}'>
+                <li style='visibility: hidden'><a href='{{root}}/'>Padding Placeholder</a></li>
             </ul>
 
             <ul class='menu submenu' id='submenu-settings' {{!'style="display:inherit"' if section == 'settings' else ''}}>
@@ -99,7 +97,7 @@
   });
 
   $('#banner #progress').click(function() {
-    return window.location = '{{root}}/schedule/aired';
+    return window.location = '{{root}}/downloads/';
   });
 
   stagehand.bind('dlprogress', function(_arg) {
@@ -126,7 +124,7 @@
 }).call(this);
 </script>
 
-    %include
+    {{!base}}
 
 </body>
 </html>
