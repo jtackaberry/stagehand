@@ -129,8 +129,12 @@ def download(url, target=None, resume=True, retry=0, progress=None, noraise=True
         if status != 0:
             errmsg = 'status %d' % status
             if status < 500 or status >= 600:
-                # Not a temporary error, break out of the retry loop.
-                break
+                # Not a temporary error that we can retry.  We're done.
+                return status, None
 
         log.warning('download failed (%d retries left): %s', retry, errmsg)
         retry -= 1
+
+    # We shouldn't actually ever get here.
+    log.warning('BUG: download retry loop did not terminate properly')
+    return 0, None
