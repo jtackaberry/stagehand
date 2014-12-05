@@ -1,7 +1,11 @@
 <?xml version="1.0"?>
 <config>
     <group name='misc'>
-        <var name='tvdir' type='str' default='~/tv'>
+        <var name='tvdir' type='str'>
+            <defaults>
+                <default platform='win32'>~\TV Shows</default>
+                <default>~/tv</default>
+            </defaults>
             <desc>Location of your TV series collection</desc>
         </var>
         <var name='language' type='str' default='en'>
@@ -29,7 +33,11 @@
                 Not used if a proxy is enabled.
             </desc>
         </var>
-        <var name='logdir' type='str' default='~/.cache/stagehand/logs/'>
+        <var name='logdir' type='str'>
+            <defaults>
+                <default platform='win32'>%AppData%\Stagehand\Logs</default>
+                <default>~/.cache/stagehand/logs</default>
+            </defaults>
             <desc>Directory for logs; leave empty to disable logging to file</desc>
         </var>
         <var name='loglevel' default='info'>
@@ -67,7 +75,12 @@
 
     <group name='naming'>
         <var name='rename' type='bool' default='True' />
-        <var name='separator' type='str' default='_' />
+        <var name='separator' type='str'>
+            <defaults>
+                <default platform='win32'> </default>
+                <default>_</default>
+            </defaults>
+        </var>
         <var name='season_dir_format' type='str' default='s{season}' />
         <var name='code_style' type='str' default='s{season:02}e{episode:02}' />
         <var name='date_style' type='str' default='%Y.%m.%d' />
