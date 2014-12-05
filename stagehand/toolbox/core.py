@@ -510,7 +510,7 @@ class FutureProgress(Signal):
         This value has no predefined meaning.  It is up to the API to define
         what units this value indicates.
         """
-        return self._speed
+        return self._speed or 0
 
 
 
