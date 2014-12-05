@@ -23,7 +23,7 @@
             <var name='host' type='str' />
             <var name='port' type='str' />
             <var name='username' type='str' />
-            <var name='password' type='str' />
+            <var name='password' type='str' scramblekey="stagehand" />
         </group>
         <var name='bind_address' type='str'>
             <desc>
@@ -60,7 +60,7 @@
         <var name='bind_address' type='str' default='' />
         <var name='port' type='int' default='8088' />
         <var name='username' type='str' />
-        <var name='password' type='str' />
+        <var name='password' type='str' scramblekey="stagehand" />
         <var name='logging' type='bool' default='False' />
         <var name='proxied_root' type='str' default=''>
             <desc>
