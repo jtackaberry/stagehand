@@ -189,7 +189,7 @@ class Episode:
 
     @property
     def filename(self):
-        return self._dbattr('filename')
+        return fsname(self._dbattr('filename'))
 
     @filename.setter
     def filename(self, value):
@@ -493,7 +493,7 @@ class Series:
 
     @property
     def path(self):
-        dir = self.cfg.path or fsname(fixsep(self.name))
+        dir = fsname(self.cfg.path or fixsep(self.name))
         if dir.startswith('/'):
             return dir
         else:
