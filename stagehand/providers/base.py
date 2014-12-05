@@ -65,9 +65,9 @@ class ProviderBase:
 
 
 class ProviderSearchResultBase:
-    def __init__(self, db, **kwargs):
-        self._db = db
-        [setattr(self, k, v) for k, v in kwargs.items()]
+    def __init__(self, provider, attrs):
+        self.provider = provider
+        self._attrs = attrs
 
     @property
     def id(self):

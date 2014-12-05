@@ -27,10 +27,6 @@ def parse_server_time(t):
 
 
 class ProviderSearchResult(ProviderSearchResultBase):
-    def __init__(self, provider, attrs):
-        self.provider = provider
-        self._attrs = attrs
-
     @property
     def pid(self):
         return self._attrs.get('showid')

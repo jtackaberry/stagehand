@@ -17,10 +17,6 @@ __all__ = ['Provider']
 log = logging.getLogger('stagehand.providers.thetvdb')
 
 class ProviderSearchResult(ProviderSearchResultBase):
-    def __init__(self, provider, attrs):
-        self.provider = provider
-        self._attrs = attrs
-
     @property
     def pid(self):
         return self._attrs.get('seriesid')
