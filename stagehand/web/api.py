@@ -62,11 +62,12 @@ def show_banner(id):
 
 
 @web.post('/api/shows/<id>/provider')
-def show_provider(id):
+@webcoroutine()
+def show_provider(job, id):
     series = get_series_from_request(id)
     provider = web.request.forms.get('provider')
     if provider:
-        series.change_provider(provider)
+        yield from series.change_provider(provider)
         series.cfg.provider = provider
 
 
