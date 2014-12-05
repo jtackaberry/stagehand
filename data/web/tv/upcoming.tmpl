@@ -42,7 +42,7 @@
         %if ep.airdate == today:
             Today
         %elif ep.airdate >= datetime.now() + timedelta(days=13):
-            {{airdatetime.strftime('%A %b %e')}}
+            {{airdatetime.strftime('%A %b %d')}}
         %elif ep.airdate >= datetime.now() + timedelta(days=6):
             Next {{airdatetime.strftime('%A')}}
         %else:
