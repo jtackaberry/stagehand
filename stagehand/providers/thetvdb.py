@@ -26,6 +26,10 @@ class ProviderSearchResult(ProviderSearchResultBase):
         return self._attrs.get('SeriesName')
 
     @property
+    def names(self):
+        yield self.name
+
+    @property
     def overview(self):
         return self._attrs.get('Overview')
 

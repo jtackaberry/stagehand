@@ -1208,24 +1208,27 @@ class TVDB(db.Database):
                     # TODO: use difflib and allow fuzzy matches iff start airdate is exact match.
                     # Year matches require exact names.  Similarly, we can do a fuzzy date match
                     # if name is an exact match.
-                    normresult = self._normalize_name(result.name)
-                    normresultaggr = self._normalize_name(result.name, aggressive=True)
-                    log.debug2('%s: result %s [%s] (want %s [%s]) started %s (want %s)', p.NAME, normresult,
-                               normresultaggr, normname, normnameaggr, result.started, started)
-                    if normname == normresult:
-                        if started == result.started:
-                            # The non-aggressively normalized name matches and the airdate
-                            # matches, this is a solid match.
-                            matches.append((0, result))
-                        else:
-                            # We have an exact title match but the airdate doesn't match.
-                            maybe.append(result)
-                    elif normnameaggr == normresultaggr:
-                        # If the aggressively normalized name matches and the start year
-                        # matches, then add this to the maybe list for a more thorough
-                        # comparison.
-                        if started[:4] == result.year:
-                            maybe.append(result)
+                    for result_name in result.names:
+                        normresult = self._normalize_name(result_name)
+                        normresultaggr = self._normalize_name(result_name, aggressive=True)
+                        log.debug2('%s: result %s [%s] (want %s [%s]) started %s (want %s)', p.NAME, normresult,
+                                   normresultaggr, normname, normnameaggr, result.started, started)
+                        if normname == normresult:
+                            if started == result.started:
+                                # The non-aggressively normalized name matches and the airdate
+                                # matches, this is a solid match.
+                                matches.append((0, result))
+                            else:
+                                # We have an exact title match but the airdate doesn't match.
+                                maybe.append(result)
+                            break
+                        elif normnameaggr == normresultaggr:
+                            # If the aggressively normalized name matches and the start year
+                            # matches, then add this to the maybe list for a more thorough
+                            # comparison.
+                            if started[:4] == result.year:
+                                maybe.append(result)
+                                break
                 if matches:
                     # We match based on full air date or just year, but prefer
                     # the more specific match if it's available.

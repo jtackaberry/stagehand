@@ -36,6 +36,12 @@ class ProviderSearchResult(ProviderSearchResultBase):
         return self._attrs.get('name')
 
     @property
+    def names(self):
+        yield self.name
+        for name in self._attrs.get('akas', []):
+            yield name
+
+    @property
     def overview(self):
         return self._attrs.get('summary')
 
@@ -86,9 +92,14 @@ class Provider(ProviderBase):
         results = []
         name = urllib.parse.quote(name.replace('.', ' ').replace('-', ' ').replace('_', ' '))
         url = self.hostname + '/feeds/full_search.php?show=%s' % name
-        for tag, attrs, data in (yield from parse_xml(url)):
-            if tag == 'show':
+        akas = []
+        for tag, attrs, data in (yield from parse_xml(url, nest=('akas', 'aka'))):
+            if tag == 'aka':
+                akas.append(data.strip())
+            elif tag == 'show':
+                data['akas'] = akas
                 results.append(ProviderSearchResult(self, data))
+                akas = []
         return results
 
 
@@ -114,7 +125,7 @@ class Provider(ProviderBase):
 
         eps = []
         # These tags we want to recurse into while walking the tree
-        nested_tags = 'Episodelist', 'Season', 'episode', 'genres', 'genre'
+        nested_tags = 'Episodelist', 'Season', 'episode', 'genres', 'genre', 'akas', 'aka'
         for tag, attrs, data in (yield from parse_xml(url, nest=nested_tags)):
             if tag == 'showid':
                 series['id'] = data
@@ -143,6 +154,8 @@ class Provider(ProviderBase):
                 # Empty genres are parsed as empty dicts.
                 if data:
                     series.setdefault('genres', []).append(data.strip().lower())
+            elif tag ==  'aka':
+                series.setdefault('akas', []).append(data.strip())
             elif tag == 'Season':
                 season = int(attrs['no'])
                 for ep in eps:
