@@ -383,6 +383,18 @@ class Manager:
     @singleton
     @asyncio.coroutine
     def _retrieve_queue_processor(self):
+        while True:
+            try:
+                yield from self._do_retrieve_queue_processor()
+            except Exception:
+                log.exception('retrieve queue processor aborted, respawning')
+                yield from asyncio.sleep(1)
+            else:
+                break
+
+
+    @asyncio.coroutine
+    def _do_retrieve_queue_processor(self):
         """
         This coroutine lives forever and monitors the retrieve queue.  If new episodes
         are found on the retrieve queue, it starts as many parallel downloads are allowed
@@ -393,15 +405,15 @@ class Manager:
         """
         retrieved = []
         active = {}
+        log.debug('starting retrieve queue processor')
         while True:
             # Check the retrieve queue.  If the number of active downloads is less than
             # the user-configured parallel limit, then pop from the queue.
             ep = None
             if len(active) < config.retrievers.parallel:
                 # Before popping, sort retrieve queue so that result sets with
-                # older episodes appear first.  FIXME: ep.airdate could be None
-                # which Python 3 won't like sorting.
-                self._retrieve_queue.sort(key=lambda item: (item[0].airdate, item[0].code))
+                # older episodes appear first.
+                self._retrieve_queue.sort(key=lambda item: (item[0].airdate or datetime.now(), item[0].code))
                 try:
                     ep, ep_results = self._retrieve_queue.pop(0)
                 except IndexError:
