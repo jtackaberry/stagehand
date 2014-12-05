@@ -24,6 +24,7 @@
     %include('tv/download-needed-episodes.tmpl', root=root, buttonid='button-search', showid='')
     <script type='text/javascript'>
 (function() {
+
   $('#select-status :[value={{status}}]').attr('selected', 'selected');
 
   $('#select-weeks :[value={{weeks}}]').attr('selected', 'selected');
@@ -95,6 +96,7 @@
                         </div>
                         <script type='text/javascript'>
 (function() {
+
   $("[id='{{ep.series.id}}-{{ep.code}}-progressbar']").progressbar({
     value: {{task.progress.percentage}}
   });
@@ -114,8 +116,9 @@
         %end
         %last_week = object() # sentinel
         %for ep, icon, title, week in episodes:
-            %if last_week != min(week, 8):
-                %last_week = min(week, 8)
+            %clamped_week = min(week, 8) if week is not None else None
+            %if last_week != clamped_week:
+                %last_week = clamped_week
                 <tr class='heading' id='group-{{week}}'>
                     <td style='padding: 0'><input type='checkbox' /></td>
                     <td colspan="5" style='text-align: left; padding-left: 0.5em'>
