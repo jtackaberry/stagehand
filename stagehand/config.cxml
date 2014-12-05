@@ -198,6 +198,16 @@
                 searched.  (Minutes are randomized and can't be configured.)
             </desc>
         </var>
+        <var name='bind_address' type='str'>
+            <desc>
+                Source address for outbound Internet communication used specifically for
+                searching, not for downloading.
+
+                If specified, overrides the global bind address.  A special
+                value of '*' will override the global bind address by disabling
+                it, causing communication to use the OS default route.
+            </desc>
+        </var>
         <list name='enabled'>
             <desc>List of enabled searcher plugins and their order of preference.</desc>
             <var type='str' />
