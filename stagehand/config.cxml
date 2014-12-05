@@ -43,7 +43,7 @@
         <var name='loglevel' default='info'>
             <desc>
                 Level of logging detail.
-                
+
                 Warnings and errors are always logged. Debug is useful to help
                 troubleshoot problems, and debug2 is <i>very</i> verbose.
             </desc>
@@ -123,7 +123,7 @@
                 Name of the directory holding episodes for this series.
                 Non-absolute paths will be relative to the global tv directory.
 
-                If unspecified, will be auto-generated. 
+                If unspecified, will be auto-generated.
             </desc>
         </var>
         <var name='flat' type='bool' default='False'>
@@ -189,13 +189,13 @@
             </desc>
         </var>
     </list>
-              
+
     <group name="searchers">
         <desc>Methods of searching for TV series</desc>
         <var name='hours' type='str' default='4, 11, 16, 21'>
             <desc>
                 Comma-separated list of hours when needed episodes are
-                searched.  (Minutes are randomized on startup.)
+                searched.  (Minutes are randomized and can't be configured.)
             </desc>
         </var>
         <list name='enabled'>
