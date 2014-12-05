@@ -963,6 +963,12 @@ class TVDB(db.Database):
         for (nn, airdate), episodes in list(matches.items()):
             codes = set((ep['season'], ep['episode']) for provider, ep in episodes)
             if len(codes) > 1:
+                # Kludge alert: some series on TheTvDB use years for season numbers
+                # which disagrees with other providers.  This workaround will
+                # avoid penalizing matches on airdate and episode name if any of
+                # the matches have seasons that look like years.
+                if any(code[0] > 1900 for code in codes):
+                    continue
                 conflicts.setdefault((nn, airdate), []).extend(matches.pop((nn, airdate)))
 
 
