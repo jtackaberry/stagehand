@@ -5,7 +5,7 @@ import asyncio
 
 # Make kaa.metadata optional (for now)
 try:
-    import kaa.metadata as metadata
+    import metadata
 except ImportError:
     metadata = None
 
@@ -104,7 +104,7 @@ class RetrieverBase:
                 # it corrupt or unknown.
                 raise RetrieverError('could not identify file after 10MB')
             return False
-        if info.media != u'MEDIA_AV':
+        if info.media != 'MEDIA_AV':
             raise RetrieverError('file is not a video file (is %s)' % info.media)
         elif not info.video:
             raise RetrieverError('file has no video tracks')
