@@ -267,8 +267,7 @@ def which(file, path=None):
     return None
 
 
-def daemonize(stdin=os.devnull, stdout=os.devnull, stderr=None,
-              pidfile=None, exit=True):
+def daemonize(stdin=os.devnull, stdout=os.devnull, stderr=None, pidfile=None, exit=True, chdir='/'):
     """
     Does a double-fork to daemonize the current process using the technique
     described at http://www.erlenstar.demon.co.uk/unix/faq_2.html#SEC16 .
@@ -276,6 +275,7 @@ def daemonize(stdin=os.devnull, stdout=os.devnull, stderr=None,
     If exit is True (default), parent exits immediately.  If false, caller will receive
     the pid of the forked child.
     """
+    target_dir = chdir if chdir else os.getcwd()
     # First fork.
     try:
         pid = os.fork()
@@ -291,7 +291,7 @@ def daemonize(stdin=os.devnull, stdout=os.devnull, stderr=None,
         #log.error("Initial daemonize fork failed: %d, %s\n", e.errno, e.strerror)
         sys.exit(1)
 
-    os.chdir("/")
+    os.chdir(target_dir)
     os.setsid()
 
     # Second fork.
@@ -307,11 +307,11 @@ def daemonize(stdin=os.devnull, stdout=os.devnull, stderr=None,
     # Create new standard file descriptors.
     if not stderr:
         stderr = stdout
-    stdin = open(stdin, 'r')
-    stdout = open(stdout, 'a+')
-    stderr = open(stderr, 'a+', 0)
+    stdin = open(stdin, 'rb')
+    stdout = open(stdout, 'a+b')
+    stderr = open(stderr, 'a+b', 0)
     if pidfile:
-        open(pidfile, 'w+').write("%d\n" % os.getpid())
+        open(pidfile, 'w+b').write("%d\n" % os.getpid())
 
     # Remap standard fds.
     os.dup2(stdin.fileno(), sys.stdin.fileno())

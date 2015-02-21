@@ -14,7 +14,7 @@ from stagehand import web, logger, tvdb, __version__
 from stagehand.manager import Manager
 from stagehand.config import config
 from stagehand.toolbox import singleton
-from stagehand.toolbox.utils import tempfile, tostr
+from stagehand.toolbox.utils import tempfile, tostr, daemonize
 from stagehand import platform
 
 # Explicitly import the web app module so the path routes get setup.
@@ -262,6 +262,9 @@ def main():
     handler.setFormatter(logging.Formatter('%(asctime)s [HTTP] %(message)s'))
     httplog.addHandler(handler)
     httplog.propagate = False
+
+    if args.background:
+        daemonize(chdir=None)
 
     loop = asyncio.get_event_loop()
     mgr = Manager(paths, loop=loop)
