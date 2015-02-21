@@ -154,7 +154,7 @@ class Manager:
         if not series:
             log.error('provider did not know about %s', id)
             return
-        log.debug('found series %s (%s) on server', id, series.name)
+        log.debug('found series %s (%s) on provider', id, series.name)
 
         # Initialize status for all old episodes as STATUS_IGNORE.  Note that
         # episodes with no airdate can be future episodes, so we mustn't
@@ -428,6 +428,8 @@ class Manager:
                         self._notify_web_retriever_progress()
                         asyncio.async(notifiers.notify(retrieved))
                         retrieved = []
+                else:
+                    log.debug2('popped %s from retrieve queue', ep)
 
             # If ep is not None, then we have a free download slot and a queued episode.
             if ep:
@@ -454,6 +456,7 @@ class Manager:
 
                 # Add the episode to the active list, start the download by calling _get_episode(),
                 # and continue to process additional episodes from the queue (if possible).
+                log.debug2('spawning episode retrieval task')
                 self._retrieve_queue_active.append((ep, ep_results))
                 task = asyncio.Task(self._get_episode(ep, ep_results))
                 active[task] = ep, ep_results
@@ -463,7 +466,9 @@ class Manager:
             # exhausted the queue.  Wait now for any of the active downloads to finish, or
             # for the processor event to force us to pick up newly enqueued episodes.
             tasks = list(active.keys()) + [self._retrieve_queue_event.wait()]
+            log.debug2('retrieve queue processor waiting for any of %d tasks', len(tasks))
             done, pending = yield from asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+            log.debug2('retrieve queue processor woke up, done=%d pending=%d', len(done), len(pending))
             # Just blindly clear the retrieve queue event.  The point of the
             # event is to wake us up, which we now are.  If it's already unset,
             # then this is a no-op.
