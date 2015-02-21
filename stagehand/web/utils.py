@@ -13,7 +13,7 @@ from . import bottle
 from . import server as web
 from .async import asyncweb
 from ..config import config
-from ..coffee import cscompile_with_cache
+from ..coffee import cscompile_with_cache, CSCompileError
 from ..utils import abspath_to_zippath, get_file_from_zip
 
 log = logging.getLogger('stagehand.web.app')
@@ -114,7 +114,10 @@ class CSTemplate(bottle.SimpleTemplate):
                 # Raw template found, so we can use cscompile_with_cache() to dynamically
                 # compile (if necessary).
                 cachedir = bottle.request['coffee.cachedir']
-                cached, self.source = cscompile_with_cache(self.filename, cachedir, is_html=True)
+                try:
+                    cached, self.source = cscompile_with_cache(self.filename, cachedir, is_html=True)
+                except CSCompileError as e:
+                    raise bottle.HTTPError(500, e.args[0], traceback=e.args[1])
                 bottle.response.logextra = '(CS %s)' % 'cached' if cached else 'compiled'
                 # Before super does eval(), set filename to .compiled form so any exceptions
                 # raised show proper lines.

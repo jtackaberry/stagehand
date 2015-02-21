@@ -42,6 +42,7 @@ def cscompile(src, dst=None, is_html=None):
         stdout, stderr = proc.communicate(tobytes(script))
         if stderr:
             # Compile failed. Figure out what line caused the error.
+            stderr = tostr(stderr)
             errmsg = stderr.lstrip().splitlines()[0]
             error = re.sub(r'\s+on line \d+', '', stderr.lstrip().splitlines()[0])
             linematch = re.search('on line (\d+)', stderr)
@@ -91,10 +92,6 @@ def cscompile_with_cache(src, cachedir, is_html=None):
         with open(cached) as f:
             return True, f.read()
     else:
-        try:
-            data = cscompile(src, cached, is_html)
-        except CSCompileError as e:
-            raise bottle.HTTPError(500, e.args[0], traceback=e.args[1])
-        else:
-            log.debug('Compiling %s -> %s', src, cached)
+        data = cscompile(src, cached, is_html)
+        log.debug('Compiling %s -> %s', src, cached)
         return False, data
