@@ -563,7 +563,7 @@ class Series:
     @property
     def seasons(self):
         """
-        A list of all seasons as Season objects for this series.  The list is:956
+        A list of all seasons as Season objects for this series.  The list is
         in order, such that the list index corresponds with the series number,
         starting at 0.  Note that some series may have a "season 0" (usually
         comprised of special episodes) which would be at index 0.
@@ -682,6 +682,8 @@ class TVDB(db.Database):
         self._series_cache_ver = None
         # A list of series ids to ignore in the database.
         self._series_ignore = []
+        # Tracks active _do_update_series tasks by series id
+        self._update_tasks_by_id = {}
 
         if self.readonly:
             log.warning('upgrading database to support new version of Stagehand')
@@ -853,7 +855,12 @@ class TVDB(db.Database):
     def _get_conflicts(self, pseries):
         # Abandon all hope, ye who enter here.
         #
-        # This is a horrifyingly obtuse function that tries to solve a sticky problem.
+        # This is a horrifyingly obtuse function that tries to solve a sticky problem:
+        # for episode data between different providers (e.g. thetvdb and tvrage) -- which
+        # may disagree on some attributes (e.g. episode code) but agree on others (e.g.
+        # (air date) -- how do we match up episodes and identify the ones that don't
+        # match anything (i.e. conflicts)?
+        #
         # There are six stages:
         #
         #   1. Group episodes by normalized name, and group again by air date.
@@ -1082,9 +1089,61 @@ class TVDB(db.Database):
         return n_real_conflicts, conflicts, matches, unmatched
 
 
+    # Convenience methods used to track tasks for series updates.
+
+    def _track_update_task(self, provider, id, task):
+        series_id = '{}:{}'.format(provider.NAME, id)
+        if series_id in self._update_tasks_by_id:
+            log.warning('BUG: %s is unexpectedly active in _update_tasks_by_id', series_id)
+        self._update_tasks_by_id[series_id] = task
+
+
+    def _clear_update_task_by_id(self, provider, id):
+        try:
+            del self._update_tasks_by_id['{}:{}'.format(provider.NAME, id)]
+        except KeyError:
+            log.exception('failed to delete task')
+            pass
+
+
+    def _clear_update_task_by_series(self, series):
+        for id in series.ids:
+            if id in self._update_tasks_by_id:
+                del self._update_tasks_by_id[id]
+                break
+
+
+    def _get_update_task_by_series(self, series):
+        for id in series.ids:
+            if id in self._update_tasks_by_id:
+                task = self._update_tasks_by_id[id]
+                if task.done():
+                    del self._update_tasks_by_id[id]
+                else:
+                    return task
+
+
     @synchronized
     @asyncio.coroutine
     def _update_series(self, provider, id, dirty=[], preferred=None, fast=False, completed=None):
+        """
+        Wraps _do_update_series() to keep track of per-series tasks.
+
+        Needed in order to cancel active update tasks on delete.
+        """
+        task = asyncio.Task(self._do_update_series(provider, id, dirty, preferred, fast, completed))
+        self._track_update_task(provider, id, task)
+        r = (yield from task)
+        if r is None:
+            # If _do_update_series() returns None then we're done and can stop
+            # tracking the task.  Otherwise it's because it spawned a new task to
+            # do more work (and is its responsibility to ensure that task is tracked).
+            self._clear_update_task_by_id(provider, id)
+        return r
+
+
+    @asyncio.coroutine
+    def _do_update_series(self, provider, id, dirty=[], preferred=None, fast=False, completed=None):
         """
         Add or update a series with the local database, retrieving metadata from
         one or more providers as needed.
@@ -1163,7 +1222,9 @@ class TVDB(db.Database):
                 # what we have now, call ourselves back with fast=False, and
                 # return back to the caller.
                 completed = Signal()
-                asyncio.Task(self._update_series(provider, id, dirty, fast=False, completed=completed))
+                task = asyncio.Task(self._do_update_series(provider, id, dirty, fast=False, completed=completed))
+                # Replace tracked task with this new one
+                self._track_update_task(provider, id, task)
                 # Generally, ip.finished won't be True, although this happens during testing
                 # where we used locally cached copies of series metadata, so coroutines
                 # don't need to yield on the network.
@@ -1249,7 +1310,7 @@ class TVDB(db.Database):
                             tpseries[preferred] = existing[preferred.CACHEATTR]
                         n_real_conflicts, conflicts, matched, unmatched = self._get_conflicts(tpseries)
                         # Count the number of unmatched episodes other that aren't season 0.
-                        n_real_unmatched = sum(1 for (provider, nn, ep) in unmatched if ep['season'] != 0)
+                        n_real_unmatched = sum(1 for (p, nn, ep) in unmatched if ep['season'] != 0)
                         # Assume that if we have more matched than unmatched then the result is valid.
                         if len(matched) > n_real_unmatched:
                             log.debug('result seems to match (%d > %d)', len(matched), n_real_unmatched)
@@ -1265,7 +1326,7 @@ class TVDB(db.Database):
 
         if pids:
             # We need to fetch series from the server.
-            which = dict((p, (id,)) for p, id in pids.items())
+            which = dict((p, (sid,)) for p, sid in pids.items())
             # FIXME: if some providers failed, we need a retry mechanism.
             results = yield from self._invoke_providers('get_series', which=which)
             if not results and not pseries:
@@ -1278,6 +1339,7 @@ class TVDB(db.Database):
 
         self._update_db_with_pseries(pseries, preferred)
         if completed:
+            self._clear_update_task_by_id(provider, id)
             completed.emit()
 
 
@@ -1329,15 +1391,6 @@ class TVDB(db.Database):
             kwargs['banner_data'] = pseries[preferred].pop('banner_data')
         series = pseries[preferred]
 
-        # Before we actually update the database, verify the config object for
-        # this series still exists.  Fixes the case where delete_series() is called
-        # while the _update_series() coroutine is still running.  FIXME: proper
-        # solution is to track per-series InProgress for _update_series() and
-        # cancel it on delete_series().
-        #if not self.get_config_for_series('%s:%s' % (preferred.NAME, series['id'])):
-        #    print '!!!!!!!!! ABORTING UPDATE!!!!!!!!!!'
-        #    return
-
         parent = self._add_or_update(
             'series', idmap, addattrs={},
             provider=tostr(preferred.NAME), name=fixquotes(series['name']),
@@ -1349,7 +1402,6 @@ class TVDB(db.Database):
         )
 
         # XXX: should remove conflicts from non-preferred providers?
-        max_season = max(ep['season'] for idmap, ep in episodes)
         # Keep track of database ids for episodes added/updated
         dbids = []
         for idmap, ep in episodes:
@@ -1523,6 +1575,11 @@ class TVDB(db.Database):
         :param series: the series to remove
         :type series: Series object
         """
+        task = self._get_update_task_by_series(series)
+        if task:
+            log.info('cancelling async series update task for series about to be deleted')
+            task.cancel()
+            self._clear_update_task_by_series(series)
         self.delete_by_query(parent=series._dbrow)
         self.delete(series._dbrow)
         self.purge_caches()
