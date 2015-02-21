@@ -68,10 +68,15 @@ class Manager:
                                   notifiers.start(self), providers.start(self))
 
         # Resume downloading any episodes we aborted by adding to retrieve queue.
+        log.info('checking all epsiodes to see if any need resuming')
         for series in self.tvdb.series:
             for ep in series.episodes:
                 if ep.ready and ep.search_result:
                     self._retrieve_queue.append((ep, [ep.search_result]))
+            # For a large number of series, this loop (which involves reading
+            # all episodes from the database) can take some time.  So yield
+            # back to the main loop so we don't starve other tasks.
+            yield
 
         # Start the retrieve queue processor
         self._retrieve_queue_processor()
