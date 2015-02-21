@@ -176,7 +176,7 @@ class AsyncWeb:
 asyncweb = AsyncWeb()
 
 
-def webcoroutine(interval=1.0, blockfor=0):
+def webcoroutine(interval=1000, blockfor=0):
     def decorator(func):
         corofunc = asyncio.coroutine(func)
         def wrapper(*args, **kwargs):
