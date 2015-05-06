@@ -50,7 +50,7 @@ class bdist_zip(build_py):
             dst_dir = os.path.join(self.build_lib, root)
             os.makedirs(dst_dir, exist_ok=True)
             for name in names:
-                if os.path.splitext(name)[1] in ('.tmpl', '.coffee'):
+                if os.path.splitext(name)[1] in ('.tmpl', '.coffee', '.swp'):
                     continue
                 src = os.path.join(root, name)
                 dst = os.path.join(dst_dir, name)
