@@ -1,4 +1,5 @@
 @defer = (timeout, callback) -> setTimeout callback, timeout
+@cancel = (timer) -> clearTimeout timer
 @repeat = (timeout, callback) ->
     id = setInterval ( ->
         if callback() == false
@@ -136,7 +137,7 @@ $ ->
             false
     .on 'selectstart', -> false
 
-$.pnotify.defaults.pnotify_opacity = 0.9
-$.fn.poshytip.defaults.className = 'tip-twitter'
-$.fn.poshytip.defaults.fade = false
-$.fn.poshytip.defaults.slide = false
+$.pnotify?.defaults.pnotify_opacity = 0.9
+$.fn.poshytip?.defaults.className = 'tip-twitter'
+$.fn.poshytip?.defaults.fade = false
+$.fn.poshytip?.defaults.slide = false
