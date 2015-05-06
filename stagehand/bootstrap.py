@@ -44,6 +44,8 @@ if sys.hexversion < 0x03030000:
         win32_version_error()
     else:
         print('fatal: Python 3.3 or later is required')
+        print('\nNote you can always run stagehand directly through an interpreter:')
+        print('$ python3.4 {}'.format(sys.argv[0]))
     sys.exit(1)
 
 
