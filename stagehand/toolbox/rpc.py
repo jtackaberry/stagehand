@@ -649,7 +649,7 @@ class Channel(asyncio.Protocol):
         """
         # Make function to XOR each character in string s with byte.
         def xor(s, byte):
-            return b''.join([bytes([x ^ byte]) for x in s])
+            return b''.join(bytes([x ^ byte]) for x in s)
 
         def H(s):
             # Returns the 20 byte SHA-1 digest of string s.
