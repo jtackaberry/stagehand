@@ -1,7 +1,7 @@
 # Stagehand
 
 **This software is somewhat half-baked. It only works (though it works well)
-if you have an Easynews](http://easynews.com) account.  Generic NNTP isn't
+if you have an [Easynews](http://easynews.com) account.  Generic NNTP isn't
 supported yet (but help is welcome).**
 
 
