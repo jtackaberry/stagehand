@@ -1,7 +1,13 @@
 // This is a generated file. Edits will be lost.
 (function() {
+  var _ref, _ref1, _ref2, _ref3;
+
   this.defer = function(timeout, callback) {
     return setTimeout(callback, timeout);
+  };
+
+  this.cancel = function(timer) {
+    return clearTimeout(timer);
   };
 
   this.repeat = function(timeout, callback) {
@@ -33,8 +39,8 @@
   };
 
   this.Stagehand = (function() {
-    function Stagehand(root) {
-      this.root = root;
+    function Stagehand(_at_root) {
+      this.root = _at_root;
       this.jobs = {};
       this.timer = null;
       this.min_interval = 5000;
@@ -223,12 +229,20 @@
     });
   });
 
-  $.pnotify.defaults.pnotify_opacity = 0.9;
+  if ((_ref = $.pnotify) != null) {
+    _ref.defaults.pnotify_opacity = 0.9;
+  }
 
-  $.fn.poshytip.defaults.className = 'tip-twitter';
+  if ((_ref1 = $.fn.poshytip) != null) {
+    _ref1.defaults.className = 'tip-twitter';
+  }
 
-  $.fn.poshytip.defaults.fade = false;
+  if ((_ref2 = $.fn.poshytip) != null) {
+    _ref2.defaults.fade = false;
+  }
 
-  $.fn.poshytip.defaults.slide = false;
+  if ((_ref3 = $.fn.poshytip) != null) {
+    _ref3.defaults.slide = false;
+  }
 
 }).call(this);
