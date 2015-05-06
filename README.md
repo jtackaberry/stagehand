@@ -1,8 +1,8 @@
 # Stagehand
 
-**Danger!  This software is half-baked. At the moment, it only works with
-[Easynews](http://easynews.com). It's not released yet. If you want to try it,
-expect some pain.**
+**This software is somewhat half-baked. It only works (though it works well)
+if you have an Easynews](http://easynews.com) account.  Generic NNTP isn't
+supported yet (but help is welcome).**
 
 
 ## What it is
