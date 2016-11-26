@@ -65,7 +65,7 @@ class SearcherBase:
             # Want.
             'mkv': 3, 'mp4': 2, 'avi': 1,
             # Don't want.
-            'wmv': -inf, 'mpg': -inf, 'ts': -inf, 'rar': -inf
+            'wmv': -inf, 'mpg': -inf, 'ts': -inf, 'rar': -inf, 'r\d\d': -inf,
         }
         av = {
             (r'[xh]\.?264', r'(ac-?3|dts)'): 10,
@@ -91,9 +91,9 @@ class SearcherBase:
         # Sort by extension
         ascore = bscore = 0
         for ext, score in exts.items():
-            if aext == ext:
+            if re.match(ext, aext):
                ascore = score
-            if bext == ext:
+            if re.match(ext, bext):
                bscore = score
         if ascore == -inf:
             a.disqualified = True
@@ -124,7 +124,7 @@ class SearcherBase:
             if 0.8 < a.size / float(b.size) < 1.2:
                 pass
             # If both sizes are within 40% of ideal, prefer the larger one
-            elif 0.6 < aratio < 1.4 and 0.6 < bratio < 1.4:
+            elif 0.6 < aratio < 3.4 and 0.6 < bratio < 3.4:
                 return 1 if b.size > a.size else -1
             # Otherwise prefer the one closest to ideal.
             else:
@@ -269,7 +269,7 @@ class SearcherBase:
             del results[None]
 
         # Sort, remove disqualified results, and set common result attributes.
-        for ep, l in results.items():
+        for ep, l in list(results.items()):
             # Sorting also sets the disqualified attribute on the bad
             # results.
             cmpfunc = functools.partial(self._cmp_result, ep, ideal_size)
