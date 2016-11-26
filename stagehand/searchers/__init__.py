@@ -34,10 +34,11 @@ def search(series, episodes, skip=[], loop=None):
         earliest = (earliest - timedelta(days=10)).strftime('%Y-%m-%d')
 
     # XXX: should probably review these wild-ass min size guesses
-    mb_per_min = 4.5 if series.cfg.quality == 'HD' else 2.5
+    mb_per_min = 2.5 if series.cfg.quality == 'HD' else 1
     min_size = (series.runtime or 30) * mb_per_min * 1024 * 1024
     # FIXME: magic factor
-    ideal_size = min_size * (10 if series.cfg.quality == 'Any' else 5)
+    ideal_size = min_size * (5 if series.cfg.quality == 'Any' else 3)
+    log.info('min size=%d ideal size=%d  runtime=%d' , min_size, ideal_size, series.runtime)
 
     tried = set()
     always = [name for name in plugins if plugins[name].Searcher.ALWAYS_ENABLED]
