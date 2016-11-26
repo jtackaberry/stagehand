@@ -83,9 +83,9 @@ class Provider(ProviderBase):
     @asyncio.coroutine
     def search(self, name):
         results = []
-        name = urllib.parse.quote(name.replace('.', ' ').replace('-', ' ').replace('_', ' '))
-        url = self.hostname + '/api/GetSeries.php?seriesname=%s' % name
-        log.info('fetching %s', url)
+        quoted = urllib.parse.quote(name.replace('-', ' ').replace('_', ' '))
+        url = self.hostname + '/api/GetSeries.php?seriesname=%s' % quoted
+        log.info('fetching %s (for %s)', url, name)
         for tag, attrs, data in (yield from parse_xml(url)):
             if tag == 'Series':
                 results.append(ProviderSearchResult(self, data))
