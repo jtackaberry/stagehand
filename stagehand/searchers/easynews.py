@@ -52,7 +52,9 @@ class Searcher(SearcherBase):
         # Strip problem characters from the title, and substitute alternative apostrophe
         title = self.clean_title(title, apostrophe=Searcher.CLEAN_APOSTROPHE_REGEXP)
         size = '%dM' % (min_size / 1048576) if min_size else '100M'
-        res = '1x540' if quality == 'HD' else ''
+        # XXX: easynews doesn't support HEVC so remove resolution filtering.
+        # res = '1x540' if quality == 'HD' else ''
+        res = ''
 
         results = []
         for i in range(0, len(episodes), 10):
