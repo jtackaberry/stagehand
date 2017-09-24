@@ -149,20 +149,20 @@ FOURCCMap = {
     'A_AAC/': 0x00ff
 }
 
-stereo_map = { 
+stereo_map = {
     1: 'side by side (left eye is first)',
     2: 'top-bottom (right eye is first)',
     3: 'top-bottom (left eye is first)',
-    4: 'checkboard (right is first)', 
-    5: 'checkboard (left is first)', 
+    4: 'checkboard (right is first)',
+    5: 'checkboard (left is first)',
     6: 'row interleaved (right is first)',
-    7: 'row interleaved (left is first)', 
-    8: 'column interleaved (right is first)', 
-    9: 'column interleaved (left is first)', 
-    10: 'anaglyph (cyan/red)', 
-    11: 'side by side (right eye is first)', 
-    12: 'anaglyph (green/magenta)', 
-    13: 'both eyes laced in one Block (left eye is first)', 
+    7: 'row interleaved (left is first)',
+    8: 'column interleaved (right is first)',
+    9: 'column interleaved (left is first)',
+    10: 'anaglyph (cyan/red)',
+    11: 'side by side (right eye is first)',
+    12: 'anaglyph (green/magenta)',
+    13: 'both eyes laced in one Block (left eye is first)',
     14: 'both eyes laced in one Block (right eye is first)'
 }
 
@@ -175,7 +175,7 @@ def matroska_date_to_datetime(date):
     #   The fields with dates should have the following format: YYYY-MM-DD
     #   HH:MM:SS.MSS [...] To store less accuracy, you remove items starting
     #   from the right. To store only the year, you would use, "2004". To store
-    #   a specific day such as May 1st, 2003, you would use "2003-05-01". 
+    #   a specific day such as May 1st, 2003, you would use "2003-05-01".
     format = re.split(r'([-:. ])', '%Y-%m-%d %H:%M:%S.%f')
     while format:
         try:
@@ -399,9 +399,11 @@ class Matroska(core.AVContainer):
         self.samplerate = 1
 
         self.file = file
-        # Read enough that we're likely to get the full seekhead (FIXME: kludge)
-        buffer = file.read(2000)
-        if len(buffer) == 0:
+        # Read enough that we're likely to get the full seekhead and elements after
+        # the seekhead (but before clusters) in case the file is truncated.
+        # (FIXME: kludge.)
+        buffer = file.read(100000)
+        if not buffer:
             # Regular File end
             raise core.ParseError()
 
@@ -423,12 +425,39 @@ class Matroska(core.AVContainer):
         if segment.get_id() != MATROSKA_SEGMENT_ID:
             log.debug("SEGMENT ID not found %08X" % segment.get_id())
             return
-
         log.debug("SEGMENT ID found %08X" % segment.get_id())
+
+        # The parsing strategy for mkv is to first process the seekhead (which is
+        # at the top of the file), which points to all top-level elements we're
+        # interested in parsing.  Seekhead parsing is more robust as it seeks
+        # across the file as needed and reads all data.  If this succeeds, then
+        # we stop processing everything else in the segment as we're done.
+        #
+        # If the seekhead parsing fails, this is usually because the file is
+        # incomplete/corrupt.  In this case, we clear out anything that might
+        # have been processed from the seekhead and continue on with the
+        # other elements in the segment that might be in our pre-read buffer.
         try:
             for elem in self.process_one_level(segment):
-                if elem.get_id() == MATROSKA_SEEKHEAD_ID:
+                log.debug("Segment level id: %x", elem.get_id())
+                try:
                     self.process_elem(elem)
+                    if elem.get_id() == MATROSKA_SEEKHEAD_ID:
+                        # Seekhead was successfully processed so we're done.
+                        break
+                except core.ParseError:
+                    if elem.get_id() == MATROSKA_SEEKHEAD_ID:
+                        # We couldn't finish processing the seekhead.  Clear
+                        # out all metadata and keep processing the segment.
+                        log.debug("Failed to process seekhead, continuing with segment")
+                        del self.audio[:]
+                        del self.video[:]
+                        del self.subtitles[:]
+                        del self.chapters[:]
+                        continue
+                    else:
+                        # Some other error, stop processing.
+                        break
         except core.ParseError:
             pass
 
@@ -438,7 +467,7 @@ class Matroska(core.AVContainer):
 
     def process_elem(self, elem):
         elem_id = elem.get_id()
-        log.debug('BEGIN: process element %s' % hex(elem_id))
+        log.debug('BEGIN: process element %x size %d', elem_id, elem.entity_len)
         if elem_id == MATROSKA_SEGMENT_INFO_ID:
             duration = 0
             scalecode = 1000000.0
@@ -476,7 +505,7 @@ class Matroska(core.AVContainer):
         elif elem_id == MATROSKA_CUES_ID:
             self.has_idx = True
 
-        log.debug('END: process element %s' % hex(elem_id))
+        log.debug('END: process element %x', elem_id)
         return True
 
 
@@ -485,21 +514,14 @@ class Matroska(core.AVContainer):
             if seek_elem.get_id() != MATROSKA_SEEK_ID:
                 continue
             for sub_elem in self.process_one_level(seek_elem):
-                if sub_elem.get_id() == MATROSKA_SEEKID_ID:
-                    if sub_elem.get_value() == MATROSKA_CLUSTER_ID:
-                        # Not interested in these.
-                        return
-
-                elif sub_elem.get_id() == MATROSKA_SEEK_POSITION_ID:
+                if sub_elem.get_id() == MATROSKA_SEEK_POSITION_ID:
                     self.file.seek(self.segment.offset + sub_elem.get_value())
                     buffer = self.file.read(100)
-                    try:
-                        elem = EbmlEntity(buffer)
-                    except core.ParseError:
-                        continue
-
+                    elem = EbmlEntity(buffer)
+                    print(elem.ebml_length)
                     # Fetch all data necessary for this element.
-                    elem.add_data(self.file.read(elem.ebml_length))
+                    if elem.ebml_length > 100:
+                        elem.add_data(self.file.read(elem.ebml_length - 100))
                     self.process_elem(elem)
 
 
@@ -508,7 +530,6 @@ class Matroska(core.AVContainer):
         index = 0
         while index < tracks.get_len():
             trackelem = EbmlEntity(tracksbuf[index:])
-            log.debug ("ELEMENT %X found" % trackelem.get_id())
             self.process_track(trackelem)
             index += trackelem.get_total_len() + trackelem.get_crc_len()
 
