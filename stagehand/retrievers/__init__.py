@@ -39,7 +39,6 @@ def retrieve(progress, result, outfile, episode, skip=[], loop=None):
             # Happens when the retriever itself aborts the download, e.g. because
             # the file failed to meet the resolution requirements.
             log.info('retriever %s aborted transfer of %s: %s', name, result.filename, e.args[0])
-            print('reraising', type(e), e)
             raise
         except asyncio.CancelledError as e:
             # Happens when something outside (like the manager) wants to abort
