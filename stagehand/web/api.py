@@ -85,6 +85,7 @@ def show_settings(id):
     series.cfg.quality = settings.quality
     series.cfg.path = settings.path
     series.cfg.search_string = settings.search_string
+    series.cfg.language = settings.language
     #series.cfg.upgrade = True if settings['upgrade'] == 'true' else False
     series.cfg.paused = True if settings['paused'] == 'true' else False
     series.cfg.flat = True if settings['flat'] == 'true' else False

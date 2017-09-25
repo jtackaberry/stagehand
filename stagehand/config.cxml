@@ -188,6 +188,11 @@
                 string.
             </desc>
         </var>
+        <var name='language' type='str'>
+            <desc>
+                Preferred audio language for this series (overrides global default).
+            </desc>
+        </var>
     </list>
 
     <group name="searchers">
