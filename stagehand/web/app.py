@@ -128,6 +128,9 @@ def downloads():
         for ep in s.episodes:
             if ep.status != ep.STATUS_NEED_FORCED and (not ep.aired or manager.is_episode_queued_for_retrieval(ep)):
                 continue
+            if s.cfg.paused:
+                # Don't show episodes for paused series, even if they are needed.
+                continue
             icon, title = episode_status_icon_info(ep)
             if ep.airdate:
                 # week 0 is anything on or after sunday
