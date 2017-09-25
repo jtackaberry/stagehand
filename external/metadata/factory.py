@@ -154,10 +154,7 @@ class _Factory:
                     parser = self.get_class(info[R_CLASS])
                     return parser(file)
                 except core.ParseError:
-                    log.exception('ParseError 1')
                     pass
-                except Exception:
-                    log.exception('parse error')
 
         # Try to find a parser based on the first bytes of the
         # file (magic header). If a magic header is found but the
@@ -175,10 +172,7 @@ class _Factory:
                         parser = self.get_class(p[R_CLASS])
                         return parser(file)
                     except core.ParseError:
-                        log.exception('ParseError 2')
                         pass
-                    except Exception:
-                        log.exception('parse error')
                 log.info('Magic header found but parser failed')
                 return None
 
@@ -197,10 +191,7 @@ class _Factory:
             try:
                 return self.get_class(e[R_CLASS])(file)
             except core.ParseError:
-                log.exception('ParseError 2')
                 pass
-            except Exception:
-                log.exception('parser error')
         return None
 
 
