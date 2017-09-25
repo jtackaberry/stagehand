@@ -3,7 +3,7 @@ import asyncio
 from ..utils import load_plugins, invoke_plugins
 from .base import ProviderError
 
-plugins, broken_plugins = load_plugins('providers', ['thetvdb', 'tvrage'])
+plugins, broken_plugins = load_plugins('providers', ['thetvdb'])
 
 @asyncio.coroutine
 def start(manager):
