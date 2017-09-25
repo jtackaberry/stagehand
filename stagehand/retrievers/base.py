@@ -127,8 +127,10 @@ class RetrieverBase:
                 raise RetrieverError('filename indicates dubbed audio but no language codes specified')
         else:
             lang2to3 = dict((c[1], c[0]) for c in metadata.language.codes if len(c) == 3)
-            threecode = lang2to3.get(config.misc.language)
-            if (not threecode or threecode not in langs) and config.misc.language not in langs:
+            lang = episode.series.cfg.language or config.misc.language
+            threecode = lang2to3.get(lang) if len(lang) == 2 else lang
+            log.info('looking for preferred audio track language %s (%s)', threecode, lang)
+            if (not threecode or threecode not in langs) and lang not in langs:
                 # There are audio tracks with defined languages, but none of
                 # them are the language we want.  Heuristic (based on real
                 # world content): if the desired language is English and one
