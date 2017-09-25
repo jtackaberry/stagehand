@@ -181,6 +181,14 @@
             </div>
             <br />
 
+            <div class='option'>
+                <label>Language Code:</label>
+                <input type='text' id='series-language' name='series-language' size='25'
+                       value='{{series.cfg.language}}' />
+                <div class='help'>{{!cfgdesc2html(series.cfg.language)}}</div>
+            </div>
+            <br />
+
             <div id='providers-list' class='ui-buttons-small option'>
                 <label>Provider:</label>
                 %for p in series.providers:
@@ -300,6 +308,7 @@
       quality: $('input:radio[name="quality"]:checked').val(),
       path: $('#series-path').val(),
       search_string: $('#series-search-string').val(),
+      language: $('#series-language').val(),
       paused: $('#series-paused').is(':checked'),
       flat: $('#series-flat').is(':checked'),
       identifier: $('input:radio[name=identifier]:checked').val()
