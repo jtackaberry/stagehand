@@ -105,7 +105,7 @@
         <label></label>
         <a href='http://thetvdb.com/?tab=series&amp;id={{series.get_id_for_provider("thetvdb")}}&amp;lid=7'>
             <img src='{{root}}/api/shows/{{series.id}}/banner' width='650' alt=''
-                 style='border: 1px solid black' />
+                 style='border: 1px solid black; max-height: 400px; width: auto' />
         </a>
     </div>
     <form>
@@ -191,7 +191,7 @@
 
             <div id='providers-list' class='ui-buttons-small option'>
                 <label>Provider:</label>
-                %for p in series.providers:
+                %for p in sorted(providers, key=lambda p: p.NAME):
                     <input type="radio" id="provider-{{p.NAME}}" name='provider'
                            {{'checked="checked"' if p == series.provider else ''}}/>
                     <label for="provider-{{p.NAME}}">{{p.NAME_PRINTABLE}}</label>
