@@ -13,7 +13,7 @@ interface to download previously aired episodes.
 
 Here are some of the main features:
 
-* Pretty, modern-looking UI
+* ~~Pretty, modern-looking UI~~ (Well it was 5 years ago.)
 * Support for multiple TV metadata providers (currently TheTVDB and TVRage): easily choose the authoritative provider per-series
 * A Just Works design principle: no cumbersome setup or external tools
 * Support for Easynews HTTP-based global search
@@ -145,8 +145,6 @@ especially the very popular Sick Beard.
 There are a few reasons Stagehand exists:
 
 * I needed an excuse to learn [CoffeeScript](http://coffeescript.org/)
-* ~~I wanted a real-world application to exercise the [Kaa application
-  framework](https://github.com/freevo/kaa-base), which is another project of mine.~~
 * I wanted a project with which to learn Python 3.4's
   [asyncio](https://docs.python.org/3/library/asyncio.html) module
 * I was a bit annoyed at Sick Beard's need for SABnzbd
