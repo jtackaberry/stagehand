@@ -89,11 +89,13 @@ def tv_library():
 @web.get('/tv/<id>', method='GET')
 @shview('tv/show.tmpl')
 def tv_show(id):
-    series = web.request['stagehand.manager'].tvdb.get_series_by_id(id)
+    tvdb = web.request['stagehand.manager'].tvdb
+    series = tvdb.get_series_by_id(id)
     if not series:
         raise web.HTTPError(404, 'Invalid show.')
     return {
-        'series': series
+        'series': series,
+        'providers': tvdb.providers.values()
     }
 
 

@@ -432,11 +432,13 @@ class Series:
             new = self._db.providers[provider] if isinstance(provider, str) else provider
         except KeyError:
             raise ValueError('%s is not a known provider' % provider)
-        if new not in self.providers:
-            raise ValueError('%s is not currently a provider for this series' % new.NAME)
-        elif old != new:
-            log.info('changing provider for %s (%s) from %s to %s', self.id, self.name, old.NAME, new.NAME)
-            yield from self._db._update_series(old, self._dbattr(old.IDATTR), dirty=[], preferred=new, fast=True)
+        if old != new:
+            # If the new provider isn't in the current list of series providers, then
+            # ensure fast=False so we give the new provider an opportunity to be matched
+            # to the current provider.
+            fast = new in self.providers
+            log.info('changing provider for %s (%s) from %s to %s (fast=%s)', self.id, self.name, old.NAME, new.NAME, fast)
+            yield from self._db._update_series(old, self._dbattr(old.IDATTR), dirty=[], preferred=new, fast=fast)
 
 
     @asyncio.coroutine
@@ -464,7 +466,13 @@ class Series:
         from this provider as a primary source, using other providers only
         if the preferred provider did not supply the attribute.
         """
-        return self._db.providers[self._dbattr('provider')]
+        try:
+            return self._db.providers[self._dbattr('provider')]
+        except KeyError:
+            # Provider isn't available (anymore?).  Have no choice but to return
+            # another provider.  Here we just pick a random one.
+            return tuple(self._db.providers.values())[0]
+
 
     @property
     def id(self):
