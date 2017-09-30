@@ -699,7 +699,6 @@ class TVDB(db.Database):
         self.providers = dict((name, p.Provider(self)) for name, p in plugins.items())
         if not self.providers:
             raise RuntimeError('No TV metadata providers initialized successfully')
-        #log.info('Using db.ObjectRow %s', db.ObjectRow)
 
 
     def _parse_id(self, id):
