@@ -1,29 +1,30 @@
 import logging
 import urllib
-import hashlib
-import zipfile
 import time
 import os
+import json
 import asyncio
+import itertools
 
-from .base import ProviderBase, ProviderSearchResultBase, ProviderError, parse_xml
+from .base import ProviderBase, ProviderSearchResultBase, ProviderError
 from ..toolbox import db
 from ..toolbox.net import download
-from ..toolbox.utils import tempfile, tostr
+from ..toolbox.utils import tostr
 from ..config import config
 
 __all__ = ['Provider']
 
 log = logging.getLogger('stagehand.providers.thetvdb')
 
+
 class ProviderSearchResult(ProviderSearchResultBase):
     @property
     def pid(self):
-        return self._attrs.get('seriesid')
+        return str(self._attrs.get('id'))
 
     @property
     def name(self):
-        return self._attrs.get('SeriesName')
+        return self._attrs.get('seriesName')
 
     @property
     def names(self):
@@ -31,11 +32,12 @@ class ProviderSearchResult(ProviderSearchResultBase):
 
     @property
     def overview(self):
-        return self._attrs.get('Overview')
+        return self._attrs.get('overview')
 
     @property
     def imdb(self):
-        return self._attrs.get('IMDB_ID')
+        # Not available in search results
+        return None
 
     @property
     def year(self):
@@ -47,7 +49,7 @@ class ProviderSearchResult(ProviderSearchResultBase):
 
     @property
     def started(self):
-        return self._attrs.get('FirstAired')
+        return self._attrs.get('firstAired')
 
 
     @property
@@ -63,11 +65,15 @@ class Provider(ProviderBase):
     IDATTR = 'thetvdbid'
     CACHEATTR = 'thetvdbcache'
 
+    # It's actually 24 hours but we trim it a bit just to be safe.
+    TOKEN_LIFETIME_SECONDS = 23 * 3600
+
     def __init__(self, db):
         super().__init__(db)
-        self.hostname = 'http://www.thetvdb.com'
+        self.hostname = 'https://www.thetvdb.com'
         self._apikey = '1E9534A23E6D7DC0'
-        self._apiurl = '%s/api/%s/' % (self.hostname, self._apikey)
+        self._token = None
+        self._token_time = 0
 
         db.register_object_type_attrs('series',
             thetvdbid = (str, db.ATTR_SEARCHABLE | db.ATTR_INDEXED),
@@ -79,48 +85,74 @@ class Provider(ProviderBase):
         )
 
 
+    @asyncio.coroutine
+    def _rawapi(self, path, token=None, method='GET', body=None):
+        url = 'https://api.thetvdb.com' + path
+        headers = {
+            'Accept': 'application/json',
+            'Accept-Language' : config.misc.language.lower()
+        }
+        if token:
+            headers['Authorization'] = 'Bearer ' + token
+        if body:
+            headers['Content-Type'] = 'application/json'
+        status, data = yield from download(url, retry=4, method=method, headers=headers, data=body)
+        return status, json.loads(data.decode('utf8')) if data else None
+
+
+    @asyncio.coroutine
+    def _login(self):
+        body = json.dumps({'apikey': self._apikey})
+        status, response = yield from self._rawapi('/login', method='POST', body=body)
+        if status == 200 and 'token' in response:
+            return response['token']
+        else:
+            log.error('thetvdb login failed: %s', response)
+            raise ProviderError('thetvdb API login failed')
+
+
+    @asyncio.coroutine
+    def _api(self, path, method='GET', body=None):
+        """
+        Invokes an API method, logging in or refreshing the token if necessary.
+        """
+        now = time.time()
+        if not self._token or now - self._token_time > Provider.TOKEN_LIFETIME_SECONDS:
+            # Acquire a new token
+            self._token = yield from self._login()
+            self._token_time = now
+
+        status, response = yield from self._rawapi(path, self._token, method, body)
+        log.debug('API %s returned status %d', path, status)
+        if status == 401:
+            if self._token_time == now:
+                raise ProviderError('thetvDB API refused token')
+            else:
+                # Token was refused before expiry.  Clear token and recurse to cause relogin.
+                self._token = None
+                status, response = yield from self._api(path,method, body)
+        elif status != 200:
+            log.debug('API %s returned status %d', path, status)
+        return status, response
+
 
     @asyncio.coroutine
     def search(self, name):
         results = []
         quoted = urllib.parse.quote(name.replace('-', ' ').replace('_', ' '))
-        url = self.hostname + '/api/GetSeries.php?seriesname=%s' % quoted
-        log.info('fetching %s (for %s)', url, name)
-        for tag, attrs, data in (yield from parse_xml(url)):
-            if tag == 'Series':
-                results.append(ProviderSearchResult(self, data))
+        log.info('searching TheTVDB for %s', name)
+        status, response = yield from self._api('/search/series?name=' + quoted)
+        if status == 200:
+            if 'data' not in response:
+                log.warning('data element missing from response')
+            else:
+                for result in response['data']:
+                    results.append(ProviderSearchResult(self, result))
         return results
 
 
     @asyncio.coroutine
-    def _get_api_zipfile(self, url):
-        STAY_LOCAL = os.getenv('STAY_LOCAL', 0)
-        tmpname = tempfile('stagehand', 'thetvdb-', '.zip')
-        url = self._apiurl + url
-
-        if STAY_LOCAL and os.path.exists(tmpname):
-            status = 200
-        else:
-            # Try 3 times before giving up, unless it's a permanent error
-            log.debug('fetching zip file %s', url)
-            status, curl = yield from download(url, tmpname, retry=3, resume=False)
-        if status != 200:
-            if os.path.exists(tmpname):
-                os.unlink(tmpname)
-            raise ProviderError('thetvdb gave status %d for %s' % (status, url))
-
-        try:
-            z = zipfile.ZipFile(tmpname)
-        except zipfile.BadZipfile:
-            os.unlink(tmpname)
-            raise ProviderError('invalid zip file from thetvdb at %s' % url)
-
-        return z
-
-
-    @asyncio.coroutine
     def get_series(self, id):
-        STAY_LOCAL = os.getenv('STAY_LOCAL', 0)
         log.debug('retrieving series data for %s', id)
         if not self.get_last_updated():
             # DB doesn't know about server time.  Set to current time so that
@@ -129,93 +161,90 @@ class Provider(ProviderBase):
             self.db.set_metadata('thetvdb::servertime', int(time.time()))
 
         series = {'episodes': []}
-        # TODO: if language doesn't exist, retry english.  Or (probaby better)
-        # fetch and cache languages.xml and make sure the user choice is there.
-        z = yield from self._get_api_zipfile('series/%s/all/%s.zip' % (id, config.misc.language.lower()))
+        log.info('fetching series %s from TheTVDB', id)
+        status, response = yield from self._api('/series/' + id)
+        if status != 200:
+            return series
+        elif 'data' not in response:
+            log.warning('data element missing from response')
+            return series
 
-        # Find the highest rated banner for the given language.
-        banner = (-1, None)  # (rating, url)
-        for tag, attrs, data in (yield from parse_xml(z.open('banners.xml'))):
-            if tag != 'Banner' or data.get('BannerType') != 'series' or \
-               data.get('Language', '').lower() != config.misc.language.lower():
-                continue
-            try:
-                rating = float(data.get('Rating', 0))
-            except ValueError:
-                rating = 0.0
+        data = response['data']
 
-            if rating > banner[0] and 'BannerPath' in data:
-                banner = rating, data['BannerPath']
+        try:
+            series['runtime'] = int(data['runtime'])
+        except (ValueError, KeyError):
+            pass
+        try:
+            # XXX: is Airs_Time guaranteed to be well formatted?
+            # Should we be more robust?
+            timetuple = time.strptime(data.get('airsTime', ''), '%I:%M %p')
+            series['airtime'] = tostr(time.strftime('%H:%M', timetuple))
+        except ValueError:
+            pass
 
-        # Get series and episode data.
-        for tag, attrs, data in (yield from parse_xml(z.open('%s.xml' % config.misc.language.lower()))):
-            if tag == 'Series':
-                try:
-                    series['runtime'] = int(data['Runtime'])
-                except (ValueError, KeyError):
-                    pass
-                try:
-                    # XXX: is Airs_Time guaranteed to be well formatted?
-                    # Should we be more robust?
-                    timetuple = time.strptime(data.get('Airs_Time', ''), '%I:%M %p')
-                    series['airtime'] = tostr(time.strftime('%H:%M', timetuple))
-                except ValueError:
-                    pass
-
-                # Get any existing series and see if we need to fetch banner data.
-                existing = self.db.get_series_by_id('thetvdb:' + data['id'])
-                missing = not existing or not existing.banner_data
-                if not STAY_LOCAL and banner[1] and (missing or not existing.banner.endswith(banner[1])):
-                    # Need to fetch banner, either because it changed (different banner with
-                    # a higher rating?) or because we never had one.
-                    url = self.hostname + '/banners/' + banner[1]
-                    log.debug('refresh series banner %s', url)
-                    status, banner_data = yield from download(url, retry=3)
-                    if status == 200:
-                        series['banner_data'] = banner_data
-                    else:
-                        log.error('banner download failed for series %s', data.get('SeriesName', data['id']))
-
-                from ..tvdb import Series
-                status_str = data.get('Status', '').lower()
-                if status_str.startswith('cont'):  # continuing
-                    status = Series.STATUS_RUNNING
-                elif status_str.startswith('on'):  # on hiaitus
-                    status = Series.STATUS_SUSPENDED
-                elif status_str.startswith('end'):  # ended
-                    status = Series.STATUS_ENDED
-                else:
-                    status = Series.STATUS_UNKNOWN
-
-                series.update({
-                    'id': data['id'],
-                    'name': data.get('SeriesName'),
-                    'poster': self.hostname + '/banners/' + data['poster'] if data.get('poster') else None,
-                    'banner': self.hostname + '/banners/' + tostr(banner[1]) if banner[1] else None,
-                    'overview': data.get('Overview'),
-                    'genres': [g.strip().lower() for g in data.get('Genre', '').split('|') if g],
-                    # TODO: do a sanity check on FirstAired format.
-                    'started': data.get('FirstAired'),
-                    # TODO: use constants for status
-                    'status': status,
-                    'imdbid': data.get('IMDB_ID')
-                })
-            elif tag == 'Episode':
-                series['episodes'].append({
-                    'id': data['id'],
-                    'name': data.get('EpisodeName'),
-                    'season': int(data['SeasonNumber']),
-                    'episode': int(data['EpisodeNumber']),
-                    # TODO: do a sanity check on FirstAired format.
-                    'airdate': data.get('FirstAired'),
-                    'overview': data.get('Overview')
-                })
+        # Get any existing series and see if we need to fetch banner data.
+        # TODO: use /series/{id}/images to pick the highest rated banner
+        # and fetch the poster as well.
+        existing = self.db.get_series_by_id('thetvdb:{}'.format(data['id']))
+        missing = not existing or not existing.banner_data
+        if missing and data.get('banner'):
+            # Need to fetch banner, either because it changed (different banner with
+            # a higher rating?) or because we never had one.
+            url = self.hostname + '/banners/' + data['banner']
+            log.debug('refresh series banner %s', url)
+            status, banner_data = yield from download(url, retry=3)
+            if status == 200:
+                series['banner_data'] = banner_data
             else:
-                log.error('unknown element: %s', name)
+                log.error('banner download failed for series %s', data.get('seriesName', data['id']))
 
-        z.close()
-        if not STAY_LOCAL:
-            os.unlink(z.filename)
+        from ..tvdb import Series
+        status_str = data.get('status', '').lower()
+        if status_str.startswith('cont'):  # continuing
+            status = Series.STATUS_RUNNING
+        elif status_str.startswith('on'):  # on hiaitus
+            status = Series.STATUS_SUSPENDED
+        elif status_str.startswith('end'):  # ended
+            status = Series.STATUS_ENDED
+        else:
+            status = Series.STATUS_UNKNOWN
+
+        series.update({
+            'id': str(data['id']),
+            'name': data.get('seriesName'),
+            'poster': self.hostname + '/banners/' + data['poster'] if data.get('poster') else None,
+            'banner': self.hostname + '/banners/' + data['banner'] if data.get('banner') else None,
+            'overview': data.get('overview'),
+            'genres': [g.strip().lower() for g in data.get('genres', []) if g],
+            # TODO: do a sanity check on FirstAired format.
+            'started': data.get('firstAired'),
+            'status': status,
+            'imdbid': data.get('imdbId')
+        })
+
+        # Iterate over all pages of episodes.
+        for page in itertools.count(1):
+            status, response = yield from self._api('/series/{}/episodes?page={}'.format(id, page))
+            if status != 200:
+                break
+            elif 'data' not in response:
+                log.warning('data element missing from episodes response')
+                break
+
+            for episode in response['data']:
+                series['episodes'].append({
+                    'id': str(episode['id']),
+                    'name': episode.get('episodeName'),
+                    'season': int(episode['airedSeason']),
+                    'episode': int(episode['airedEpisodeNumber']),
+                    # TODO: do a sanity check on FirstAired format.
+                    'airdate': episode.get('firstAired'),
+                    'overview': episode.get('overview')
+                })
+
+            if 'links' not in response or response['links'].get('last', page) == page:
+                break
         return series
 
 
@@ -225,32 +254,26 @@ class Provider(ProviderBase):
         if not servertime:
             # No servertime stored, so there must not be any series in db.
             return
-        ids = []
         now = int(time.time())
 
         # Grab all series ids currently in the DB.
         series = set([o[self.IDATTR] for o in self.db.query(type='series', attrs=[self.IDATTR])])
-        if now - servertime < 60*60*24:
-            update_file = 'updates_day'
-        elif now - servertime < 60*60*24*7:
-            update_file = 'updates_week'
-        elif now - servertime < 60*60*24*28:
-            update_file = 'updates_month'
-        else:
-            # Haven't updated in over a month, so refresh all series.
+        if now - servertime > 60*60*24*7:
+            log.warning("haven't updated in over a week, returning all series")
+            # Haven't updated in over a week (which is the upper bound for the API), so refresh all series.
             self.db.set_metadata('thetvdb::servertime', now)
             return list(series)
 
-        # Fetch updates
-        z = yield from self._get_api_zipfile('updates/%s.zip' % update_file)
-        for tag, attrs, data in (yield from parse_xml(z.open('%s.xml' % update_file), nest=['Data'])):
-            if tag == 'Series' and data['id'] in series:
-                if 'time' not in data or int(data['time']) >= servertime:
-                    ids.append(data['id'])
-        self.db.set_metadata('thetvdb::servertime', now)
-        log.debug('set servertime %s', now)
-        z.close()
-        os.unlink(z.filename)
+        ids = []
+        status, response = yield from self._api('/updated/query?fromTime={}'.format(servertime))
+        if status == 200:
+            if 'data' not in response:
+                log.warning('data element missing from response')
+            elif response['data']:
+                for result in response['data']:
+                    ids.append(str(result['id']))
+            self.db.set_metadata('thetvdb::servertime', now)
+            log.debug('set servertime %s', now)
         return ids
 
 

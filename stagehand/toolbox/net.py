@@ -41,7 +41,7 @@ def _download(url, target=None, resume=True, progress=None, **kwargs):
         target = open(target, 'ab+' if resume else 'wb')
 
     try:
-        kwargs['headers'] = headers = {}
+        headers = kwargs.setdefault('headers', {})
         if resume:
             pos = target.seek(0, io.SEEK_END)
             if pos > 0:
@@ -53,7 +53,8 @@ def _download(url, target=None, resume=True, progress=None, **kwargs):
             expected_pos = 0
 
         log.info('fetching %s', url)
-        response = yield from aiohttp.request('GET', url, **kwargs)
+        method = kwargs.pop('method', 'GET')
+        response = yield from aiohttp.request(method, url, **kwargs)
         if response.status >= 300:
             raise aiohttp.HttpErrorException(response.status)
 
