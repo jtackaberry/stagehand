@@ -5,7 +5,7 @@ import asyncio
 
 from ..utils import load_plugins, invoke_plugins
 from ..config import config
-from .base import SearcherError
+from .base import SearcherError, SearchResult
 
 log = logging.getLogger('stagehand.searchers')
 

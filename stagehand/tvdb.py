@@ -13,6 +13,7 @@ from .toolbox import Signal, db, tostr, fsname, synchronized
 
 from .utils import fixsep, fixquotes, name_to_url_segment, remove_stop_words
 from .config import config
+from .searchers import SearchResult
 from .providers import plugins, ProviderError
 
 # get logging object
@@ -453,6 +454,7 @@ class Series:
         """
         return [p for p in self._db.providers.values() if self._dbattr(p.IDATTR)]
 
+
     @property
     def provider(self):
         """
@@ -617,47 +619,6 @@ class Series:
                 if startswith and genre.startswith(requested) or genre == requested:
                     matches.append(requested)
         return bool((all and len(matches) == len(genres)) or matches)
-
-
-class SearchResult:
-    def __init__(self, db, attrs):
-        super().__init__()
-        self._db = db
-        self._attrs = attrs
-
-    @property
-    def id(self):
-        return self._attrs.get('seriesid')
-
-    @property
-    def name(self):
-        return self._attrs.get('SeriesName')
-
-    @property
-    def overview(self):
-        return self._attrs.get('Overview')
-
-    @property
-    def imdb(self):
-        return self._attrs.get('IMDB_ID')
-
-    @property
-    def year(self):
-        airdate = self._attrs.get('FirstAired')
-        if airdate and len(airdate.split('-')) == 3:
-            return airdate.split('-')[0]
-        else:
-            return airdate
-
-    @property
-    def started(self):
-        return self._attrs.get('FirstAired')
-
-
-    @property
-    def banner(self):
-        if 'banner' in self._attrs:
-            return self._db.hostname + '/banners/' + self._attrs['banner']
 
 
 
