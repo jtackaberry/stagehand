@@ -56,11 +56,12 @@ class Manager:
         Starts the Stagehand manager, which starts all plugins and
         schedules tasks for
         """
+        yield from self._load_config()
+
         # TODO: randomize time, twice a day
         self.loop.call_soon(asyncio.async, self._check_update_tvdb())
         #web.notify('alert', title='Global alert', text='Stagehand was restarted')
 
-        yield from self._load_config()
         self._schedule_next_episode_check(skip_current_hour=False)
 
         # Start all plugins in parallel
