@@ -2,6 +2,7 @@
 *.swp
 build/
 dist/
+local/
 src/version.py
 stagehand.egg-info/
 ChangeLog
