@@ -233,15 +233,18 @@ class Provider(ProviderBase):
                 break
 
             for episode in response['data']:
-                series['episodes'].append({
-                    'id': str(episode['id']),
-                    'name': episode.get('episodeName'),
-                    'season': int(episode['airedSeason']),
-                    'episode': int(episode['airedEpisodeNumber']),
-                    # TODO: do a sanity check on FirstAired format.
-                    'airdate': episode.get('firstAired'),
-                    'overview': episode.get('overview')
-                })
+                try:
+                    series['episodes'].append({
+                        'id': str(episode['id']),
+                        'name': episode.get('episodeName'),
+                        'season': int(episode['airedSeason']),
+                        'episode': int(episode['airedEpisodeNumber']),
+                        # TODO: do a sanity check on FirstAired format.
+                        'airdate': episode.get('firstAired'),
+                        'overview': episode.get('overview')
+                    })
+                except Exception as e:
+                    log.exception("failed to extract episode details: %s %s", e, episode)
 
             if 'links' not in response or response['links'].get('last', page) == page:
                 break
