@@ -34,7 +34,7 @@ def search(series, episodes, skip=[], loop=None):
         earliest = (earliest - timedelta(days=10)).strftime('%Y-%m-%d')
 
     # XXX: should probably review these wild-ass min size guesses
-    mb_per_min = 2.5 if series.cfg.quality == 'HD' else 1
+    mb_per_min = 2 if series.cfg.quality == 'HD' else 0.5
     min_size = (series.runtime or 30) * mb_per_min * 1024 * 1024
     # FIXME: magic factor
     ideal_size = min_size * (5 if series.cfg.quality == 'Any' else 3)
