@@ -38,7 +38,7 @@ class ProviderSearchResult(ProviderSearchResultBase):
 
     @property
     def year(self):
-        started = self.premiered
+        started = self.started
         if started and len(started.split('-')) == 3:
             return started.split('-')[0]
         else:
