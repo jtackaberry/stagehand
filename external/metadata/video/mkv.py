@@ -189,7 +189,7 @@ def matroska_bps_to_bitrate(bps):
     """
     Tries to convert a free-form bps string into a bitrate (bits per second).
     """
-    m = re.search('([\d.]+)\s*(\D.*)', bps)
+    m = re.search(r'([\d.]+)\s*(\D.*)', bps)
     if m:
         bps, suffix = m.groups()
         if 'kbit' in suffix:
@@ -417,6 +417,7 @@ class Matroska(core.AVContainer):
         self.type = 'Matroska'
         self.has_idx = False
         self.objects_by_uid = {}
+        self._in_seekhead = False
 
         # Now get the segment
         self.segment = segment = EbmlEntity(buffer[header.get_total_len():])
@@ -454,6 +455,7 @@ class Matroska(core.AVContainer):
                         del self.video[:]
                         del self.subtitles[:]
                         del self.chapters[:]
+                        self.objects_by_uid.clear()
                         continue
                     else:
                         # Some other error, stop processing.
@@ -510,6 +512,9 @@ class Matroska(core.AVContainer):
 
 
     def process_seekhead(self, elem):
+        if self._in_seekhead:
+            return log.debug('skipping recursive seekhead processing')
+        self._in_seekhead = True
         for seek_elem in self.process_one_level(elem):
             if seek_elem.get_id() != MATROSKA_SEEK_ID:
                 continue
@@ -518,11 +523,11 @@ class Matroska(core.AVContainer):
                     self.file.seek(self.segment.offset + sub_elem.get_value())
                     buffer = self.file.read(100)
                     elem = EbmlEntity(buffer)
-                    print(elem.ebml_length)
                     # Fetch all data necessary for this element.
                     if elem.ebml_length > 100:
                         elem.add_data(self.file.read(elem.ebml_length - 100))
                     self.process_elem(elem)
+        self._in_seekhead = False
 
 
     def process_tracks(self, tracks):
@@ -865,11 +870,14 @@ class Matroska(core.AVContainer):
                 # so skip.
                 continue
 
-            # Pull value out of Tag object or list of Tag objects.
-            value = [item.value for item in tag] if isinstance(tag, list) else tag.value
+            # Pull value out of Tag object or list of Tag objects.  We expect scalar values
+            # so in the case of lists (because there was more than one tag of the same name)
+            # just pick the first.
+            value = tag[0].value if isinstance(tag, list) else tag.value
+
             if filter:
                 try:
-                    value = [list(filter(item)) for item in value] if isinstance(value, list) else list(filter(value))
+                    value = filter(value)
                 except Exception as e:
                     log.warning('Failed to convert tag to core attribute: %s', e)
             # Special handling for tv series recordings. The 'title' tag
