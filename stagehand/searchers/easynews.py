@@ -1,5 +1,6 @@
 import os
 import urllib
+import urllib.parse
 import logging
 import re
 import asyncio
@@ -68,7 +69,8 @@ class Searcher(SearcherBase):
             soup = BeautifulSoup(rss, 'html.parser')
             for item in soup.find_all('item'):
                 result = SearchResult(self)
-                result.filename = urllib.parse.unquote(os.path.split(item.enclosure['url'])[-1])
+                urlpath = urllib.parse.urlparse(item.enclosure['url']).path
+                result.filename = urllib.parse.unquote(os.path.split(urlpath)[-1])
                 result.size = self._parse_hsize(item.enclosure['length'])
                 result.date = dateutils.from_rfc822(item.pubdate.contents[0])
                 result.subject = ''.join(item.title.contents)
