@@ -193,7 +193,11 @@ def get_temp_path(appname):
     except KeyError:
         # create tmp directory for the user
         base = gettempdir()
-        path = os.path.join(base, '{}-{}'.format(appname, getpass.getuser()))
+        try:
+            user = getpass.getuser()
+        except Exception:
+            user = os.getuid()
+        path = os.path.join(base, '{}-{}'.format(appname, user))
         if not os.path.isdir(path):
             try:
                 os.mkdir(path, 0o0700)
