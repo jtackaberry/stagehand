@@ -206,6 +206,7 @@ def main():
                    help="path to Stagehand's static data directory")
     p.add_argument('-s', '--stop', dest='stop', action='store_true',
                    help='stop a currently running instance of Stagehand')
+    p.add_argument('--version', action='version', version='%(prog)s ' + __version__)
     args = p.parse_args()
 
     paths = init_default_paths(args.data)

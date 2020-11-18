@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 NAME = 'stagehand'
-VERSION = '0.3.0'
+VERSION = '0.3.1'
 
 import sys
 import os
@@ -69,6 +69,10 @@ class bdist_zip(build_py):
         os.makedirs(bdist.dist_dir, exist_ok=True)
 
         self.copy_data('data')
+
+        print('generating __init__.py')
+        with open('stagehand/__init__.py', 'w') as f:
+            f.write("# Auto-generated from setup.py\n__version__ = '{}'\n".format(version))
 
         print('generating __main__.py')
         with open(os.path.join(self.build_lib, '__main__.py'), 'w') as f:
