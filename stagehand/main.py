@@ -212,7 +212,9 @@ def main():
 
     if os.path.exists(paths.config):
         config.load(paths.config)
-    paths.logs = build_path(config.misc.logdir)
+    if config.misc.logdir != config.misc.logdir.default:
+        # If logdir configurable is non-default, then apply it.
+        paths.logs = build_path(config.misc.logdir)
 
     create_paths(paths)
 
