@@ -138,7 +138,7 @@ class Provider(ProviderBase):
         missing = not existing or not existing.banner_data
         try:
             image_url = response['image']['original']
-        except KeyError:
+        except (KeyError, TypeError):
             image_url = None
         else:
             if missing:

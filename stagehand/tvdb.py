@@ -1305,6 +1305,8 @@ class TVDB(db.Database):
                 for p, s in results:
                     pseries[p] = s
 
+        if preferred not in pseries:
+            raise ProviderError('provider %s does not have series, unable to set as preferred' % preferred.NAME)
         self._update_db_with_pseries(pseries, preferred)
         if completed:
             self._clear_update_task_by_id(provider, id)

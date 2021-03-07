@@ -67,8 +67,13 @@ def show_provider(job, id):
     series = get_series_from_request(id)
     provider = web.request.forms.get('provider')
     if provider:
-        yield from series.change_provider(provider)
-        series.cfg.provider = provider
+        try:
+            yield from series.change_provider(provider)
+        except Exception as e:
+            job.notify_after('alert', title='Series Provider', text='Failed to change provider: %s' % e.args[0])
+            raise web.HTTPError(404, 'Invalid provider.')
+        else:
+            series.cfg.provider = provider
 
 
 @web.post('/api/shows/<id>/refresh')
