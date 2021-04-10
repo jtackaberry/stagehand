@@ -68,8 +68,8 @@ class SearcherBase:
             'wmv': -inf, 'mpg': -inf, 'ts': -inf, 'rar': -inf, 'r\d\d': -inf,
         }
         av = {
-            (r'[xh]\.?264', r'(ac-?3|dts)'): 10,
-            (r'[xh]\.?264', None): 9,
+            (r'[xh]\.?26[45]', r'(ac-?3|dts|dd5\.?1)'): 10,
+            (r'[xh]\.?26[45]', None): 9,
             (None,  r'(ac-?3|dts)'): 8,
             (None, r'aac\.?2?'): -1
         }
@@ -121,10 +121,11 @@ class SearcherBase:
             aratio = a.size / float(ideal_size)
             bratio = b.size / float(ideal_size)
             # If both sizes are within 20% of each other, treat them the same.
-            if 0.8 < a.size / float(b.size) < 1.2:
+            if 0.8 < (a.size / float(b.size)) < 1.2:
                 pass
-            # If both sizes are within 40% of ideal, prefer the larger one
-            elif 0.6 < aratio < 3.4 and 0.6 < bratio < 3.4:
+            # If both sizes are no worse than 60% of ideal size, or up to 4x ideal size,
+            # prefer the larger one
+            elif 0.6 < aratio < 4 and 0.6 < bratio < 4:
                 return 1 if b.size > a.size else -1
             # Otherwise prefer the one closest to ideal.
             else:
