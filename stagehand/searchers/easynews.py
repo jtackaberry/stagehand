@@ -75,7 +75,6 @@ class Searcher(SearcherBase):
                 result.date = dateutils.from_rfc822(item.pubdate.contents[0])
                 result.subject = ''.join(item.title.contents)
                 result.url = item.enclosure['url']
-                log.debug('result: %s', result)
                 # TODO: parse out newsgroup
                 results.append(result)
 

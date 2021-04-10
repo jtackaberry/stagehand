@@ -287,6 +287,10 @@ class SearcherBase:
                 # We ended up disqualifying all the results.  So remove this episode
                 # from the result set.
                 del results[ep]
+            else:
+                for n, result in enumerate(l, 1):
+                    log.info('result: %s. %s', n, result)
+
 
         return results
 
