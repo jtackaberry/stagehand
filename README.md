@@ -1,7 +1,7 @@
 # Stagehand
 
 **This software is somewhat half-baked. It only works (though it works well)
-if you have an [Easynews](http://easynews.com) account.  Generic NNTP isn't
+if you have an [Easynews](https://easynews.com) account.  Generic NNTP isn't
 supported yet (but help is welcome).**
 
 
@@ -36,9 +36,9 @@ The core of Stagehand is quite robust, but many essential features are missing
 
 ## What it looks like
 
-![](https://helix.urandom.ca/stagehand/stagehand.jpg)
+![](https://stagehand.ca/img/stagehand.jpg)
 
-![](https://helix.urandom.ca/stagehand/stagehand2.jpg)
+![](https://stagehand.ca/img/stagehand2.jpg)
 
 
 
@@ -51,7 +51,7 @@ Stagehand is powered by Python and requires Python 3.3 or later.
 
 First [download Python](https://www.python.org/downloads/) and install it.
 
-Then [download Stagehand](http://stagehand.ca/downloads/stagehand.pyw), which
+Then [download Stagehand](https://stagehand.ca/downloads/stagehand.pyw), which
 you can run directly.
 
 Once running, you should see a TV icon in your system tray.  Double clicking
@@ -79,7 +79,7 @@ to install a newer version of Python alongside your system version.
 Just fetch the latest build as a single executable:
 
 ```bash
-$ wget http://stagehand.ca/downloads/stagehand && chmod a+x stagehand
+$ wget https://stagehand.ca/downloads/stagehand && chmod a+x stagehand
 $ ./stagehand
 ```
 
@@ -144,9 +144,9 @@ especially the very popular Sick Beard.
 
 There are a few reasons Stagehand exists:
 
-* I needed an excuse to learn [CoffeeScript](http://coffeescript.org/)
+* I needed an excuse to learn [CoffeeScript](https://coffeescript.org/)
 * I wanted a project with which to learn Python 3.4's
   [asyncio](https://docs.python.org/3/library/asyncio.html) module
 * I was a bit annoyed at Sick Beard's need for SABnzbd
-* I suffer horribly from [NIH](http://en.wikipedia.org/wiki/Not_invented_here)
+* I suffer horribly from [NIH](https://en.wikipedia.org/wiki/Not_invented_here)
 
