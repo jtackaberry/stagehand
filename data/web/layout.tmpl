@@ -37,8 +37,10 @@
                 <li id='m-home'><a href='{{root}}/'><img src='{{root}}/static/img/home.png' alt='Home' /></a></li>
                 <li id='m-tv'><a href='{{root}}/tv/'>TV Shows</a></li>
                 <li id='m-downloads'><a href='{{root}}/downloads/'>Downloads</a></li>
+                %if False:
                 <li id='m-settings'><a href='{{root}}/settings/'>Settings</a></li>
                 <li id='m-log'><a href='{{root}}/log/'>Log</a></li>
+                %end
                 <li>
                     %import stagehand
                     version {{stagehand.__version__}}
