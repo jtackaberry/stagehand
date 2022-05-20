@@ -3,7 +3,7 @@
 build/
 dist/
 local/
-src/version.py
+src/__init__.py
 stagehand.egg-info/
 ChangeLog
 MANIFEST
