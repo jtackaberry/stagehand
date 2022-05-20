@@ -40,8 +40,10 @@
                 <li id='m-home'><a href='{{root}}/'><img src='{{root}}/static/img/home.png' alt='Home' /></a></li>
                 <li id='m-tv'><a href='{{root}}/tv/'>TV Shows</a></li>
                 <li id='m-downloads'><a href='{{root}}/downloads/'>Downloads</a></li>
+                %if False:
                 <li id='m-settings'><a href='{{root}}/settings/'>Settings</a></li>
                 <li id='m-log'><a href='{{root}}/log/'>Log</a></li>
+                %end
                 <li>
                     %import stagehand
                     version {{stagehand.__version__}}
@@ -84,7 +86,7 @@
 
   $('#main li').mouseenter(function() {
     var menu;
-    menu = $("#submenu-" + (this.id.replace('m-', '')));
+    menu = $(`#submenu-${this.id.replace('m-', '')}`);
     if (menu.length) {
       $('.submenu').hide();
       return menu.show();
@@ -100,16 +102,16 @@
     return window.location = '{{root}}/downloads/';
   });
 
-  stagehand.bind('dlprogress', function(_arg) {
-    var code, current, percentage, progress, queue, showid, speed, total, _ref;
-    queue = _arg.queue;
+  stagehand.bind('dlprogress', function({queue}) {
+    var code, current, percentage, progress, showid, speed, total;
     if (queue.length > 0) {
-      _ref = queue[0], showid = _ref[0], code = _ref[1], progress = _ref[2];
+      // TODO: tally progress for all active downloads
+      [showid, code, progress] = queue[0];
       if (progress) {
-        percentage = progress[0], current = progress[1], total = progress[2], speed = progress[3];
+        [percentage, current, total, speed] = progress;
         $('#banner #progress:hidden').show();
         return $('#banner #progress span').css({
-          width: "" + percentage + "%"
+          width: `${percentage}%`
         });
       }
     } else {
