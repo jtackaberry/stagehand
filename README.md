@@ -14,24 +14,19 @@ interface to download previously aired episodes.
 Here are some of the main features:
 
 * ~~Pretty, modern-looking UI~~ (Well it was 5 years ago.)
-* Support for multiple TV metadata providers (currently TheTVDB and TVRage): easily choose the authoritative provider per-series
-* A Just Works design principle: no cumbersome setup or external tools
-* Support for Easynews HTTP-based global search
+* Support for multiple TV metadata providers (currently TheTVDB and TVmaze): easily choose the authoritative provider per-series
+* (Exclusive) support for Easynews HTTP-based global search
 * Multi-platform: tested on Linux and Windows (and theoretically works on OS X)
 
+## What it isn't
 
-
-## What it isn't (yet)
-
-The core of Stagehand is quite robust, but many essential features are missing
-(but planned):
+The core of Stagehand is quite robust, but many essential features are missing:
 
 * NZB and NNTP support (for non-Easynews Usenet services): the most critical missing functionality
 * Bittorrent
 * Web-based configuration UI
 * Ability to import an existing TV library
 * ... and a bazillion FIXMEs and TODOs in the source
-
 
 
 ## What it looks like
@@ -42,88 +37,48 @@ The core of Stagehand is quite robust, but many essential features are missing
 
 
 
-## How to install it
+## How to run it
 
-Stagehand is powered by Python and requires Python 3.3 or later.
+Stagehand is powered by Python and requires a Python version between 3.3 and 3.6.
 
+This max Python version restriction is obviously problematic, but fixing it requires
+nontrivial changes.  Consequently, we use a Docker image to ensure compatibility.
 
-### Windows
-
-First [download Python](https://www.python.org/downloads/) and install it.
-
-Then [download Stagehand](https://stagehand.ca/downloads/stagehand.pyw), which
-you can run directly.
-
-Once running, you should see a TV icon in your system tray.  Double clicking
-it will open Stagehand in your browser.  You can also right-click the icon to
-see additional options.
-
-
-
-### Linux
-
-If you have a relatively recent Linux distribution, you probably already have
-Python 3.3+.  You can check at the command line:
+The Docker image is available at
+[`jtackaberry/stagehand`](https://hub.docker.com/r/jtackaberry/stagehand).  This is the
+simplest way to run it -- change `/data/tv` below with the path where you want to hold
+downloaded episodes:
 
 ```bash
-$ python3 --version
-Python 3.4.0
+docker run -ti -u $UID:$UID --net=host -v $HOME:/stagehand -v /data/tv:/stagehand/tv jtackaberry/stagehand
 ```
 
-If you're running an older Ubuntu version, you might try the
-[Old and New Python Versions PPA](https://launchpad.net/~fkrull/+archive/deadsnakes)
-to install a newer version of Python alongside your system version.
-
-#### The Easy Way
-
-Just fetch the latest build as a single executable:
-
-```bash
-$ wget https://stagehand.ca/downloads/stagehand && chmod a+x stagehand
-$ ./stagehand
-```
-
-It will output a line that looks like:
+If things are working properly, you should see output that looks like this:
 
 ```
-2014-06-18 22:58:02,571 [INFO] stagehand.web: started webserver at http://buffy:8088/
+2022-05-20 20:11:38,655 [INFO] stagehand: starting Stagehand 0.3.3
+2022-05-20 20:11:38,662 [INFO] manager: watching /stagehand/.config/stagehand/config for changes
+2022-05-20 20:11:38,680 [INFO] manager: scheduling next episode check for 2022-05-20 21:06:00
+2022-05-20 20:11:38,682 [INFO] manager: checking for new episodes and availability
+2022-05-20 20:11:38,692 [INFO] manager: no new episodes; we are all up to date
+2022-05-20 20:11:38,696 [INFO] stagehand.web: started webserver at http://faith:8088/
+2022-05-20 20:11:38,697 [INFO] manager: checking all epsiodes to see if any need resuming
+2022-05-20 20:11:38,697 [INFO] manager: stagehand started, waiting for next new episodes check
 ```
 
-You should be able to browse to this URL (from inside your network,
-presumably).
+Note the webserver URL in the output above.  You should be able to browse to this URL from
+within your network.  Before proceeding with configuration, ensure that it's reachable.
 
-
-You can daemonize Stagehand if you want to run it in the background.  Logs go
-to `~/.cache/stagehand/logs/`.  For debugging purposes, it's recommended you
-run Stagehand with extra verbosity (`-vv`).
-
-```bash
-$ stagehand -vvb
-```
-
-#### The Hard Way
-
-Stagehand installs from source like any other Python module:
-
-```bash
-$ git clone git://github.com/jtackaberry/stagehand.git
-$ cd stagehand
-$ sudo python3 setup.py install
-$ stagehand
-```
+👉 You can daemonize the container by replacing `-ti` in the command line above with `-d`.
 
 
 ## How to configure it
 
-Ideally you'd be able to configure Stagehand from the web interface, but this
-isn't implemented yet (in spite of the fact that there is content in the
-Settings section).
+Ideally you'd be able to configure Stagehand from the web interface, but this isn't
+implemented yet. Until then, you will need to edit the config file at
+`~/.config/stagehand/config`.
 
-Until then, you will need to edit the config file
-(`~/.config/stagehand/config` on Linux, or `%AppData%\Stagehand\config.txt` on
-Windows).
-
-Minimally, you will need these lines, which you can just append to the bottom
+Minimally, you will need these lines, which you can safely append to the bottom
 of the file:
 
 ```
@@ -134,19 +89,3 @@ searchers.easynews.password = your_easynews_password
 
 Once you save the config file, you're ready to start using Stagehand.  No reload
 is needed, it will pick up the changes dynamically.
-
-
-
-## Haven't you heard of $APP?
-
-I realize there are several programs that do what Stagehand does, including and
-especially the very popular Sick Beard.
-
-There are a few reasons Stagehand exists:
-
-* I needed an excuse to learn [CoffeeScript](https://coffeescript.org/)
-* I wanted a project with which to learn Python 3.4's
-  [asyncio](https://docs.python.org/3/library/asyncio.html) module
-* I was a bit annoyed at Sick Beard's need for SABnzbd
-* I suffer horribly from [NIH](https://en.wikipedia.org/wiki/Not_invented_here)
-
