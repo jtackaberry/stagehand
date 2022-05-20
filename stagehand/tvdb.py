@@ -380,8 +380,8 @@ class Series:
     # Constants for status attribute
     STATUS_UNKNOWN = 0
     STATUS_RUNNING = 1
-    STATUS_SUSPENDED = 1
     STATUS_ENDED = 2
+    STATUS_SUSPENDED = 3
 
     def __init__(self, db, dbrow):
         super().__init__()
