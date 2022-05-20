@@ -245,7 +245,9 @@ class Manager:
             if series.id not in seen:
                 log.error('series %s (%s) in database but not config; ignoring', series.id, series.name)
                 self.tvdb.ignore_series_by_id(series.id)
-
+            # Loop over episodes as well just to warm the cache
+            for ep in series.episodes:
+                pass
 
     def get_episode_retrieve_task(self, ep):
         """
