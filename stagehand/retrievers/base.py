@@ -117,6 +117,9 @@ class RetrieverBase:
             raise RetrieverError('video resolution %dx%d does not satisfy requested %s quality' % \
                                  (video.width, video.height, result.quality))
 
+        if info.length < 300:
+            raise RetrieverError('file duration %s is not long enough' % info.length)
+
         # See if the audio is the right language.  If the language is specified in any of
         # the tracks, make sure one of them is the user-preferred language.
         langs = set(track.langcode or 'und' for track in info.audio)
