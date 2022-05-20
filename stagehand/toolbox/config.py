@@ -153,6 +153,11 @@ class Base:
         return self._value
 
 
+    @property
+    def default(self):
+        return self._default
+
+
     def _hash(self, values=True):
         """
         Returns a hash of the config item.
