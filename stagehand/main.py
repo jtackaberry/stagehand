@@ -240,19 +240,20 @@ def main():
 
     # Default log levels.
 
-    # XXX: these should be INFO, WARNING, INFO but increase levels temporarily
-    # for development.
-    log.setLevel(logging.DEBUG)
+    log.setLevel(logging.INFO)
     logging.getLogger('stagehand.http').setLevel(logging.INFO)
+    logging.getLogger('config').setLevel(logging.INFO)
     logging.getLogger('http').setLevel(logging.DEBUG)
 
     if args.quiet:
         log.setLevel(logging.CRITICAL)
     elif len(args.verbose) == 1:
         log.setLevel(logging.DEBUG)
+        logging.getLogger('config').setLevel(logging.DEBUG)
         logging.getLogger('stagehand.web').setLevel(logging.INFO)
     elif len(args.verbose) >= 2:
         log.setLevel(logging.DEBUG2)
+        logging.getLogger('config').setLevel(logging.DEBUG)
         if len(args.verbose) == 3:
             logging.getLogger('stagehand.web').setLevel(logging.DEBUG2)
             logging.getLogger('stagehand.http').setLevel(logging.DEBUG)
@@ -269,14 +270,13 @@ def main():
     if args.background:
         daemonize(chdir=None)
 
+    log.info('starting Stagehand %s', __version__)
     loop = asyncio.get_event_loop()
     mgr = Manager(paths, loop=loop)
     # Take care to start platform plugins before any logging is done.  At least
     # for win32, for reasons yet unclear, it seems that performing any output
     # before the window is created can cause it to fail.
     loop.run_until_complete(platform.start(mgr))
-
-    log.info('starting Stagehand %s', __version__)
 
     config.web.add_monitor(functools.partial(web_config_changed, mgr, args))
     asyncio.async(web_start_server(mgr, args))

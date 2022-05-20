@@ -42,7 +42,7 @@ class Manager:
         # then write out a new config file.
         config.save(paths.config, force=not os.path.exists(paths.config))
 
-        # Monitor config file for changes.
+        log.info('watching %s for changes', config.filename)
         config.watch()
         config.autosave = True
         config.signals['reloaded'].connect(self._load_config)
@@ -82,6 +82,7 @@ class Manager:
 
         # Start the retrieve queue processor
         self._retrieve_queue_processor()
+        log.info('stagehand started, waiting for next new episodes check')
 
 
 

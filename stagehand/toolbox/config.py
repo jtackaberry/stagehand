@@ -1516,9 +1516,13 @@ class Config(Group):
             cb = lambda *args: changed_names.append(args[0])
             self.add_monitor(cb)
             self.load()
-            log.info('Config file %s modified; %d settings changed.' % (self.filename, len(changed_names)))
+            if len(changed_names) < 5:
+                details = 'changed: ' + (', '.join(changed_names) or 'nothing')
+            else:
+                details = f'{len(changed_names)} settings changed'
+            log.info('config file %s modified; %s' % (self.filename, details))
             self.signals['reloaded'].emit(changed_names)
-            log.debug('What changed: %s', ', '.join(changed_names) or 'nothing')
+            log.debug('what changed: %s', ', '.join(changed_names) or 'nothing')
             self.remove_monitor(cb)
         elif mask & (INotify.IGNORED | INotify.MOVE_SELF):
             # File may have been replaced, check mtime now.
