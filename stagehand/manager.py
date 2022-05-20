@@ -63,6 +63,7 @@ class Manager:
         #web.notify('alert', title='Global alert', text='Stagehand was restarted')
 
         self._schedule_next_episode_check(skip_current_hour=False)
+        yield from self.check_new_episodes()
 
         # Start all plugins in parallel
         yield from asyncio.gather(searchers.start(self), retrievers.start(self),
