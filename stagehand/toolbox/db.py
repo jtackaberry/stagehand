@@ -49,8 +49,10 @@ import sqlite3 as sqlite
 import asyncio
 from .utils import tostr
 
+RAW_TYPE = bytes
 BYTES_TYPE = bytes
 UNICODE_TYPE = str
+PICKLE_PROTOCOL = 3
 
 # get logging object
 log = logging.getLogger('db')
@@ -124,6 +126,12 @@ STOP_WORDS = (
 
 def btos(s):
     return s.decode('ascii') if isinstance(s, bytes) else s
+
+def dbpickle(value):
+    return bytes(pickle.dumps(value, 3))
+
+def dbunpickle(s, modmap=None):
+    return pickle.loads(bytes(s))
 
 
 class PyObjectRow:
@@ -330,98 +338,6 @@ class PyObjectRow:
             return True
         else:
             return key in self._idxmap
-
-
-if sys.hexversion >= 0x03000000:
-    RAW_TYPE = bytes
-    PICKLE_PROTOCOL = 3
-    class Proto2Unpickler(pickle._Unpickler):
-        """
-        In spite of the promise that pickles will be compatible between Python
-        releases, Python 3 does the wrong thing with non-unicode strings in
-        pickles (BINSTRING pickle opcode).  It will try to convert them to
-        unicode strings, which is wrong when the intention was to store binary
-        data in a Python 2 str.
-
-        This class implements a custom unpickler that will load BINSTRING as
-        bytes objects.  An exception is made for dictionaries, where BINSTRING
-        keys are converted to unicode strings.
-
-        Additionally, it maps the unicode and buffer types to corresponding
-        Python 3 types.
-        """
-        printable = string.printable.encode('ascii')
-        dispatch = pickle._Unpickler.dispatch.copy()
-
-        def load(self, modmap):
-            self.modmap = modmap
-            return super().load()
-
-        def load_binstring(self):
-            len = struct.unpack('<i', self.read(4))[0]
-            self.append(bytes(self.read(len)))
-        dispatch[pickle.BINSTRING[0]] = load_binstring
-
-        def load_short_binstring(self):
-            len = ord(self.read(1))
-            s = self.read(len)
-            if not any(c not in self.printable for c in s):
-                s = s.decode('ascii')
-            self.append(s)
-        dispatch[pickle.SHORT_BINSTRING[0]] = load_short_binstring
-
-        def load_setitems(self):
-            super(Proto2Unpickler, self).load_setitems()
-            d = self.stack[-1]
-            for k, v in d.items():
-                if type(k) == bytes:
-                    sk = str(k, self.encoding, self.errors)
-                    if sk not in d:
-                        d[sk] = v
-                        del d[k]
-        dispatch[pickle.SETITEMS[0]] = load_setitems
-
-        def find_class(self, module, name):
-            if module == '__builtin__':
-                if name == 'unicode':
-                    return str
-                elif name == 'buffer':
-                    return bytes
-            elif self.modmap and module in self.modmap:
-                module = self.modmap[module]
-            return super(Proto2Unpickler, self).find_class(module, name)
-
-    def dbunpickle(s, modmap=None):
-        if s[1] == 0x02:
-            import io
-            return Proto2Unpickler(io.BytesIO(bytes(s))).load(modmap)
-        else:
-            return pickle.loads(bytes(s))
-
-    def dbpickle(value):
-        return bytes(pickle.dumps(value, 3))
-
-    # Need to be able to unpickle pickled buffers from Python 2.
-    def _unpickle_buffer(s):
-        return bytes(s)
-
-else:
-    RAW_TYPE = buffer
-    PICKLE_PROTOCOL = 2
-    def dbunpickle(s, modmap=None):
-        return cPickle.loads(str(s))
-
-    def dbpickle(value):
-        return buffer(cPickle.dumps(value, 2))
-
-
-    # Python2 can't pickle buffer types, so register a handler for that.
-    def _pickle_buffer(b):
-        return _unpickle_buffer, (str(b),)
-
-    def _unpickle_buffer(s):
-        return str(s)
-    copyreg.pickle(buffer, _pickle_buffer, _unpickle_buffer)
 
 
 try:
@@ -681,7 +597,7 @@ class Database:
                 cursor.execute(statement, args)
             rows = cursor.fetchall()
         t1=time.time()
-        #print("QUERY [%.06f%s]: %s" % (t1-t0, ('', ' (many)')[many], statement), args)
+        #log.warn('db: query [%.06f]: %s (%s)', t1-t0, statement, args)
         return rows
 
 
