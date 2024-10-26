@@ -358,7 +358,12 @@ table.grid tr.heading td {
    text-shadow: #000 1px 1px 1px;
    display: inline-block;
    margin: 0;
-   width: 2em;
+   width: 3em;
+}
+
+.quality span.uhd {
+   background-color: #548e6c;
+   border: 1px solid #38463c;
 }
 
 .quality span.hd {

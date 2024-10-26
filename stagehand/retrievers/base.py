@@ -113,7 +113,8 @@ class RetrieverBase:
         # TODO: don't hardcode these
         video = sorted(info.video, key=lambda track: track.height)[-1]
         if (result.quality == 'SD' and (video.height < 240 or video.height > 540)) or \
-           (result.quality == 'HD' and video.height < 600):
+           (result.quality == 'HD' and video.height < 600) or \
+           (result.quality == 'UHD' and video.height < 1600):
             raise RetrieverError('video resolution %dx%d does not satisfy requested %s quality' % \
                                  (video.width, video.height, result.quality))
 

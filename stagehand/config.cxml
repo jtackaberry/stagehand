@@ -137,12 +137,13 @@
             <desc>
                 The required resolution for downloaded episodes.
 
-                HD is 1080p or 720p, SD is anything less than HD, and Any will
-                download whatever is available.  In all cases, if there are
-                multiple options within the preferred resolution, Stagehand
-                will try to choose the one with the best quality.
+                UHD is 2160p, HD is 1080p or 720p, SD is anything less than HD, and Any
+                will download whatever is available.  In all cases, if there are multiple
+                options within the preferred resolution, Stagehand will try to choose the
+                one with the best quality.
             </desc>
             <enum>
+                <value>UHD</value>
                 <value>HD</value>
                 <value>SD</value>
                 <value>Any</value>

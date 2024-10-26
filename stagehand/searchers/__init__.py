@@ -33,12 +33,16 @@ def search(series, episodes, skip=[], loop=None):
         # air date.
         earliest = (earliest - timedelta(days=10)).strftime('%Y-%m-%d')
 
-    # XXX: should probably review these wild-ass min size guesses
-    mb_per_min = 2 if series.cfg.quality == 'HD' else 0.5
-    min_size = (series.runtime or 30) * mb_per_min * 1024 * 1024
-    # FIXME: magic factor
-    ideal_size = min_size * (5 if series.cfg.quality == 'Any' else 3)
-    log.info('min size=%d ideal size=%d  runtime=%d' , min_size, ideal_size, series.runtime)
+    # For each quality type, this is the minimum MB per min, and ideal MB per min
+    mb_per_min = {
+        'UHD': (30, 120),
+        'HD': (10, 25),
+        'SD': (2, 8),
+        'Any': (2, 20),
+    }[series.cfg.quality or 'Any']
+    runtime = series.runtime or 30
+    min_size_bytes = runtime * mb_per_min[0] * 1024 * 1024
+    ideal_size_bytes = runtime * mb_per_min[1] * 1024 * 1024
 
     tried = set()
     always = [name for name in plugins if plugins[name].Searcher.ALWAYS_ENABLED]
@@ -48,7 +52,7 @@ def search(series, episodes, skip=[], loop=None):
         tried.add(name)
         searcher = plugins[name].Searcher(loop=loop)
         try:
-            results = yield from searcher.search(series, episodes, earliest, min_size, ideal_size, series.cfg.quality)
+            results = yield from searcher.search(series, episodes, earliest, min_size_bytes, ideal_size_bytes, series.cfg.quality)
         except SearcherError as e:
             log.error('%s failed: %s', name, e.args[0])
         except Exception:

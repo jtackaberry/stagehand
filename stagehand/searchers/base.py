@@ -73,7 +73,7 @@ class SearcherBase:
             (None,  r'(ac-?3|dts)'): 8,
             (None, r'aac\.?2?'): -1
         }
-        res = {'1080p': 2, '720p': 1}
+        res = {'2160p': 3, '1080p': 2, '720p': 1}
         mods = {r'blu-?ray': 10, 'proper': 9, r're-?pack': 7, 'immerse': 6,
                 'dimension': 5, 'nlsubs': 4, 'web-?dl': 3}
 
