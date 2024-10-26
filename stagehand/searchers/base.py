@@ -166,7 +166,8 @@ class SearcherBase:
             if dates:
                 dt = ep.airdatetime
                 if dt:
-                    parts.append(r'{0}[-.]?{1:02}[-.]?{2:02}'.format(dt.year, dt.month, dt.day))
+                    parts.append(r'{0}-{1:02}-{2:02}'.format(dt.year, dt.month, dt.day))
+                    parts.append(r'{0}.{1:02}.{2:02}'.format(dt.year, dt.month, dt.day))
 
         return parts
 
