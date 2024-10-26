@@ -81,36 +81,36 @@
   });
 
   $('#episode-button-bar button').click(function() {
-    var epcode, eplist, eps_by_show, item, showid, status, _i, _len, _ref, _ref1, _results;
+    var epcode, eplist, eps_by_show, i, item, len, ref, ref1, results, showid, status;
     eps_by_show = {};
     status = this.id.replace('button-episodes-status-', '');
-    _ref = $('#{{tableid}} tr.ep input[type=checkbox]:checked').parents('tr');
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      item = _ref[_i];
-      _ref1 = item.id.split('-'), showid = _ref1[0], epcode = _ref1[1];
+    ref = $('#{{tableid}} tr.ep input[type=checkbox]:checked').parents('tr');
+    for (i = 0, len = ref.length; i < len; i++) {
+      item = ref[i];
+      ref1 = item.id.split('-'), showid = ref1[0], epcode = ref1[1];
       if (!eps_by_show[showid]) {
         eps_by_show[showid] = [];
       }
       eps_by_show[showid].push(epcode);
     }
-    _results = [];
+    results = [];
     for (showid in eps_by_show) {
       eplist = eps_by_show[showid];
-      _results.push((function(showid, eplist) {
+      results.push((function(showid, eplist) {
         return stagehand.api("/api/shows/" + showid + "/episodes/" + (eplist.join(',')) + "/status?value=" + status, null, 'POST').done((function(_this) {
-          return function(_arg) {
-            var code, statuses, title, _ref2;
-            statuses = _arg.statuses;
+          return function(arg) {
+            var code, ref2, statuses, title;
+            statuses = arg.statuses;
             for (code in statuses) {
-              _ref2 = statuses[code], status = _ref2[0], title = _ref2[1];
+              ref2 = statuses[code], status = ref2[0], title = ref2[1];
               $("[id='" + showid + "-" + code + "'] img").prop('src', "{{root}}/static/img/icon-20-status-" + status + ".png").prop('title', title).prop('alt', title);
             }
             $('#{{tableid}} input[type=checkbox]').prop('checked', false);
             return open_button_bar_if_needed();
           };
-        })(this)).fail(function(_arg) {
+        })(this)).fail(function(arg) {
           var message, xhr;
-          message = _arg.message, xhr = _arg.xhr;
+          message = arg.message, xhr = arg.xhr;
           if (xhr.status === 404) {
             return alert("Failed: one of the episodes selected doesn't exist or unknown status code");
           } else {
@@ -119,7 +119,7 @@
         });
       })(showid, eplist));
     }
-    return _results;
+    return results;
   });
 
 }).call(this);

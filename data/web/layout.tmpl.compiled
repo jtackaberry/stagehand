@@ -86,7 +86,7 @@
 
   $('#main li').mouseenter(function() {
     var menu;
-    menu = $(`#submenu-${this.id.replace('m-', '')}`);
+    menu = $("#submenu-" + (this.id.replace('m-', '')));
     if (menu.length) {
       $('.submenu').hide();
       return menu.show();
@@ -102,16 +102,16 @@
     return window.location = '{{root}}/downloads/';
   });
 
-  stagehand.bind('dlprogress', function({queue}) {
-    var code, current, percentage, progress, showid, speed, total;
+  stagehand.bind('dlprogress', function(arg) {
+    var code, current, percentage, progress, queue, ref, showid, speed, total;
+    queue = arg.queue;
     if (queue.length > 0) {
-      // TODO: tally progress for all active downloads
-      [showid, code, progress] = queue[0];
+      ref = queue[0], showid = ref[0], code = ref[1], progress = ref[2];
       if (progress) {
-        [percentage, current, total, speed] = progress;
+        percentage = progress[0], current = progress[1], total = progress[2], speed = progress[3];
         $('#banner #progress:hidden').show();
         return $('#banner #progress span').css({
-          width: `${percentage}%`
+          width: percentage + "%"
         });
       }
     } else {

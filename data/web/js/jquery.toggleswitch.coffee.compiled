@@ -20,11 +20,11 @@
       }
     },
     _update: function(speed) {
-      var pos, _ref;
+      var pos, ref;
       if (speed == null) {
         speed = this.options.speed;
       }
-      pos = ((_ref = this._shift) != null ? _ref[this._is_checked()] : void 0) || 0;
+      pos = ((ref = this._shift) != null ? ref[this._is_checked()] : void 0) || 0;
       if (speed === 0) {
         return this._span.stop().css({
           backgroundPositionX: pos
@@ -59,9 +59,9 @@
       }
     },
     _create: function() {
-      var _base;
-      if ((_base = this.options).disabled == null) {
-        _base.disabled = this.element.propAttr('disabled');
+      var base;
+      if ((base = this.options).disabled == null) {
+        base.disabled = this.element.propAttr('disabled');
       }
       if (this.element.is(':disabled')) {
         this.options.disabled = true;

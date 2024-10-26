@@ -1,0 +1,4 @@
+UI Core: all
+Interactions: all but Droppable
+Widgets: Autocomplete, Button, Dialog, Slider, Progressbar
+Effects: Core, Bounce, Drop, Fade, Slide

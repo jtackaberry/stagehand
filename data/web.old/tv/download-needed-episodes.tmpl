@@ -1,0 +1,29 @@
+<script type='text/coffeescript'>
+    $('#{{buttonid}}').button icons: primary: 'ui-icon-search'
+    $('#{{buttonid}}').click ->
+        $(@).button 'disable'
+        need_cells = $('img').filter(-> /^Needed.*/.test(@alt)).parents('tr').children('td')
+        need_cells.animate backgroundColor: '#ffe26f', 500
+        pn = $.pnotify(pnotify_title: 'Episode check').hide()
+        stagehand.api('/api/shows/check', {id: '{{showid}}'})
+            .progress ->
+                pn.show().pnotify
+                    pnotify_text: 'Searching ...', pnotify_hide: false, pnotify_closer: false,
+                    pnotify_notice_icon: 'picon picon-throbber'
+            .always =>
+                $(@).button 'enable'
+                pn.pnotify pnotify_hide: true,  pnotify_closer: true
+                need_cells.stop().css backgroundColor: ''
+            .done ({need, found}) ->
+                if not need
+                    msg = "No episodes of #{if '{{showid}}' then 'this' else 'any'} series need downloading."
+                else
+                    msg = "Found #{found} of #{need} episodes #{if '{{showid}}' then 'for this' else 'across all'} series."
+                pn.show().pnotify
+                    pnotify_text: msg, pnotify_delay: 4000, pnotify_notice_icon: 'picon picon-complete'
+            .fail ({message}) ->
+                pn.show().pnotify
+                    pnotify_text: "Search failed with the error:\n<code>#{message}</code>",
+                    pnotify_type: 'error'
+                pn.effect 'bounce'
+</script>

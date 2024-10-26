@@ -314,9 +314,9 @@
       identifier: $('input:radio[name=identifier]:checked').val()
     };
     return stagehand.api("/api/shows/{{series.id}}/settings", settings, 'post').fail((function(_this) {
-      return function(_arg) {
+      return function(arg) {
         var message;
-        message = _arg.message;
+        message = arg.message;
         return alert("Error while saving changes: " + message);
       };
     })(this));
@@ -354,9 +354,9 @@
             };
           })(this)).done(function() {
             return window.location = "{{root}}/tv/";
-          }).fail(function(_arg) {
+          }).fail(function(arg) {
             var message;
-            message = _arg.message;
+            message = arg.message;
             return $.pnotify({
               pnotify_title: 'Series deletion failed',
               pnotify_text: "Deletion failed with the error:\n<code>" + message + "</code>",
@@ -399,9 +399,9 @@
     }
     epcode = this.id.replace('{{series.id}}-', '');
     return stagehand.api("/api/shows/{{series.id}}/" + epcode + "/overview").done((function(_this) {
-      return function(_arg) {
+      return function(arg) {
         var overview;
-        overview = _arg.overview;
+        overview = arg.overview;
         tip = $(_this).poshytip({
           showOn: 'none',
           alignTo: 'target',

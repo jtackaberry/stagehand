@@ -1,0 +1,394 @@
+%from stagehand.toolbox.config import get_type
+%from stagehand.utils import cfgdesc2html, episode_status_icon_info
+
+%def header():
+    <style>
+        div.tip-twitter {
+            max-width: 20em;
+        }
+
+        #advanced-toggle-bar:hover span {
+            text-decoration: underline;
+        }
+
+        div.option {
+            display: inline-block;
+        }
+
+        #advanced-toggle-bar {
+            color: #888;
+            border-bottom: 1px solid #ddd;
+            width: 602px;
+            cursor: pointer;
+        }
+
+        #advanced-toggle-bar > div {
+            line-height: 1em;
+            position: relative;
+            top: 0.5em;
+            left: 20px;
+            background-color: white;
+            display: inline-block;
+            padding-right: 0.5em;
+        }
+        #advanced-toggle-bar div.ui-icon {
+            position: absolute;
+            margin-top: 1px;
+        }
+        #advanced-toggle-bar span {
+            padding-left: 16px;
+            font-size: 80%;
+        }
+
+        #advanced-section {
+            display: none;
+            border-left: 1px solid #ddd;
+            border-right: 1px solid #ddd;
+            padding: 1em 0 1em 0;
+            box-shadow: inset 20px 0 20px -15px #eee, inset -20px 0 20px -15px #eee;
+            border-bottom: 1px solid #ddd;
+            width: 600px;
+            background-color: #fdfdfd;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+
+        }
+
+        #button-delete-dialog {
+            display: none;
+        }
+
+        #button-delete-dialog span.ui-icon-alert {
+            float: left;
+            margin: 0 7px 3em 0;
+        }
+        #episode-list {
+            z-index: 2;
+            position: relative;
+        }
+
+        tr.ep {
+            position: relative;
+        }
+
+        tr.ep td:nth-child(1), tr.ep td:nth-child(2) {
+            padding: 0;
+        }
+
+        tr.ep td:nth-child(3) {
+            text-align: left;
+        }
+
+        tr.ep td:nth-child(4) {
+            white-space: nowrap;
+        }
+    </style>
+%end
+
+<h1>
+    <img id='status-icon-notpaused'
+        %if series.status == series.STATUS_RUNNING:
+            src='{{root}}/static/img/icon-16-play.png' alt='Running' title='Running'
+        %elif series.status == series.STATUS_SUSPENDED:
+            src='{{root}}/static/img/icon-16-pause.png' alt='Paused' title='Paused'
+        %elif series.status == series.STATUS_ENDED:
+            src='{{root}}/static/img/icon-16-stop.png' alt='Stopped' title='Stopped'
+        %end
+         style='display: {{"none" if series.cfg.paused else "auto"}}'
+    />
+    <img src='{{root}}/static/img/icon-16-pause.png' alt='Paused' title='Paused' id='status-icon-paused'
+         style='display: {{"auto" if series.cfg.paused else "none"}}' />
+    {{series.name}}
+</h1>
+<div class='section'>
+    <div style='text-align: left; padding: 0.5em 0'>
+        <label></label>
+        <a href='http://thetvdb.com/?tab=series&amp;id={{series.get_id_for_provider("thetvdb")}}&amp;lid=7'>
+            <img src='{{root}}/api/shows/{{series.id}}/banner' width='650' alt=''
+                 style='border: 1px solid black; max-height: 400px; width: auto' />
+        </a>
+    </div>
+    <form>
+        <div id='series-quality' class='ui-buttons-small option'>
+            <label>Quality:</label>
+            %for quality in get_type(series.cfg.quality):
+                <input type="radio" id="series-quality-{{quality}}"
+                       name='quality' value='{{quality}}'
+                      {{!'checked="checked"' if series.cfg.quality == quality else ''}} />
+                <label for="series-quality-{{quality}}">{{quality}}</label>
+            %end
+            <div class='help'>{{!cfgdesc2html(series.cfg.quality)}}</div>
+        </div>
+        <br />
+
+        <div class='option'>
+            <label>Flatten Seasons:</label>
+            <input type='checkbox' name='series-flat' id='series-flat'
+                  {{'checked="checked"' if series.cfg.flat else ''}} />
+            <div class='help'>{{!cfgdesc2html(series.cfg.flat)}}</div>
+        </div>
+        <br />
+
+        <!--div>
+            <label>Upgrade Episodes:</label>
+            <input type='checkbox' name='series-upgrade' id='series-upgrade'
+                  {{'checked="checked"' if series.cfg.upgrade else ''}} />
+        </div-->
+
+        <div class='option'>
+            <label>Downloads Paused:</label>
+            <input type='checkbox' name='series-paused' id='series-paused'
+                  {{'checked="checked"' if series.cfg.paused else ''}} />
+            <div class='help'>{{!cfgdesc2html(series.cfg.paused)}}</div>
+        </div>
+        <br />
+
+        <div id='advanced-toggle-bar'>
+            <div>
+                <div class='ui-icon ui-icon-triangle-1-e'></div>
+                <span>Advanced Options</span>
+            </div>
+        </div>
+
+        <div id='advanced-section' style=''>
+
+            <div id='series-identifier' class='ui-buttons-small option'>
+                <label>Episode Identifier:</label>
+                %labels = {'epcode': 'Episode Code', 'date': 'Air Date'}
+                %for identifier in get_type(series.cfg.identifier):
+                    <input type="radio" id="series-identifier-{{identifier}}"
+                           name='identifier' value='{{identifier}}'
+                          {{!'checked="checked"' if series.cfg.identifier == identifier else ''}} />
+                    <label for="series-identifier-{{identifier}}">{{labels[identifier]}}</label>
+                %end
+                <div class='help'>{{!cfgdesc2html(series.cfg.identifier)}}</div>
+            </div>
+            <br />
+
+            <div class='option'>
+                <label>Directory Name:</label>
+                <input type='text' id='series-path' name='series-path' size='25'
+                       value='{{series.cfg.path}}' />
+                <div class='help'>{{!cfgdesc2html(series.cfg.path)}}</div>
+            </div>
+            <br />
+
+            <div class='option'>
+                <label>Search String:</label>
+                <input type='text' id='series-search-string' name='series-search-string' size='25'
+                       value='{{series.cfg.search_string}}' />
+                <div class='help'>{{!cfgdesc2html(series.cfg.search_string)}}</div>
+            </div>
+            <br />
+
+            <div class='option'>
+                <label>Language Code:</label>
+                <input type='text' id='series-language' name='series-language' size='25'
+                       value='{{series.cfg.language}}' />
+                <div class='help'>{{!cfgdesc2html(series.cfg.language)}}</div>
+            </div>
+            <br />
+
+            <div id='providers-list' class='ui-buttons-small option'>
+                <label>Provider:</label>
+                %for p in sorted(providers, key=lambda p: p.NAME):
+                    <input type="radio" id="provider-{{p.NAME}}" name='provider'
+                           {{'checked="checked"' if p == series.provider else ''}}/>
+                    <label for="provider-{{p.NAME}}">{{p.NAME_PRINTABLE}}</label>
+                %end
+                <div class='help'>{{!cfgdesc2html(series.cfg.provider)}}</div>
+            </div>
+            <br />
+
+        </div>
+    </form>
+
+    <div style='margin-top: 1.5em'>
+        <label></label>
+        <div id="button-delete-dialog" title="Delete this series?">
+            <span class="ui-icon ui-icon-alert"></span>
+            This series will be permanently deleted from the local database, however no
+            video files will be deleted.  Are you sure you want to do this?
+        </div>
+        <button id='button-refresh'>Refresh Episode Info</button>
+        <button id='button-delete'>Delete Series</button>
+        <button id='button-search'>
+            Download Needed Episodes Now
+        </button>
+
+    </div>
+</div>
+
+%include('tv/download-needed-episodes.tmpl', root=root, buttonid='button-search', showid=series.id)
+
+<script type='text/coffeescript'>
+    $('#providers-list, #series-quality, #series-identifier').buttonset()
+    $('#button-delete').button icons: primary: 'ui-icon-trash'
+    $('#button-refresh').button icons: primary: 'ui-icon-refresh'
+    $('#series-flat, #series-upgrade, #series-paused').toggleswitch yesno: true
+</script>
+
+<h1>Episodes</h1>
+<div style='padding: 0 64px; display: table; margin: 2em auto'>
+
+<div style='clear: both; padding-top: 0.75em'></div>
+
+%include('tv/episode-table-multiselect.tmpl', tableid='episode-list', root=root)
+
+<table id='episode-list' class='grid align-center interactive' width='100%'>
+<thead id='episode-list-header'>
+<tr>
+    <th style='padding: 0 0.7em'><input type='checkbox' /></th>
+    <th style='padding: 0 0.7em'>#</th>
+    <th style='text-align: left'>Name</th>
+    <th>Date</th>
+    <th>Status</th>
+</tr>
+</thead>
+<tbody>
+%season = 0
+%for ep in sorted(series.episodes, key=lambda e: (-e.season.number, -e.number)):
+    %if ep.season.number != season:
+        %season = ep.season.number
+        <tr class='heading' id='group-{{season}}'>
+            <td style='padding: 0'><input type='checkbox' /></td>
+            <td colspan="4" style='text-align: left; padding-left: 0.5em'>
+                %if ep.season.number == 0:
+                    <b>Specials</b>
+                %else:
+                    <b>Season {{ep.season.number}}</b>
+                %end
+            </td>
+        </tr>
+    %end
+    <tr id='{{series.id}}-{{ep.code}}' class='group-{{season}} ep'>
+        <td><input type='checkbox' /></td>
+        <td>{{ep.number}}</td>
+        <td>{{ep.name}}</td>
+        <td>
+            %if ep.airdate:
+                {{ep.airdate.strftime('%Y-%m-%d')}}
+            %else:
+                Not aired
+            %end
+        </td>
+        <td>
+            %icon, title = episode_status_icon_info(ep)
+            <img src='{{root}}/static/img/icon-20-status-{{icon}}.png' alt='{{title}}' title='{{title}}' />
+        </td>
+    </tr>
+%end
+</tbody>
+</table>
+</div>
+
+<script type='text/coffeescript'>
+    # TODO: need a way to reset status to needed, but blacklist one of the search results
+    $('form input').change ->
+        settings =
+            quality: $('input:radio[name="quality"]:checked').val()
+            path: $('#series-path').val()
+            search_string: $('#series-search-string').val()
+            language: $('#series-language').val()
+            #upgrade: $('#series-upgrade').is(':checked')
+            paused: $('#series-paused').is(':checked')
+            flat: $('#series-flat').is(':checked')
+            identifier: $('input:radio[name=identifier]:checked').val()
+
+        stagehand.api("/api/shows/{{series.id}}/settings", settings, 'post')
+            .fail ({message}) =>
+                alert "Error while saving changes: #{message}"
+
+    $('#series-paused').change ->
+        if @checked
+            $('#status-icon-notpaused').hide()
+            $('#status-icon-paused').show()
+        else
+            $('#status-icon-notpaused').show()
+            $('#status-icon-paused').hide()
+
+    $('#providers-list')
+        .children('input').change ->
+            stagehand.api("/api/shows/{{series.id}}/provider", provider: @id.replace('provider-', ''), 'post')
+                .done ->
+                    window.location.reload()
+
+    #
+    # Delete Series button
+    #
+    $('#button-delete').click ->
+        $('#button-delete-dialog').dialog
+            resizable: false
+            height: 200
+            width: 400
+            modal: true
+            buttons:
+                'Delete {{!series.name.replace("\'", "\\\'")}}': ->
+                    stagehand.api("/api/shows/{{series.id}}", null, 'DELETE')
+                        .always =>
+                            $(@).dialog 'close'
+                        .done ->
+                            window.location = "{{root}}/tv/"
+                        .fail ({message}) ->
+                            $.pnotify
+                                pnotify_title: 'Series deletion failed'
+                                pnotify_text: "Deletion failed with the error:\n<code>#{message}</code>",
+                                pnotify_type: 'error'
+
+                'Cancel': -> $(@).dialog 'close'
+
+
+    #
+    # Refresh Episode Info button
+    #
+    $('#button-refresh').click ->
+        $(@).button 'disable'
+        pn = $.pnotify
+            pnotify_title: 'Refreshing Episode Info'
+            pnotify_text: 'Fetching series metadata from providers ...',
+            pnotify_hide: false, pnotify_closer: false,
+            pnotify_notice_icon: 'picon picon-throbber'
+
+        stagehand.api("/api/shows/{{series.id}}/refresh", null, 'POST')
+            .always =>
+                $(@).button 'enable'
+            .done ->
+                window.location.reload()
+
+
+    tip = null
+    $('tr:not(.heading)').slice(1).click ->
+        if tip
+            tip.poshytip 'destroy'
+
+        epcode = @id.replace('{{series.id}}-', '')
+        stagehand.api("/api/shows/{{series.id}}/#{epcode}/overview")
+            .done ({overview}) =>
+                tip = $(@).poshytip
+                    showOn: 'none'
+                    alignTo: 'target'
+                    offsetX: 10
+                    alignX: 'center'
+                    alignY: 'bottom'
+                    content: overview
+                tip.poshytip 'show'
+
+
+    $('div.help').parents('.option').poshytip
+        showOn: 'hover'
+        showTimeout: 300
+        offsetX: 10
+        alignX: 'right'
+        alignY: 'center'
+        alignTo: 'target'
+        content: -> $(@).children('div.help').html()
+
+
+    $('#advanced-toggle-bar').click ->
+        icon = $('#advanced-toggle-bar div.ui-icon')
+        dir = if $('#advanced-section').is(':visible') then 'e' else 's'
+        icon.removeClass('ui-icon-triangle-1-e ui-icon-triangle-1-s').addClass("ui-icon-triangle-1-#{dir}")
+        $('#advanced-section').slideToggle('fast')
+</script>
+
+%rebase('layout.tmpl', title=series.name, section="tv", subsection="library", header=header)

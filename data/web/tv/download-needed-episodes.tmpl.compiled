@@ -38,9 +38,9 @@
           backgroundColor: ''
         });
       };
-    })(this)).done(function(_arg) {
+    })(this)).done(function(arg) {
       var found, msg, need;
-      need = _arg.need, found = _arg.found;
+      need = arg.need, found = arg.found;
       if (!need) {
         msg = "No episodes of " + ('{{showid}}' ? 'this' : 'any') + " series need downloading.";
       } else {
@@ -51,9 +51,9 @@
         pnotify_delay: 4000,
         pnotify_notice_icon: 'picon picon-complete'
       });
-    }).fail(function(_arg) {
+    }).fail(function(arg) {
       var message;
-      message = _arg.message;
+      message = arg.message;
       pn.show().pnotify({
         pnotify_text: "Search failed with the error:\n<code>" + message + "</code>",
         pnotify_type: 'error'

@@ -24,7 +24,6 @@
     %include('tv/download-needed-episodes.tmpl', root=root, buttonid='button-search', showid='')
     <script type='text/javascript'>
 (function() {
-
   $('#select-status :[value={{status}}]').attr('selected', 'selected');
 
   $('#select-weeks :[value={{weeks}}]').attr('selected', 'selected');
@@ -96,7 +95,6 @@
                         </div>
                         <script type='text/javascript'>
 (function() {
-
   $("[id='{{ep.series.id}}-{{ep.code}}-progressbar']").progressbar({
     value: {{task.progress.percentage}}
   });
@@ -170,22 +168,22 @@
 
   last_download_queue = [{{!','.join('["%s", "%s"]' % (ep.series.id, ep.code) for ep, results in manager.retrieve_queue)}}];
 
-  stagehand.bind('dlprogress', function(_arg) {
-    var bar, code, current, current_download_queue, idx, item, percentage, progress, queue, queue_changed, row, showid, speed, total, _i, _len, _ref, _ref1, _ref2;
-    queue = _arg.queue;
+  stagehand.bind('dlprogress', function(arg) {
+    var bar, code, current, current_download_queue, idx, item, j, len, percentage, progress, queue, queue_changed, ref, ref1, ref2, row, showid, speed, total;
+    queue = arg.queue;
     queue_changed = queue.length !== last_download_queue.length;
     current_download_queue = (function() {
-      var _i, _len, _results;
-      _results = [];
-      for (_i = 0, _len = queue.length; _i < _len; _i++) {
-        item = queue[_i];
-        _results.push(item.slice(0, 2));
+      var j, len, results;
+      results = [];
+      for (j = 0, len = queue.length; j < len; j++) {
+        item = queue[j];
+        results.push(item.slice(0, 2));
       }
-      return _results;
+      return results;
     })();
-    for (idx = _i = 0, _len = queue.length; _i < _len; idx = ++_i) {
-      _ref = queue[idx], showid = _ref[0], code = _ref[1], progress = _ref[2];
-      if (((_ref1 = last_download_queue[idx]) != null ? _ref1[0] : void 0) !== showid || ((_ref2 = last_download_queue[idx]) != null ? _ref2[1] : void 0) !== code) {
+    for (idx = j = 0, len = queue.length; j < len; idx = ++j) {
+      ref = queue[idx], showid = ref[0], code = ref[1], progress = ref[2];
+      if (((ref1 = last_download_queue[idx]) != null ? ref1[0] : void 0) !== showid || ((ref2 = last_download_queue[idx]) != null ? ref2[1] : void 0) !== code) {
         queue_changed = true;
       }
       row = $("[id='" + showid + "-" + code + "'].download");
@@ -195,8 +193,8 @@
         bar.progressbar({
           value: percentage
         });
-        bar.parent().attr('title', "" + speed + " KB/s");
-        bar.children('.overlay').text("" + current + " / " + total + " MB");
+        bar.parent().attr('title', speed + " KB/s");
+        bar.children('.overlay').text(current + " / " + total + " MB");
       }
     }
     if (queue_changed) {

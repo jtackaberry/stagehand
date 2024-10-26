@@ -1,0 +1,248 @@
+// This is a generated file. Edits will be lost.
+(function() {
+  var _ref, _ref1, _ref2, _ref3;
+
+  this.defer = function(timeout, callback) {
+    return setTimeout(callback, timeout);
+  };
+
+  this.cancel = function(timer) {
+    return clearTimeout(timer);
+  };
+
+  this.repeat = function(timeout, callback) {
+    var id;
+    return id = setInterval((function() {
+      if (callback() === false) {
+        return clearInterval(id);
+      }
+    }), timeout);
+  };
+
+  this.section_set_disabled = function(id, disabled) {
+    var $section;
+    $section = $("#" + id);
+    $section.find(':input').attr('disabled', disabled);
+    $section.find('.ui-buttonset').buttonset('option', 'disabled', disabled);
+    $section.find('.ui-button').button('option', 'disabled', disabled);
+    $section.find('.ui-toggleswitch').toggleswitch('option', 'disabled', disabled);
+    $section.find('select').selectmenu('option', 'disabled', disabled);
+    return $section.find('label,img,p,span').css({
+      opacity: disabled ? 0.3 : 1.0
+    });
+  };
+
+  this.section_toggleswitch = function(section, toggle) {
+    return toggle.change(function() {
+      return section_set_disabled(section, !$(this).is(':checked'));
+    }).change();
+  };
+
+  this.Stagehand = (function() {
+    function Stagehand(_at_root) {
+      this.root = _at_root;
+      this.jobs = {};
+      this.timer = null;
+      this.min_interval = 5000;
+      this.max_interval = 10000;
+      this.handlers = {};
+      this.poll(this.min_interval);
+    }
+
+    Stagehand.prototype.bind = function(ntype, f) {
+      var _base;
+      if ((_base = this.handlers)[ntype] == null) {
+        _base[ntype] = [];
+      }
+      return this.handlers[ntype].push(f);
+    };
+
+    Stagehand.prototype.api = function(url, data, type) {
+      var dfd, xhr;
+      if (data == null) {
+        data = {};
+      }
+      if (type == null) {
+        type = 'GET';
+      }
+      dfd = $.Deferred();
+      xhr = $.ajax({
+        url: this.root + url,
+        data: data,
+        type: type.toUpperCase()
+      }).done((function(_this) {
+        return function(response) {
+          if (response.jobid == null) {
+            response.xhr = xhr;
+            return dfd.resolve(response);
+          }
+          _this.jobs[response.jobid] = [dfd, xhr];
+          if (response.pending) {
+            dfd.notify(response.jobid);
+          }
+          if (response.pending && _this.interval > response.interval) {
+            _this.poll(response.interval);
+          } else if (_this.interval > 1000) {
+            _this.poll(1000);
+          }
+          return _this.handle_response(response);
+        };
+      })(this)).fail((function(_this) {
+        return function(xhr, status) {
+          return dfd.reject({
+            message: "HTTP " + xhr.status + ": " + xhr.statusText,
+            xhr: xhr
+          });
+        };
+      })(this));
+      return dfd.promise();
+    };
+
+    Stagehand.prototype.handle_response = function(_arg) {
+      var dfd, f, job, jobs, key, n, notifications, value, xhr, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _results;
+      jobs = _arg.jobs, notifications = _arg.notifications;
+      for (_i = 0, _len = jobs.length; _i < _len; _i++) {
+        job = jobs[_i];
+        if (this.jobs[job.id]) {
+          _ref = this.jobs[job.id], dfd = _ref[0], xhr = _ref[1];
+          delete this.jobs[job.id];
+          if (job.error) {
+            job.error.xhr = xhr;
+            dfd.reject(job.error);
+          } else {
+            dfd.resolve(job.result);
+          }
+        }
+      }
+      _results = [];
+      for (_j = 0, _len1 = notifications.length; _j < _len1; _j++) {
+        n = notifications[_j];
+        if (this.handlers[n._ntype] != null) {
+          _ref1 = this.handlers[n._ntype];
+          for (_k = 0, _len2 = _ref1.length; _k < _len2; _k++) {
+            f = _ref1[_k];
+            f(n);
+          }
+        }
+        if (n._ntype === 'alert') {
+          if (n.type == null) {
+            n.type = 'notice';
+          }
+          if (n.nonblock == null) {
+            n.nonblock = false;
+          }
+          if (n.animation == null) {
+            n.animation = 'fade';
+          }
+          if (n.closer == null) {
+            n.closer = true;
+          }
+          if (n.delay == null) {
+            n.delay = 8000;
+          }
+          for (key in n) {
+            value = n[key];
+            if (typeof value === 'string') {
+              value = value.replace(/{{root}}/g, this.root);
+            }
+            n['pnotify_' + key] = value;
+          }
+          _results.push($.pnotify(n));
+        } else {
+          _results.push(void 0);
+        }
+      }
+      return _results;
+    };
+
+    Stagehand.prototype.poll = function(interval) {
+      if (interval == null) {
+        interval = this.interval;
+      }
+      if (this.timer) {
+        if (interval === this.interval) {
+          return;
+        }
+        clearInterval(this.timer);
+      }
+      this.interval = interval <= this.max_interval ? interval : this.max_interval;
+      return this.timer = repeat(this.interval, (function(_this) {
+        return function() {
+          var data, dfd, jobid;
+          data = !$.isEmptyObject(_this.jobs) ? {
+            jobs: ((function() {
+              var _ref, _results;
+              _ref = this.jobs;
+              _results = [];
+              for (jobid in _ref) {
+                dfd = _ref[jobid];
+                _results.push(jobid);
+              }
+              return _results;
+            }).call(_this)).join(',')
+          } : null;
+          return $.ajax({
+            url: _this.root + '/api/jobs',
+            data: data,
+            timeout: _this.interval
+          }).done(function(_arg) {
+            var jobs, notifications;
+            jobs = _arg.jobs, notifications = _arg.notifications;
+            _this.handle_response({
+              jobs: jobs,
+              notifications: notifications
+            });
+            if ($.isEmptyObject(_this.jobs) && notifications.length === 0) {
+              if (_this.interval < _this.max_interval) {
+                return _this.poll(_this.interval * 2);
+              }
+            } else if (_this.interval > _this.min_interval) {
+              return _this.poll(_this.min_interval);
+            }
+          }).fail(function(xhr, status, error) {
+            return _this.poll(_this.max_interval);
+          });
+        };
+      })(this));
+    };
+
+    return Stagehand;
+
+  })();
+
+  $(function() {
+    return $('label.ui-button').click(function() {
+      var b;
+      b = $(this).prev();
+      if (!b.is(':disabled')) {
+        if (b.is(':checked') && b.attr('type') !== 'radio') {
+          b.removeAttr('checked');
+        } else {
+          b.attr('checked', 'checked');
+        }
+        b.button('refresh');
+        b.change();
+        return false;
+      }
+    }).on('selectstart', function() {
+      return false;
+    });
+  });
+
+  if ((_ref = $.pnotify) != null) {
+    _ref.defaults.pnotify_opacity = 0.9;
+  }
+
+  if ((_ref1 = $.fn.poshytip) != null) {
+    _ref1.defaults.className = 'tip-twitter';
+  }
+
+  if ((_ref2 = $.fn.poshytip) != null) {
+    _ref2.defaults.fade = false;
+  }
+
+  if ((_ref3 = $.fn.poshytip) != null) {
+    _ref3.defaults.slide = false;
+  }
+
+}).call(this);

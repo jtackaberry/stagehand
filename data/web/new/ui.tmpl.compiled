@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+
+    <title>Stagehand</title>
+
+    <link rel="stylesheet" type="text/css" href="{{root}}/static/new/css/semantic.min.css.gz">
+    <link rel="stylesheet" type="text/css" href="{{root}}/static/new/css/stagehand.css">
+
+    <script src="{{root}}/static/new/js/jquery-2.1.3.min.js.gz"></script>
+    <script src="{{root}}/static/new/js/semantic.min.js.gz"></script>
+    <script type='text/javascript' src='{{root}}/static/new/js/utils.coffee'></script>
+</head>
+<body id="home" style='background-color: black; color: white; padding:0; margin:0'>
+<div class="ui large menu inverted fixed" style='box-shadow: 0px 5px 15px 0px rgba(0, 0, 0, 0.97)' id='menu'>
+    <div class="menu">
+        <img class="header image item" src="{{root}}/static/new/img/masks.png" style='width: 50px; padding: 0; opacity: 0.3'>
+        <div class="header item" id='menu-label-logo' style='padding-left: 0; padding-right: 2em; opacity: 0.3'>
+               Stagehand
+        </div>
+        <a class="item" data-tab-id='tab-home'>
+            <i class="home icon"></i>
+        </a>
+        <a class="active item" data-tab-id='tab-tv'>
+            <i class="camera retro icon"></i>
+            <span id='menu-label-tv'>TV Shows</span>
+        </a>
+        <a class="item" data-tab-id='tab-downloads'>
+            <i class="download icon"></i>
+            <span id='menu-label-downloads'>Downloads</span>
+        </a>
+        <div class="right menu">
+            <div class="ui dropdown item fade">
+                <i class="settings icon"></i>
+                <span id='menu-label-configure'>Configure</span>
+                <i class="icon dropdown"></i>
+                <div class="blue menu">
+                    <a class="item">
+                        <i class="settings icon"></i> Settings
+                    </a>
+                    <a class="item">
+                        <i class="content icon"></i> Logs
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class='right header item' id='menu-search'>
+            <div class="ui inverted transparent icon input">
+                <input placeholder="Search" type="text">
+                <i class="search icon"></i>
+            </div>
+        </div>
+        <div class="right header item" style='width:150px' id='menu-progress'>
+            <div class="ui teal small progress" style='padding:0; margin:0' data-variation='inverted large'
+                 data-content='Downloading 2 episodes (21.2MB/s)'>
+                <div class="bar">
+                    <div class="progress"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div style='padding-top: 5rem; width: 90%; margin: 0 auto' class='app-tab' id='tab-downloads'>
+</div>
+
+<div style='padding-top: 5rem; width: 90%; margin: 0 auto' class='app-tab' id='tab-tv'>
+
+    <div style='display: none' id='tab-tv-page-add' class='app-page'>
+        <div class="ui labeled icon blue button">
+              Go Back
+        </div>
+    </div>
+    <div id='tab-tv-page-list' class='app-page'>
+        <div id='scroll-label-letter-container'>
+            <div class='ui label huge black inverted' id='scroll-label-letter' style='display:none'></div>
+        </div>
+        <div id='tab-tv-page-list-buttons'>
+            <div class="ui labeled icon blue button" style='float: right' id='tab-tv-page-add-button'>
+              <i class="add icon"></i>
+              Add TV Show
+            </div>
+            <div class="ui buttons" id='show-filter'>
+              <div class="ui positive button" data-filter='all'>All Shows</div>
+              <div class="or" data-text="or"></div>
+              <div class="ui button" data-filter='active'>Only Active Shows</div>
+            </div>
+        </div>
+        <div style='clear: both; padding-top: 3rem'></div>
+
+        <div class="ui two column doubling centered grid banner-grid" id='shows'>
+            <!--
+            <div class='column'>
+                <div class='ui rounded image'>
+                    <a href='/'><img src='/api/shows/thetvdb:279553/banner'></a>
+                    <a class="ui left yellow corner label">
+                        <i class="pause icon"></i>
+                    </a>
+                </div>
+            </div>
+            <div class='column'>
+                <div class='ui rounded image'>
+                    <img src='/api/shows/thetvdb:279553/banner'>
+                    <a class="ui left red corner label">
+                        <i class="pause icon"></i>
+                    </a>
+                </div>
+            </div>
+            <div class='column'>
+                <div class='ui rounded image' style='position:relative; overflow: hidden'>
+                    <img src='/api/shows/thetvdb:279553/banner'>
+                    <a class="ui left red corner label">
+                        <i class="pause icon"></i>
+                    </a>
+                </div>
+            </div>
+            <div class='column'>
+                <div class='ui rounded image' style='position:relative; overflow: hidden'>
+                    <img src='/api/shows/thetvdb:279553/banner'>
+                    <a class="ui left red corner label">
+                        <i class="pause icon"></i>
+                    </a>
+                </div>
+            </div>
+            -->
+        </div>
+    </div>
+</div>
+
+
+<script type='text/javascript'>
+(function() {
+  var getLetterAtOffset, showTVTab;
+
+  this.stagehand = new Stagehand('{{root}}');
+
+  $(function() {
+    $('.progress').progress({
+      percent: 42,
+      label: 42
+    }).popup({
+      on: 'hover'
+    });
+    $('.ui.dropdown').dropdown({
+      on: 'click',
+      duration: 0
+    });
+    $('.menu a.item').click(function() {
+      var tabId;
+      tabId = $(this).data('tab-id');
+      if (tabId) {
+        $('.app-tab').hide().filter('#' + tabId).show();
+      }
+      if (!$(this).hasClass('dropdown')) {
+        return $(this).addClass('active').closest('.ui.menu').find('.item').not($(this)).removeClass('active');
+      }
+    });
+    return $('#menu-search i').click(function() {
+      return $('#menu-search input').focus();
+    });
+  });
+
+  getLetterAtOffset = function(offset, delta) {
+    var elem, i, img, j;
+    for (i = j = 1; j <= 10; i = ++j) {
+      elem = document.elementFromPoint(100, offset);
+      img = $(elem).closest('img.banner');
+      if (img.length > 0) {
+        return img.data('letter');
+      } else {
+        offset += delta;
+      }
+    }
+  };
+
+  $(function() {
+    var $window, lastTop, offset, timer;
+    timer = 0;
+    offset = $('#menu').height() + 10;
+    $window = $(window);
+    lastTop = $window.scrollTop();
+    return $window.scroll(function(event) {
+      var label, letter, top;
+      top = $window.scrollTop();
+      if (top > lastTop) {
+        letter = getLetterAtOffset($window.height() - 10, -50);
+      } else {
+        letter = getLetterAtOffset(offset, 50);
+      }
+      lastTop = top;
+      label = $('#scroll-label-letter');
+      label.text(letter);
+      if (!label.transition('is visible')) {
+        label.transition('fade');
+      }
+      if (timer) {
+        cancel(timer);
+      }
+      return timer = defer(1500, function() {
+        if (label.transition('is visible')) {
+          return label.transition('fade');
+        }
+      });
+    });
+  });
+
+  $(function() {
+    $('#show-filter .button').click(function() {
+      var $button, filter;
+      $button = $(this);
+      $('#show-filter .button').not($button).removeClass('positive');
+      $button.addClass('positive');
+      filter = $button.data('filter');
+      localStorage.setItem('showsFilter', filter);
+      return $('#shows .column').each(function() {
+        if (!$(this).data('active')) {
+          if (filter === 'active') {
+            return $(this).hide();
+          } else {
+            return $(this).show();
+          }
+        }
+      });
+    });
+    $('#tab-tv-page-add-button').click(function() {
+      $('#tab-tv .app-page').hide().filter('#tab-tv-page-add').show();
+      return history.pushState({
+        foo: 42
+      }, "Page 2", "add");
+    });
+    $('#tab-tv-page-add .button').click(function() {
+      return $('#tab-tv .app-page').hide().filter('#tab-tv-page-list').show();
+    });
+    $(window).bind('popstate', function(event) {
+      return showTVTab();
+    });
+    return showTVTab();
+  });
+
+  showTVTab = function() {
+    var showsFilter;
+    showsFilter = localStorage.getItem('showsFilter') || 'all';
+    $("#show-filter .button[data-filter='" + showsFilter + "']").click();
+    $('.app-tab').hide().filter('#tab-tv').show();
+    if ($('#shows .column').size() > 0) {
+      return;
+    }
+    return stagehand.api("/api/shows").done((function(_this) {
+      return function(arg) {
+        var $a, $cell, $grid, $img, $link, $wrapper, j, label, len, results, show, shows;
+        shows = arg.shows;
+        $grid = $('#shows');
+        $grid.empty();
+        results = [];
+        for (j = 0, len = shows.length; j < len; j++) {
+          show = shows[j];
+          $img = $('<img>').addClass('banner').attr({
+            src: "/api/shows/" + show.id + "/banner"
+          });
+          $img.data('letter', show.order);
+          $link = $('<a>').attr({
+            href: '/tv/' + show.id
+          });
+          $link.append($img);
+          $wrapper = $('<div>').addClass('ui rounded image');
+          $wrapper.append($link);
+          if (show.paused) {
+            label = {
+              color: 'yellow',
+              icon: 'black pause'
+            };
+          } else if (show.status === {{Series.STATUS_ENDED}}) {
+            label = {
+              color: 'yellow',
+              icon: 'black stop'
+            };
+          } else {
+            label = null;
+          }
+          if (label) {
+            $a = $('<a>').addClass("ui right corner " + label.color + " label");
+            $a.append($('<i>').addClass(label.icon + " icon"));
+            $wrapper.append($a);
+          }
+          $cell = $('<div>').addClass('column');
+          $cell.append($wrapper);
+          $cell.data('active', label ? false : true);
+          if (showsFilter === 'active' && label) {
+            $cell.hide();
+          }
+          results.push($grid.append($cell));
+        }
+        return results;
+      };
+    })(this));
+  };
+
+}).call(this);
+</script>
+
+</body>
+
+</html>

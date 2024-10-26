@@ -94,9 +94,9 @@
           pnotify_type: 'error'
         });
       };
-    })(this)).done(function(_arg) {
-      var dummy, menu, result, results, size, _i, _len;
-      results = _arg.results;
+    })(this)).done(function(arg) {
+      var dummy, i, len, menu, result, results, size;
+      results = arg.results;
       if (results.length === 0) {
         pn.pnotify({
           pnotify_text: "No TV series were found matching \"" + name + "\""
@@ -109,22 +109,22 @@
       menu = $('#select-series').empty();
       dummy = menu.append('<option>Dummy</option>');
       size = 10;
-      for (_i = 0, _len = results.length; _i < _len; _i++) {
-        result = results[_i];
+      for (i = 0, len = results.length; i < len; i++) {
+        result = results[i];
         menu.append("<option value='" + result.id + "'>" + result.name + " (" + (result.started || '?') + ")</option>");
         size = Math.max(size, result.name.length);
       }
       menu.selectmenu('destroy').selectmenu({
-        width: "" + (size * .8 + 8) + "em"
+        width: (size * .8 + 8) + "em"
       });
       menu.next().children('.ui-selectmenu-status').text('Choose a series ...');
       $('#select-series-menu').find('.ui-selectmenu-item-selected').css({
         display: 'none'
       });
       return menu.focus();
-    }).fail(function(_arg) {
+    }).fail(function(arg) {
       var message;
-      message = _arg.message;
+      message = arg.message;
       return pn.pnotify({
         pnotify_text: "Unrecoverable error while searching (" + message + ").  Try again?"
       });

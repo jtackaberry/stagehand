@@ -1,6 +1,6 @@
 // This is a generated file. Edits will be lost.
 (function() {
-  var _ref, _ref1, _ref2, _ref3;
+  var ref, ref1, ref2, ref3;
 
   this.defer = function(timeout, callback) {
     return setTimeout(callback, timeout);
@@ -39,8 +39,8 @@
   };
 
   this.Stagehand = (function() {
-    function Stagehand(_at_root) {
-      this.root = _at_root;
+    function Stagehand(root) {
+      this.root = root;
       this.jobs = {};
       this.timer = null;
       this.min_interval = 5000;
@@ -50,9 +50,9 @@
     }
 
     Stagehand.prototype.bind = function(ntype, f) {
-      var _base;
-      if ((_base = this.handlers)[ntype] == null) {
-        _base[ntype] = [];
+      var base;
+      if ((base = this.handlers)[ntype] == null) {
+        base[ntype] = [];
       }
       return this.handlers[ntype].push(f);
     };
@@ -98,13 +98,13 @@
       return dfd.promise();
     };
 
-    Stagehand.prototype.handle_response = function(_arg) {
-      var dfd, f, job, jobs, key, n, notifications, value, xhr, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _results;
-      jobs = _arg.jobs, notifications = _arg.notifications;
-      for (_i = 0, _len = jobs.length; _i < _len; _i++) {
-        job = jobs[_i];
+    Stagehand.prototype.handle_response = function(arg) {
+      var dfd, f, i, j, job, jobs, k, key, len, len1, len2, n, notifications, ref, ref1, results, value, xhr;
+      jobs = arg.jobs, notifications = arg.notifications;
+      for (i = 0, len = jobs.length; i < len; i++) {
+        job = jobs[i];
         if (this.jobs[job.id]) {
-          _ref = this.jobs[job.id], dfd = _ref[0], xhr = _ref[1];
+          ref = this.jobs[job.id], dfd = ref[0], xhr = ref[1];
           delete this.jobs[job.id];
           if (job.error) {
             job.error.xhr = xhr;
@@ -114,13 +114,13 @@
           }
         }
       }
-      _results = [];
-      for (_j = 0, _len1 = notifications.length; _j < _len1; _j++) {
-        n = notifications[_j];
+      results = [];
+      for (j = 0, len1 = notifications.length; j < len1; j++) {
+        n = notifications[j];
         if (this.handlers[n._ntype] != null) {
-          _ref1 = this.handlers[n._ntype];
-          for (_k = 0, _len2 = _ref1.length; _k < _len2; _k++) {
-            f = _ref1[_k];
+          ref1 = this.handlers[n._ntype];
+          for (k = 0, len2 = ref1.length; k < len2; k++) {
+            f = ref1[k];
             f(n);
           }
         }
@@ -147,12 +147,12 @@
             }
             n['pnotify_' + key] = value;
           }
-          _results.push($.pnotify(n));
+          results.push($.pnotify(n));
         } else {
-          _results.push(void 0);
+          results.push(void 0);
         }
       }
-      return _results;
+      return results;
     };
 
     Stagehand.prototype.poll = function(interval) {
@@ -171,23 +171,23 @@
           var data, dfd, jobid;
           data = !$.isEmptyObject(_this.jobs) ? {
             jobs: ((function() {
-              var _ref, _results;
-              _ref = this.jobs;
-              _results = [];
-              for (jobid in _ref) {
-                dfd = _ref[jobid];
-                _results.push(jobid);
+              var ref, results;
+              ref = this.jobs;
+              results = [];
+              for (jobid in ref) {
+                dfd = ref[jobid];
+                results.push(jobid);
               }
-              return _results;
+              return results;
             }).call(_this)).join(',')
           } : null;
           return $.ajax({
             url: _this.root + '/api/jobs',
             data: data,
             timeout: _this.interval
-          }).done(function(_arg) {
+          }).done(function(arg) {
             var jobs, notifications;
-            jobs = _arg.jobs, notifications = _arg.notifications;
+            jobs = arg.jobs, notifications = arg.notifications;
             _this.handle_response({
               jobs: jobs,
               notifications: notifications
@@ -229,20 +229,20 @@
     });
   });
 
-  if ((_ref = $.pnotify) != null) {
-    _ref.defaults.pnotify_opacity = 0.9;
+  if ((ref = $.pnotify) != null) {
+    ref.defaults.pnotify_opacity = 0.9;
   }
 
-  if ((_ref1 = $.fn.poshytip) != null) {
-    _ref1.defaults.className = 'tip-twitter';
+  if ((ref1 = $.fn.poshytip) != null) {
+    ref1.defaults.className = 'tip-twitter';
   }
 
-  if ((_ref2 = $.fn.poshytip) != null) {
-    _ref2.defaults.fade = false;
+  if ((ref2 = $.fn.poshytip) != null) {
+    ref2.defaults.fade = false;
   }
 
-  if ((_ref3 = $.fn.poshytip) != null) {
-    _ref3.defaults.slide = false;
+  if ((ref3 = $.fn.poshytip) != null) {
+    ref3.defaults.slide = false;
   }
 
 }).call(this);
