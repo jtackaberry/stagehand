@@ -13,7 +13,7 @@ interface to download previously aired episodes.
 
 Here are some of the main features:
 
-* ~~Pretty, modern-looking UI~~ (Well it was 5 years ago.)
+* ~~Pretty, modern-looking UI~~ (Well it was 10 years ago.)
 * Support for multiple TV metadata providers (currently TheTVDB and TVmaze): easily choose the authoritative provider per-series
 * (Exclusive) support for Easynews HTTP-based global search
 * Multi-platform: tested on Linux and Windows (and theoretically works on OS X)
