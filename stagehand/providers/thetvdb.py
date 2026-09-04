@@ -20,11 +20,13 @@ log = logging.getLogger('stagehand.providers.thetvdb')
 class ProviderSearchResult(ProviderSearchResultBase):
     @property
     def pid(self):
-        return str(self._attrs.get('id'))
+        # tvdb_id is a plain numeric string; id may be prefixed like "series-NNNN"
+        raw = self._attrs.get('tvdb_id') or self._attrs.get('id', '')
+        return str(raw).split('-')[-1]
 
     @property
     def name(self):
-        return self._attrs.get('seriesName')
+        return self._attrs.get('name')
 
     @property
     def names(self):
@@ -49,14 +51,11 @@ class ProviderSearchResult(ProviderSearchResultBase):
 
     @property
     def started(self):
-        return self._attrs.get('firstAired')
-
+        return self._attrs.get('first_air_time')
 
     @property
     def banner(self):
-        if 'banner' in self._attrs:
-            return self.provider.hostname + '/banners/' + self._attrs['banner']
-
+        return self._attrs.get('image_url')
 
 
 class Provider(ProviderBase):
@@ -65,13 +64,13 @@ class Provider(ProviderBase):
     IDATTR = 'thetvdbid'
     CACHEATTR = 'thetvdbcache'
 
-    # It's actually 24 hours but we trim it a bit just to be safe.
-    TOKEN_LIFETIME_SECONDS = 23 * 3600
+    # Tokens are valid for 1 month; trim a bit to be safe.
+    TOKEN_LIFETIME_SECONDS = 29 * 24 * 3600
 
     def __init__(self, db):
         super().__init__(db)
         self.hostname = 'https://www.thetvdb.com'
-        self._apikey = '1E9534A23E6D7DC0'
+        self._apikey = '17b1544f-5e79-4145-9e61-db722dd252c3'
         self._token = None
         self._token_time = 0
 
@@ -87,10 +86,9 @@ class Provider(ProviderBase):
 
     @asyncio.coroutine
     def _rawapi(self, path, token=None, method='GET', body=None):
-        url = 'https://api.thetvdb.com' + path
+        url = 'https://api4.thetvdb.com/v4' + path
         headers = {
             'Accept': 'application/json',
-            'Accept-Language' : config.misc.language.lower()
         }
         if token:
             headers['Authorization'] = 'Bearer ' + token
@@ -104,8 +102,8 @@ class Provider(ProviderBase):
     def _login(self):
         body = json.dumps({'apikey': self._apikey})
         status, response = yield from self._rawapi('/login', method='POST', body=body)
-        if status == 200 and 'token' in response:
-            return response['token']
+        if status == 200 and response and response.get('data', {}).get('token'):
+            return response['data']['token']
         else:
             log.error('thetvdb login failed: %s', response)
             raise ProviderError('thetvdb API login failed')
@@ -130,7 +128,7 @@ class Provider(ProviderBase):
             else:
                 # Token was refused before expiry.  Clear token and recurse to cause relogin.
                 self._token = None
-                status, response = yield from self._api(path,method, body)
+                status, response = yield from self._api(path, method, body)
         elif status != 200:
             log.debug('API %s returned status %d', path, status)
         return status, response
@@ -141,7 +139,7 @@ class Provider(ProviderBase):
         results = []
         quoted = urllib.parse.quote(name.replace('-', ' ').replace('_', ' '))
         log.info('searching TheTVDB for %s', name)
-        status, response = yield from self._api('/search/series?name=' + quoted)
+        status, response = yield from self._api('/search?query=' + quoted + '&type=series')
         if status == 200:
             if 'data' not in response:
                 log.warning('data element missing from response')
@@ -162,7 +160,10 @@ class Provider(ProviderBase):
 
         series = {'episodes': []}
         log.info('fetching series %s from TheTVDB', id)
-        status, response = yield from self._api('/series/' + id)
+
+        # Use the extended endpoint to get genres, airsTime, and remoteIds,
+        # with short=true to skip the heavy artworks/characters payload.
+        status, response = yield from self._api('/series/{}/extended?short=true'.format(id))
         if status != 200:
             return series
         elif 'data' not in response:
@@ -172,82 +173,98 @@ class Provider(ProviderBase):
         data = response['data']
 
         try:
-            series['runtime'] = int(data['runtime'])
-        except (ValueError, KeyError):
+            series['runtime'] = int(data['averageRuntime'])
+        except (ValueError, KeyError, TypeError):
             pass
+
         try:
-            # XXX: is Airs_Time guaranteed to be well formatted?
-            # Should we be more robust?
-            timetuple = time.strptime(data.get('airsTime', ''), '%I:%M %p')
-            series['airtime'] = tostr(time.strftime('%H:%M', timetuple))
+            airtime = data.get('airsTime', '')
+            if airtime:
+                try:
+                    timetuple = time.strptime(airtime, '%H:%M')
+                    series['airtime'] = tostr(time.strftime('%H:%M', timetuple))
+                except ValueError:
+                    timetuple = time.strptime(airtime, '%I:%M %p')
+                    series['airtime'] = tostr(time.strftime('%H:%M', timetuple))
         except ValueError:
             pass
 
         # Get any existing series and see if we need to fetch banner data.
-        # TODO: use /series/{id}/images to pick the highest rated banner
-        # and fetch the poster as well.
         existing = self.db.get_series_by_id('thetvdb:{}'.format(data['id']))
         missing = not existing or not existing.banner_data
-        if missing and data.get('banner'):
-            # Need to fetch banner, either because it changed (different banner with
-            # a higher rating?) or because we never had one.
-            url = self.hostname + '/banners/' + data['banner']
-            log.debug('refresh series banner %s', url)
-            status, banner_data = yield from download(url, retry=3)
+        image_url = data.get('image')
+        if missing and image_url:
+            log.debug('refresh series banner %s', image_url)
+            status, banner_data = yield from download(image_url, retry=3)
             if status == 200:
                 series['banner_data'] = banner_data
             else:
-                log.error('banner download failed for series %s', data.get('seriesName', data['id']))
+                log.error('banner download failed for series %s', data.get('name', data['id']))
 
         from ..tvdb import Series
-        status_str = data.get('status', '').lower()
-        if status_str.startswith('cont'):  # continuing
-            status = Series.STATUS_RUNNING
-        elif status_str.startswith('on'):  # on hiaitus
-            status = Series.STATUS_SUSPENDED
-        elif status_str.startswith('end'):  # ended
-            status = Series.STATUS_ENDED
+        status_obj = data.get('status') or {}
+        status_name = (status_obj.get('name') or '').lower()
+        if status_name.startswith('cont'):        # continuing
+            series_status = Series.STATUS_RUNNING
+        elif status_name.startswith('on'):        # on hiatus
+            series_status = Series.STATUS_SUSPENDED
+        elif status_name.startswith('end'):       # ended
+            series_status = Series.STATUS_ENDED
+        elif status_name.startswith('upcom'):     # upcoming
+            series_status = Series.STATUS_RUNNING
         else:
-            status = Series.STATUS_UNKNOWN
+            series_status = Series.STATUS_UNKNOWN
+
+        # Extract IMDB id from remoteIds list
+        imdbid = None
+        for remote in data.get('remoteIds') or []:
+            if remote.get('sourceName', '').upper() == 'IMDB':
+                imdbid = remote.get('id')
+                break
+
+        genres = [g['name'].strip().lower() for g in (data.get('genres') or []) if g.get('name')]
 
         series.update({
             'id': str(data['id']),
-            'name': data.get('seriesName'),
-            'poster': self.hostname + '/banners/' + data['poster'] if data.get('poster') else None,
-            'banner': self.hostname + '/banners/' + data['banner'] if data.get('banner') else None,
+            'name': data.get('name'),
+            'poster': image_url,
+            'banner': image_url,
             'overview': data.get('overview'),
-            'genres': [g.strip().lower() for g in data.get('genres', []) if g],
-            # TODO: do a sanity check on FirstAired format.
+            'genres': genres,
             'started': data.get('firstAired'),
-            'status': status,
-            'imdbid': data.get('imdbId')
+            'status': series_status,
+            'imdbid': imdbid,
         })
 
         # Iterate over all pages of episodes.
-        for page in itertools.count(1):
-            status, response = yield from self._api('/series/{}/episodes?page={}'.format(id, page))
-            if status != 200:
+        for page in itertools.count(0):
+            ep_status, ep_response = yield from self._api(
+                '/series/{}/episodes/default?page={}'.format(id, page)
+            )
+            if ep_status != 200:
                 break
-            elif 'data' not in response:
+            elif 'data' not in ep_response:
                 log.warning('data element missing from episodes response')
                 break
 
-            for episode in response['data']:
+            episodes = ep_response['data'].get('episodes') or []
+            for episode in episodes:
                 try:
                     series['episodes'].append({
                         'id': str(episode['id']),
-                        'name': episode.get('episodeName'),
-                        'season': int(episode['airedSeason']),
-                        'episode': int(episode['airedEpisodeNumber']),
-                        # TODO: do a sanity check on FirstAired format.
-                        'airdate': episode.get('firstAired'),
-                        'overview': episode.get('overview')
+                        'name': episode.get('name'),
+                        'season': int(episode['seasonNumber']),
+                        'episode': int(episode['number']),
+                        'airdate': episode.get('aired'),
+                        'overview': episode.get('overview'),
                     })
                 except Exception as e:
-                    log.exception("failed to extract episode details: %s %s", e, episode)
+                    log.exception('failed to extract episode details: %s %s', e, episode)
 
-            if 'links' not in response or response['links'].get('last', page) == page:
+            links = ep_response.get('links') or {}
+            if not links.get('next'):
                 break
+
         return series
 
 
@@ -261,22 +278,40 @@ class Provider(ProviderBase):
 
         # Grab all series ids currently in the DB.
         series = set([o[self.IDATTR] for o in self.db.query(type='series', attrs=[self.IDATTR])])
-        if now - servertime > 60*60*24*7:
-            log.warning("haven't updated in over a week, returning all series")
-            # Haven't updated in over a week (which is the upper bound for the API), so refresh all series.
+
+        # The updates endpoint only supports lookback of up to ~3 months.
+        # If we're beyond that window, refresh everything.
+        max_lookback = 60 * 60 * 24 * 85  # ~85 days, safely under 3 months
+        if now - servertime > max_lookback:
+            log.warning("haven't updated in over 85 days, returning all series")
             self.db.set_metadata('thetvdb::servertime', now)
             return list(series)
 
         ids = []
-        status, response = yield from self._api('/updated/query?fromTime={}'.format(servertime))
-        if status == 200:
-            if 'data' not in response:
-                log.warning('data element missing from response')
-            elif response['data']:
-                for result in response['data']:
-                    ids.append(str(result['id']))
-            self.db.set_metadata('thetvdb::servertime', now)
-            log.debug('set servertime %s', now)
+        path = '/updates?since={}&type=series'.format(servertime)
+        while path:
+            status, response = yield from self._api(path)
+            if status == 200:
+                if 'data' not in response:
+                    log.warning('data element missing from response')
+                    break
+                elif response['data']:
+                    for result in response['data']:
+                        ids.append(str(result['recordId']))
+                # Follow pagination
+                links = response.get('links') or {}
+                next_url = links.get('next')
+                if next_url:
+                    # Strip base URL, keep just the path+query
+                    path = next_url.replace('https://api4.thetvdb.com/v4', '')
+                else:
+                    path = None
+            else:
+                log.warning('updates API returned status %d', status)
+                break
+
+        self.db.set_metadata('thetvdb::servertime', now)
+        log.debug('set servertime %s', now)
         return ids
 
 
