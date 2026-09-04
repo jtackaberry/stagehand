@@ -45,7 +45,7 @@ def cscompile(src, dst=None, is_html=None):
             stderr = tostr(stderr)
             errmsg = stderr.lstrip().splitlines()[0]
             error = re.sub(r'\s+on line \d+', '', stderr.lstrip().splitlines()[0])
-            linematch = re.search('on line (\d+)', stderr)
+            linematch = re.search(r'on line (\d+)', stderr)
             if linematch:
                 # This is the line relative to the coffescript portion
                 linenum = int(linematch.group(1))
